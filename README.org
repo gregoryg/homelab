@@ -2,7 +2,7 @@
 #+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
 #+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:t
 #+options: todo:t |:t
-#+title: README
+#+title: Homelab scripts and config for Kubernetes clusters
 #+date: <2020-06-13 Sat>
 #+author: Gregory Grubbs
 #+email: gregory@dynapse.com
@@ -10,4 +10,27 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 27.0.91 (Org mode 9.3.6)
-* Homelab scripts and config for Kubernetes clusters
+* Set up initial barebones cluster
+** Apache Kubernetes using Kubeadm
+   + [[file+emacs:01-k8s-distribution/apache-kubeadm/]]
+** Rancher Labs' RKE
+   + [[file+emacs:01-k8s-distribution/rancher-rke/]]
+** Platform9 PMK
+* Initialize Pod networking
+  + At the end of this step you should see all nodes reporting =ready= status
+* Establish storage solution
+  + I'm putting this step ahead of higher-level networking or *any* new objects that might
+    possibly create persistent volume claims
+** Longhorn
+   + OSS project created by Rancher Labs
+     #+begin_src bash
+       kubectl apply -f  https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/longhorn.yaml
+     #+end_src
+** Optionally make one storage class the default
+   + Add annotation to the desired StorageClass resource
+    #+begin_src yaml
+      annotations:
+        storageclass.kubernetes.io/is-default-class: "true"
+    #+end_src
+   + Check with `kubectl get sc`
+* Set up Load Balancing and Ingress Controller
