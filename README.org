@@ -1,1 +1,13 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:t
+#+options: todo:t |:t
+#+title: README
+#+date: <2020-06-13 Sat>
+#+author: Gregory Grubbs
+#+email: gregory@dynapse.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 27.0.91 (Org mode 9.3.6)
 * Homelab scripts and config for Kubernetes clusters
