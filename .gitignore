@@ -1,1 +1,3 @@
 *.html
+pdsh/
+mysql-data/
