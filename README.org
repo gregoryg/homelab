@@ -10,14 +10,32 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 27.0.91 (Org mode 9.3.6)
+#+setupfile: ~/projects/emacs/org-html-themes/setup/theme-readtheorg.setup
+# #+setupfile: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
+#+PROPERTY: header-args:sh :comments org :shebang #!/usr/bin/env bash :tangle deploy-all.sh :eval never-export
+
+* Literate document setup
+  This README is a literate programming document.  When this document is loaded in Emacs
+  with Org Mode, it can generate scripts and configuration for the documented steps.
+
 * Set up initial barebones cluster
 ** Apache Kubernetes using Kubeadm
    + [[file+emacs:01-k8s-distribution/apache-kubeadm/]]
 ** Rancher Labs' RKE
    + [[file+emacs:01-k8s-distribution/rancher-rke/]]
+   + Have a look at the two canonical starter configs from Rancher:
+     + [[file+emacs:01-k8s-distribution/rancher-rke/cluster-full-example.yaml-TEMPLATE][Cluster full example config]]
+     + [[file+emacs:01-k8s-distribution/rancher-rke/cluster-minimal-example.yaml-TEMPLATE][Cluster minimal example config]]
+   + [[file+emacs:01-k8s-distribution/rancher-rke/cluster.yaml][My specific homelab config]]
+   + Once you have the config to your liking, run
+     #+begin_src bash
+       # rke up
+       rke up --config cluster.yaml --ssh-agent-auth
+     #+end_src
 ** Platform9 PMK
 * Initialize Pod networking
   + At the end of this step you should see all nodes reporting =ready= status
+      kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 * Establish storage solution
   + I'm putting this step ahead of higher-level networking or *any* new objects that might
     possibly create persistent volume claims
@@ -34,3 +52,252 @@
     #+end_src
    + Check with `kubectl get sc`
 * Set up Load Balancing and Ingress Controller
+  + First step, let's make it possible to create =LoadBalancer= resources
+  + On our bare metal cluster, we'll use MetalLB - be sure to check [[https://github.com/metallb/metallb/releases][releases]] to get the
+    right URL
+  + TODO: Investigate reserving host network IPs
+    #+begin_src bash
+      # use new namespace metallb-system
+      kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
+      kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
+      # On first install only
+      kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+    #+end_src
+* Tear down your cluster
+** Apache K8s with Kubeadm
+** Rancher's RKE
+   #+begin_src bash
+     rke remove --config cluster.yaml --ssh-agent-auth
+   #+end_src
+** Cleanup after removal of any distribution
+*** Some components may need manual removal
+    #+begin_src bash
+      sudo rm -rf /var/lib/longhorn
+      sudo rm -rf /etc/cni/net.d/
+    #+end_src
+* Kubernetes notes
+** DONE Create volume that persists between multiple pod restarts
+   :LOGBOOK:
+   - State "DONE"       from              [2020-02-23 Sun 12:10]
+   :END:
+   + A volume that handles persistent storage using a PersistentVolumeClaim will survive
+     Pod restarts.  This is true of Konvoy's default storage class on any cloud platform,
+     and is true of persistent storage providers such as Portworx and Mayadata.
+*** To show this on AWS
+    + Define a PersistentVolumeClaim using the =awsebscsiprovisioner= storage class
+      #+caption: hello-pvc.yaml
+      #+begin_src yaml :tangle manifests/hello-pvc.yaml
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          labels:
+            app: hello-world
+          name: hello-pvc
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+          storageClassName: awsebscsiprovisioner
+          volumeMode: Filesystem
+      #+end_src
+      + Create a PVC using the above manifest.  List the resulting PVC resource and see
+        that it is created and in a =Pending= state:
+
+        #+begin_src bash :results table replace
+          kubectl create -f manifests/hello-pvc.yaml
+          kubectl get pvc -o wide
+        #+end_src
+
+
+      + Define a Pod that makes use of the PVC
+        #+caption: myhello-pod.yaml
+        #+begin_src yaml :tangle manifests/myhello-pod.yaml
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            creationTimestamp: null
+            labels:
+              app: myhello
+            name: myhello
+          spec:
+            containers:
+            - image: nginxdemos/hello
+              name: myhello
+              resources: {}
+              volumeMounts:
+              - name: myhellovol
+                mountPath: /data
+            dnsPolicy: ClusterFirst
+            restartPolicy: Never
+            volumes:
+            - name: myhellovol
+              persistentVolumeClaim:
+                claimName: hello-pvc
+          status: {}
+        #+end_src
+        + Create the Pod, then list both the pod and the PersistentVolume that was created
+          from the PVC. 
+          #+begin_src bash :results output replace
+            kubectl create -f manifests/myhello-pod.yaml
+            until [ $(kubectl get pods myhello -o jsonpath='{.status.phase}') == 'Running' ]; do sleep 1; done
+            kubectl get pod,pv,pvc
+          #+end_src
+
+        + Create a file on the mounted volume, delete the pod, recreate the pod and verify
+          that the file is still there
+          #+begin_src bash  :results output replace
+            kubectl exec myhello -- sh -c "touch /data/persistent.flag && ls /data/"
+            kubectl delete pod myhello && kubectl create -f manifests/myhello-pod.yaml
+            until [ $(kubectl get pods myhello -o jsonpath='{.status.phase}') == 'Running' ]; do sleep 1; done
+            kubectl exec myhello -- sh -c "ls /data/"
+          #+end_src
+
+** DONE Create volume per instance of pod
+   :LOGBOOK:
+   - State "DONE"       from              [2020-02-23 Sun 12:10]
+   :END:
+   + This would be a volume used by each pod, and valid for the life of the individual
+     Pod.  One reason to have this would be for multiple containers in the pod to indicate
+     readiness and "liveness".  For this reason, the example will be a multi-container pod
+     with an Init container writing a file to indicate readiness, and a container that
+     periodically writes status for a liveness probe.
+
+     #+caption: multivol-deployment.yaml
+     #+begin_src yaml :tangle manifests/multivol-deployment.yaml
+       apiVersion: apps/v1
+       kind: Deployment
+       metadata:
+         creationTimestamp: null
+         labels:
+           app: multivol
+         name: multivol
+       spec:
+         replicas: 3
+         selector:
+           matchLabels:
+             app: multivol
+         strategy: {}
+         template:
+           metadata:
+             creationTimestamp: null
+             labels:
+               app: multivol
+           spec:
+             initContainers:
+             - name: init1
+               image: busybox
+               command: ["sh", "-c", "touch /status/running"]
+               volumeMounts:
+               - name: statusdir
+                 mountPath: /status
+             containers:
+             - name: nginx
+               image: nginx
+               resources: {}
+               readinessProbe:
+                 exec:
+                   command: ["sh", "-c", "ls /opt/status/running && true"]
+               volumeMounts:
+               - name: statusdir
+                 mountPath: /opt/status
+             volumes:
+             - name: statusdir
+               emptyDir: {}
+       status: {}
+     #+end_src
+
+     + Create, then describe the deployment.  Note the same volume is deployed at
+       different mount points in each container
+       #+begin_src bash  :results output replace
+          kubectl create -f manifests/multivol-deployment.yaml
+          until [ $(kubectl get pods -l app=multivol -o jsonpath='{.items[*].status.phase}' | grep 'Running' -o | wc -l) -eq 3  ]; do sleep 1; done
+          kubectl describe deployment multivol | grep Mounts: -A 4
+       #+end_src
+     
+** MAYBE Create volume shared between pods                             :NEXT:
+   :LOGBOOK:
+   - State "MAYBE"      from "STARTED"    [2020-02-24 Mon 08:36]
+   - State "STARTED"    from              [2020-02-23 Sun 12:10]
+   :END:
+   + This is a matter of mounting the volume as ReadWriteMany.  The underlying file system
+     must support sharing across multiple nodes.  Examples of this type of file system
+     include NFS and cloud implementations such as AWS EFS.
+
+*** Example on AWS
+    + Create an EFS file system in the AWS Console or CLI
+    + Konvoy comes pre-installed with Helm and Tiller.  Install the EFS Provisioner using
+      a Helm chart.  You will need the EFS file system ID and the AWS region it's in.  Use
+      the below as a guide
+      #+begin_src bash :results output replace
+        helm install --name efs-provisioner \
+             --namespace default \
+             --set  efsProvisioner.efsFileSystemId=fs-d7a62e7d \
+             --set efsProvisioner.awsRegion=us-west-2 \
+             stable/efs-provisioner
+      #+end_src
+      
+   + We will define a deployment with 3 replicas.  Each pod will mount the same persistent
+     volume.  As before, the pods will mount a volume based on a PersistentVolumeClaim.
+
+     #+caption: diskshare-pvc.yaml
+     #+begin_src yaml :tangle manifests/diskshare-pvc.yaml
+       apiVersion: v1
+       kind: PersistentVolumeClaim
+       metadata:
+         labels:
+           app: diskshare
+         name: diskshare-pvc
+       spec:
+         accessModes:
+         - ReadWriteMany
+         resources:
+           requests:
+             storage: 6Ki
+         storageClassName: aws-efs
+         volumeMode: Filesystem
+     #+end_src
+     #+caption: diskshare-deployment.yaml
+     #+begin_src yaml :tangle manifests/diskshare-deployment.yaml
+       apiVersion: apps/v1
+       kind: Deployment
+       metadata:
+         creationTimestamp: null
+         labels:
+           app: diskshare
+         name: diskshare
+       spec:
+         replicas: 3
+         selector:
+           matchLabels:
+             app: diskshare
+         strategy: {}
+         template:
+           metadata:
+             creationTimestamp: null
+             labels:
+               app: diskshare
+           spec:
+             containers:
+             - name: nginx
+               image: nginx
+               command: ["sh", "-c", "echo 'Wondrous Disk Content at WDC!' > /usr/share/nginx/html/index.html"]
+               resources: {}
+               volumeMounts:
+               - name: sharevol
+                 mountPath: /usr/share/nginx/html
+             volumes:
+             - name: sharevol
+               persistentVolumeClaim:
+                 claimName: diskshare-pvc
+       status: {}
+     #+end_src
+
+   + Create PVC and Deployment, verify all pods share the disk
+     #+begin_src bash :results output replace
+     #+end_src
+** Resize existing volume in-place
+   + [[https://kubernetes.io/docs/concepts/storage/persistent-volumes/#csi-volume-expansion][CSI Volume Expansion]] (k8s.io)
+   + Resizing in-use volumes can only be done on specific storage classes that support
+     dynamic resizing.  It is effected by editing the PersistentVolumeClaim object.
