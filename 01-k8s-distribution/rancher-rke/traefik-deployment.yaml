@@ -1,0 +1,29 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: traefik
+  namespace: ingress
+  labels:
+    app: traefik
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      containers:
+      - image: traefik:v1.7.11-alpine
+        name: traefik-ingress-lb
+        args:
+        - --api
+        - --api.statistics
+        - --kubernetes
+        - --logLevel=INFO
+        - --configfile=/config/traefik.toml
+        ports:
+          - containerPort: 8080
+            name: metrics
