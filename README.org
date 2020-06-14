@@ -76,7 +76,7 @@
       sudo rm -rf /etc/cni/net.d/
     #+end_src
 * Kubernetes notes
-** DONE Create volume that persists between multiple pod restarts
+** Create volume that persists between multiple pod restarts
    :LOGBOOK:
    - State "DONE"       from              [2020-02-23 Sun 12:10]
    :END:
@@ -154,7 +154,7 @@
             kubectl exec myhello -- sh -c "ls /data/"
           #+end_src
 
-** DONE Create volume per instance of pod
+** Create volume per instance of pod
    :LOGBOOK:
    - State "DONE"       from              [2020-02-23 Sun 12:10]
    :END:
@@ -216,7 +216,7 @@
           kubectl describe deployment multivol | grep Mounts: -A 4
        #+end_src
      
-** MAYBE Create volume shared between pods                             :NEXT:
+** Create volume shared between pods                                   :NEXT:
    :LOGBOOK:
    - State "MAYBE"      from "STARTED"    [2020-02-24 Mon 08:36]
    - State "STARTED"    from              [2020-02-23 Sun 12:10]
