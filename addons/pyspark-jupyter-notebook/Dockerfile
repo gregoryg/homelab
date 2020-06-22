@@ -3,11 +3,8 @@ FROM ubuntu:20.04
 ARG SPARK_VER=2.4.6
 
 WORKDIR /root
-
-# run as unprivileged user in container!
 ENV http_proxy http://172.16.17.4:3128
-RUN useradd --create-home --shell /usr/bin/bash gregj
-# TODO ?? set up user for sudo 
+ENV https_proxy http://172.16.17.4:3128
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
     apt-get clean && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
@@ -27,7 +24,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     pkg-config \
     python3 \
 	python3.7 \
-	python3.7-dev \
+    python3.7-dev \
+    python3-pip \
 	python3-distutils \
 	software-properties-common \
 	sudo \
@@ -39,8 +37,15 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 #
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 10
 
-# Get the latest pip3
-RUN wget -q https://bootstrap.pypa.io/get-pip.py && python3 get-pip.py && rm -f get-pip.py
+# run as unprivileged user in container!
+RUN groupadd -g 1042 gregj && \
+    useradd -g 1042 --uid 1042 --create-home --shell /usr/bin/bash gregj && \
+    echo "gregj ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/gregj && \
+    chmod 0440 /etc/sudoers.d/gregj
+# TODO ?? set up user for sudo 
+
+# # Get the latest pip3
+# RUN wget -q https://bootstrap.pypa.io/get-pip.py && python3 get-pip.py && rm -f get-pip.py
 
 # Install python3 infrastructure
 COPY requirements.txt .
