@@ -1,0 +1,10 @@
+* Custom image for Jupyter notebook
+  This Dockerfile was adapted from Alexander Sack's [[https://github.com/pisymbol/docker/blob/master/spark/Dockerfile][custom image · GitHub]]
+  Referred to in his Medium article [[https://towardsdatascience.com/ignite-the-spark-68f3f988f642][Ignite the Spark! - Towards Data Science]]
+
+  My additions include
+  + Update base Ubuntu from 18.04 to 20.04
+  + Update Spark from 2.4.4 to 2.4.6
+  + Downgrade Python from 3.8 to 3.7 because of current incompatibiliy in Spark 2.4.6
+  + Use my local Squid cachin server - CHANGE this for your environment
+  + Run notebooks as unprivileged user, not root
