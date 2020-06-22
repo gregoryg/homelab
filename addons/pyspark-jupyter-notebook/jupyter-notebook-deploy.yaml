@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: spark
+  name: jupyter-notebook-deployment
+  labels:
+    app: jupyter-notebook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyter-notebook
+  template:
+    metadata:
+      labels:
+        app: jupyter-notebook
+    spec:
+      serviceAccountName: spark
+      securityContext:
+        fsGroup: 1042
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: jupyter-notebook
+        image: smeagol:5000/gjg-pyspark-notebook
+        ports:
+          - containerPort: 8888
+        volumeMounts:
+          - mountPath: /home/gregj/data
+            name: jupyter-notebook-pv
+        workingDir: /home/gregj
+        resources:
+          limits:
+            memory: 2Gi
+      volumes:
+        - name: jupyter-notebook-pv
+          persistentVolumeClaim:
+            claimName: jupyter-notebook-pvc
+---
+# Headless service
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: spark
+  name: jupyter-notebook-deployment
+spec:
+  selector:
+    app: jupyter-notebook
+  ports:
+    - protocol: TCP
+      port: 29413
+  clusterIP: None
