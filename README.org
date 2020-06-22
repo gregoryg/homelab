@@ -24,33 +24,71 @@
 ** Rancher Labs' RKE
    + [[file+emacs:01-k8s-distribution/rancher-rke/]]
    + Have a look at the two canonical starter configs from Rancher:
-     + [[file+emacs:01-k8s-distribution/rancher-rke/cluster-full-example.yaml-TEMPLATE][Cluster full example config]]
-     + [[file+emacs:01-k8s-distribution/rancher-rke/cluster-minimal-example.yaml-TEMPLATE][Cluster minimal example config]]
+     + [[file+emacs:01-k8s-distribution/rancher-rke/templates/cluster-full-example.yaml-TEMPLATE][Cluster full example config]]
+     + [[file+emacs:01-k8s-distribution/rancher-rke/templates/cluster-minimal-example.yaml-TEMPLATE][Cluster minimal example config]]
    + [[file+emacs:01-k8s-distribution/rancher-rke/cluster.yaml][My specific homelab config]]
    + Once you have the config to your liking, run
      #+begin_src bash
        # rke up
        rke up --config cluster.yaml --ssh-agent-auth
+       KUBECONFIG=kube_config_cluster.yaml kubectl get nodes
      #+end_src
+*** Install Rancher on the cluster
+    #+begin_src bash
+      kubectl create ns cattle-system
+      helm install rancher rancher-latest/rancher \
+           --namespace cattle-system \
+           --set hostname=rancher.example.com
+    #+end_src
+    + To get the =cattle-cluster-agent= Deployment to resolve my =rancher.example.com=
+      server URL, I had to add the following to =Deployment.spec.template.spec=
+      #+begin_src yaml
+        hostAliases:
+        - hostnames:
+          - rancher.example.com
+          ip: 172.16.17.14
+      #+end_src
 ** Platform9 PMK
 * Initialize Pod networking
+  + SKIP THIS for RKE - Canal is already installed and configured
   + At the end of this step you should see all nodes reporting =ready= status
+      #+begin_src bash
       kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+      #+end_src
+* Consider a cluster management solution
+  + There are some options for getting a Web UI overview of either a single cluster or
+    multiple clusters.  These will usually offer the ability to display resource usage,
+    view and edit running resources, and create new resources.  Some allow higher level
+    options like setting workloads to run on multiple clusters, deploying secrets and
+    config maps across clusters, etc.
+  + A great choice for this is Rancher (not RKE or K3s, which are Kubernetes distributions
+    offered by Rancher Labs).  All you have to do to get started is to follow the guide at
+    [[https://rancher.com/docs/rancher/v2.x/en/quick-start-guide/deployment/quickstart-manual-setup/][Rancher Docs: Manual Quick Start]].  The TL;DR is here.
+    #+begin_src bash
+    docker run --name rancher -d --restart=unless-stopped -p 0.0.0.0:80:80 -p 0.0.0.0:443:443 rancher/rancher
+    #+end_src
+  + Run this on any server you wish that can be seen by your cluster.  It can also be run
+    on one of your cluster nodes, of course.
 * Establish storage solution
   + I'm putting this step ahead of higher-level networking or *any* new objects that might
-    possibly create persistent volume claims
+    create persistent volume claims
 ** Longhorn
    + OSS project created by Rancher Labs
      #+begin_src bash
        kubectl apply -f  https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/longhorn.yaml
      #+end_src
+   + If you want to create easy access to the Longhorn UI, change the =longhorn-frontend=
+     service to either NodePort or LoadBalancer.  If the latter, you will need to
+     implement a load balancer solution such as MetalLB (see below)
 ** Optionally make one storage class the default
    + Add annotation to the desired StorageClass resource
     #+begin_src yaml
       annotations:
         storageclass.kubernetes.io/is-default-class: "true"
     #+end_src
-   + Check with `kubectl get sc`
+   + Check with =kubectl get sc=
+   + Note that you can also install Longhorn using the Rancher UI if you are using that:
+     Rancher -> Apps -> Launch -> Longhorn
 * Set up Load Balancing and Ingress Controller
   + First step, let's make it possible to create =LoadBalancer= resources
   + On our bare metal cluster, we'll use MetalLB - be sure to check [[https://github.com/metallb/metallb/releases][releases]] to get the
@@ -62,6 +100,64 @@
       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
       # On first install only
       kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+    #+end_src
+  + Give MetalLB a pool of IPs
+    + Here I'm using a pool from the primary home network
+      #+begin_src yaml :tangle manifests/metallb-pool-cm.yaml
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          namespace: metallb-system
+          name: config
+        data:
+          config: |
+            address-pools:
+            - name: default
+              protocol: layer2
+              addresses:
+              - 172.16.17.230-172.16.17.250
+      #+end_src
+* Prepare for complex apps - Helm and Kudo
+** Helm
+   + Install the Helm 3.x client from [[https://github.com/helm/helm/releases][Helm releases]]
+   + That's all there is to do!  Installing a Helm chart will put required resources on
+     the server
+** KUDO
+   + Install the KUDO client from [[https://github.com/kudobuilder/kudo/releases][Kudo releases]]
+   + This is a =kubectl= plugin; the binary is named =kubectl-kudo=.  It can be invoked
+     as-is, but is meant to be used in conjunction with =kubectl=.  Place it in the Path
+     and test it with
+     #+begin_src bash
+       kubectl kudo version
+     #+end_src
+   + Install server components with
+     #+begin_src bash
+       kubectl kudo init
+     #+end_src
+* Install a relational DB - MySQL
+  + We will do this with the mature Helm chart
+  + Change the root password below
+    #+begin_src bash
+      # Create the namespace we will use
+      kubectl create ns sunshine
+      helm install mysql stable/mysql \
+           -n sunshine \
+           --set mysqlRootPassword=adminpass,persistence.storageClass=longhorn,persistence.size=20Gi
+    #+end_src
+  + Note that the Longhorn UI should show a 20Gi volume.
+  + To use the =mysql= CLI or other client, figure out whether you want to forward the
+    port, use a NodePort or create a load balancer
+* Install Apache Kafka
+  + For this we will use KUDO, which offers a mature, purely declarative operator
+  + Zookeeper first
+    #+begin_src bash
+      kubectl kudo install zookeeper --instance=zk
+    #+end_src
+  + Wait until all Zookeeper pods in your chosen namespace are ready, then
+    #+begin_src bash
+      kubectl kudo install kafka \
+              --instance=kafka \
+              -p ZOOKEEPER_URI=zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181
     #+end_src
 * Tear down your cluster
 ** Apache K8s with Kubeadm

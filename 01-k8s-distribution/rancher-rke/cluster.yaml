@@ -16,6 +16,10 @@ nodes:
       user: gregj
       role:
         - worker
+    - address: birdperson
+      user: gregj
+      role:
+        - worker
 # If set to true, RKE will not fail when unsupported Docker version
 # are found
 ignore_docker_version: false
