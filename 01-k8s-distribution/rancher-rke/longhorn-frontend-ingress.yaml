@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  namespace: longhorn-system
+  labels:
+    app: longhorn-frontend
+    author: gregorio-the-great
+  name: longhorn-ui
+spec:
+  rules:
+  - host: longhorn-frontend.example.com
+    http:
+      paths:
+      - backend:
+          serviceName: longhorn-frontend
+          servicePort: http
