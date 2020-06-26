@@ -42,10 +42,6 @@ RUN groupadd -g 1042 gregj && \
     useradd -g 1042 --uid 1042 --create-home --shell /usr/bin/bash gregj && \
     echo "gregj ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/gregj && \
     chmod 0440 /etc/sudoers.d/gregj
-# TODO ?? set up user for sudo 
-
-# # Get the latest pip3
-# RUN wget -q https://bootstrap.pypa.io/get-pip.py && python3 get-pip.py && rm -f get-pip.py
 
 # Install python3 infrastructure
 COPY requirements.txt .
