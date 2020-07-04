@@ -165,6 +165,11 @@
    #+begin_src bash
      rke remove --config cluster.yaml --ssh-agent-auth
    #+end_src
+** Platform 9 Systems' PMK
+   #+begin_src bash
+     sudo apt purge `dpkg -l | grep pf9|cut -d' ' -f3`
+     sudo rm -rf /var/opt/pf9/ /opt/pf9/ /var/log/pf9/ /var/log/pods
+   #+end_src
 ** Cleanup after removal of any distribution
 *** Some components may need manual removal
     #+begin_src bash
