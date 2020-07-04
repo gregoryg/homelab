@@ -6,8 +6,8 @@ FROM debian:10-slim
 # ARG SPARK_VER=2.4.6
 
 WORKDIR /root
-ENV http_proxy http://172.16.17.4:3128
-ENV https_proxy http://172.16.17.4:3128
+# ENV http_proxy http://172.16.17.4:3128
+# ENV https_proxy http://172.16.17.4:3128
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y 
 # RUN  apt-get clean && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
