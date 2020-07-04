@@ -14,8 +14,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
 
 # Install goodies
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
-    bash-completion \
-    command-not-found \
     wget \
     curl \
     telnet \
