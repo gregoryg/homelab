@@ -25,17 +25,17 @@ spec:
         image: smeagol:5000/gjg-pyspark-notebook
         ports:
           - containerPort: 8888
-        volumeMounts:
-          - mountPath: /home/gregj/data
-            name: jupyter-notebook-pv
+        # volumeMounts:
+        #   - mountPath: /home/gregj/data
+        #     name: jupyter-notebook-pv
         workingDir: /home/gregj
         resources:
           limits:
             memory: 2Gi
-      volumes:
-        - name: jupyter-notebook-pv
-          persistentVolumeClaim:
-            claimName: jupyter-notebook-pvc
+      # volumes:
+      #   - name: jupyter-notebook-pv
+      #     persistentVolumeClaim:
+      #       claimName: jupyter-notebook-pvc
 ---
 # Headless service
 apiVersion: v1
