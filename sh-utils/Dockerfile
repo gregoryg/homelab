@@ -23,6 +23,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install \
     jq \
     htop \
     python3 \
+    dnsutils \
     iputils-ping \
     iputils-arping \
     iputils-tracepath
