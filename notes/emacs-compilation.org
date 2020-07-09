@@ -1,0 +1,47 @@
+* Compile latest from source
+  Clone source and optionally switch to desired branch
+  #+begin_src bash
+    git clone https://git.savannah.gnu.org/git/emacs.git emacs-source
+    git checkout -b emacs-27
+  #+end_src
+
+* Install development tools and required libraries
+** Ubuntu
+** OpenSUSE
+   #+begin_src bash
+     # The following is the SuSE equivalent of installing build-essentials package
+     sudo zypper install -t pattern devel_basis
+     # Install libraries
+     sudo zypper install --no-recommends  texinfo \
+          xorg-x11-devel \
+          gtk2-devel \
+          libjpeg62-devel \
+          ncurses5-devel \
+          dbus-1-devel \
+          giflib-devel \
+          libtiff-devel \
+          m17n-lib-devel \
+          libpng16-devel \
+          librsvg-devel \
+          libotf-devel \
+          libgnutls-devel \
+          libxml2-devel \
+          libXaw3d-devel \
+          liblcms2-devel \
+          ImageMagick-devel \
+          gpm-devel \
+          gconf2-devel  \
+          libXft-devel \
+          systemd-devel \
+          libjansson-devel \
+          gtk3-devel
+   #+end_src
+
+* Configure and compile
+#+begin_src bash
+  cd emacs-source
+  ./autogen.sh
+  ./configure --with-imagemagick
+  make
+  sudo make install
+#+end_src
