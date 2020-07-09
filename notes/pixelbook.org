@@ -1,0 +1,571 @@
+
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline author:t broken-links:nil
+#+OPTIONS: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:t
+#+OPTIONS: todo:t |:t
+#+TITLE: The Ways of the Pixelbook
+#+DATE: <2019-01-01 Tue>
+#+AUTHOR: Gregory Grubbs
+#+EMAIL: gregory.grubbs@gmail.com
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 26.1 (Org mode 9.2)
+#+setupfile: ~/projects/emacs/org-html-themes/setup/theme-readtheorg.setup
+
+* The Ways of the Pixelbook
+* Pros and cons of the notebook itself
+** perfect hand feel for a huge "tablet"
+   + compare with the HP X2
+     + weird weighting
+   + feels much heavier, even with screen detached
+     + detachable screen is failure waiting to happen (IMO)
+** comparison with MacBook Pro 13"
+   + same ports: 2 USB-C, one headphone (thank G-d)
+   + con on the Pixelbook: headphone jack too close to the USB-C port on left hand side
+   + screen resolution: wash
+   + 2nd monitor: wash
+   + comparitive weight: pro
+   + twisty screen: pro
+   + touch screen: HUGE PRO
+   + Backlit keyboard: wash with MBP, advantage against other laptops and Chromebooks
+   + Package manager: I use homebrew on MacOS, which is fine.  On the Chromebook, I have
+     the extensions/app store for ChromeOS.  For Linux, I have full Debian.  For Android,
+     I have the Play Store.  I see this as overwhelmingly in favor of ChromeOS.
+** ChromeOS positives
+   + Cloud integration from the start (but can be matched on any other OS running the
+     Chrome Browser, so wash)
+   + Great and very intriguing integration with the cell phone.  If you have a Pixel
+     phone, you can unlock using the phone.  You have instant hotspot setup with the phone
+     when there is no Wifi available. Other integrations now and to come?
+   + True ability to run *real* Linux - the new beta Linux subsystem is a full-fledged
+     Debian 9
+   + No, really - the Linux stuff works amazingly well - including GUI programs --
+     including developer tools
+   + Runs Android apps, of all things!!
+   + can run a limited set of Windows applications (those that run well under Wine).  TBH,
+     I consider this a parlour trick, something just to show "Hey look, I'm alt-tabbing
+     between Chrome, Android, Linux and Notepad++!"
+   + With some understanding of the underlying security system, you can run VPN and SOCKS5 proxy
+   + Alt-tab shows real time window state!
+** ChromeOS negatives
+   + Memory management is not great - on the one hand, Chrome seems more efficient in
+     memory use on Chrome OS compared to other platforms.  On the other hand, when memory
+     does get overtaxed, Chrome OS simply reboots, with no warning whatsoever.  Chrome
+     tabs will likely recover, but Linux applications may lose data in this scenario. 
+   + If you are deeply invested in the Apple ecosystem, stick with the Mac!  I don't use
+     iTunes, Garage Band, etc etc so don't miss those at all!
+   + If you take advantage of Linux, you have to be relatively knowledgable to do things
+     like printing, implementing proxies, sharing files between Linux and ChromeOS, making
+     application icons show in the shelf, etc.  But then again, if you want Linux, you are
+     probably neurologically adapted to doing these things!
+   + If you do code development locally, it may be hard to find a sufficiently powered
+     chromebook.  Personally, most of my computationally intensive work has moved to cloud
+     platforms, and I really need very little horsepower locally.  Tasks that involve
+     compiling specific applications for use on the Linux environment are easily handled
+     by the Pixelbook - and I have the lowest powered Pixelbook.  I have run maven
+     projects, installed software such as Emacs and Intellij IDEA, VSCode, Sublime Text,
+     Atom, Android SDK.  All have completed in
+     reasonable time for my needs.  So - it turns out not to be a negative in my usage.
+   + It is no joke that the OS imposes strict security.  The user is prevented from
+     looking under the covers at details of the OS, as they can do on Linux and even
+     Windows.  SSH, remote destktop protocol and other network-level functions have to be
+     done via Chrome extensions.  This feels weird and restrictive, and limits standard
+     behaviours a techie comes to expect, like using OpenSSH with SSH agent,
+     using a client config file with SSH etc. SSH agent is doable from the Linux side, as
+     I show in my how-to video
+** Demo of key features, with details in another screencast
+   + Running Chrome with extensions and apps
+   + Enabling the beta Linux system
+   + Running Android apps
+   + Running Linux apps - show Emacs, IDEA, Atom, Firefox
+   + Running Windows apps - show Notepad++ just for fun
+   + Prove TRAMP remote access as well as proxy working - and point to detail video
+* Detailed howto on ChromeOS
+** Get a system monitor that shows aggregate values
+   [[https://chrome.google.com/webstore/detail/system-monitor/ecmlflnkenbdjfocclindonmigndecla][System Monitor]]
+** Install Linux (Beta) from settings - even from stable channel!!
+   + Debian 9 with minimal repo in =/etc/apt/sources.list=
+** Linux containers
+** Font scaling - Pixelbook has high pixel density
+
+   + Fonts seem very small in Emacs and IDEA, but not Firefox
+   + Adjust per app, for now
+   + Google working on a HiDPI fix
+   + You may have a right-click option on the Linux application icon to 'Use low density'
+     
+** SSH Agent
+   Best way is to set up a user service in =systemd=
+
+   #+begin_src sh
+     mkdir -p ~/.config/systemd/user
+     echo """
+     [Unit]
+     Description=SSH key agent
+
+     [Service]
+     Type=simple
+     Environment=SSH_AUTH_SOCK=%t/ssh-agent.socket
+     ExecStart=/usr/bin/ssh-agent -D -a $SSH_AUTH_SOCK
+
+     [Install]
+     WantedBy=default.target
+     """ > ~/.config/systemd/user/ssh-agent.service
+     echo """
+     export SSH_AUTH_SOCK=/run/user/1000/ssh-agent.socket
+     systemctl --user start ssh-agent.service 
+     """ >> .bashrc 
+   #+end_src
+
+** SSH Tunneling for Chrome OS
+   When you tunnel from the Crostini shell with something like =ssh <host> -L 8080:localhost:8080=, your Linux environment will be able to take
+   advantage of the tunnel, but not Chrome OS. The reason is that the tunnel is binding to
+   localhost in Crostini, but not the network interface between Chrome OS and the Linux
+   container.
+
+   To make this work, do the following 2 things:
+
+   Set up the tunnel, binding to all network interfaces
+   #+begin_src sh
+   ssh <host> -L 0.0.0.0:8080 :localhost:8080
+   #+end_src
+
+   In the Chrome browser, use the host =penguin.linux.test= rather than =localhost=
+
+   #+begin_src web
+     http://penguin.linux.test:8080/
+   #+end_src
+** Printing
+*** From Chrome
+    + Use Google CloudPrint
+*** From Linux
+    #+BEGIN_SRC sh
+      sudo apt install cups cups-bsd system-config-printer hplip
+      # set default printer
+      lpoptions -d my_printer  
+    #+END_SRC
+   You can use Cloud print as well: [[https://www.niftiestsoftware.com/cups-cloud-print/comment-page-5/][CUPS Cloud Print]]
+   #+begin_src sh
+     wget https://niftyrepo.niftiestsoftware.com/cups-cloud-print/packages/cupscloudprint_20160502-1_all.deb
+     sudo apt install ./cupscloudprint_20160502-1_all.deb
+     sudo /usr/share/cloudprint-cups/setupcloudprint.py
+   #+end_src
+** Building / compiling
+
+   #+BEGIN_SRC sh
+     # Some nice tools you may or may not make use of
+     sudo apt install tmux wget curl git locate jq htop telnet nmap finger
+     # Essential packages for compiling Emacs and many other source packages
+     sudo apt install autoconf automake libtool texinfo build-essential xorg-dev libgtk2.0-dev libjpeg-dev libncurses5-dev libdbus-1-dev libgif-dev libtiff-dev libm17n-dev libpng-dev librsvg2-dev libotf-dev libgnutls28-dev libxml2-dev
+   #+END_SRC
+** Emacs
+*** Installation
+   + Debian 9 comes with Emacs 25.  If you want v26, you will have to build.
+
+     #+BEGIN_SRC sh
+       wget 'http://mirror.keystealth.org/gnu/emacs/emacs-26.1.tar.gz'
+       tar zxf emacs-26.1.tar.gz
+       cd emacs-26.1/
+       ./configure
+       make && sudo make install
+     #+END_SRC
+
+   + And for Emacs 27 (as of 09-2019), this is the =master= branch of the repo, so should
+     be done as so:
+	 #+begin_src sh 
+cd ~/projects
+git clone git://git.savannah.gnu.org/emacs.git &&
+	cd emacs && 
+	./autogen.sh && 
+	./configure && 
+	make && 
+	sudo make install
+	 #+end_src
+
+	 #+RESULTS:
+
+*** Emacs tested functions
+**** TRAMP remote access
+hto     Works with no additional modification
+
+     On Emacs 26, the protocol is required
+     #+begin_src sh
+     C-x d //ssh:centos@gcp-instance1:
+     #+end_src
+**** Printing
+     Works - though font scaling may be an issue (in my case, fonts print very large)
+     see [[Printing]]
+**** Org-mode, themes, packages
+     All of it works seamlessly
+**** Open HTML in Chrome
+     This does not work at first. 
+
+     To fix, set =browse-url-browser-function= to ='browse-url-generic=, then set
+     =browse-url-generic-program= to ="sensible-browser"=
+
+     It's worth nothing that the Linux file system under =/home= is represented
+     by a Chrome OS mount that starts with =/media/fuse/=.  If you browse to your HTML
+     file using the Files app, right click and select Open With -> View, you will see the
+     true Chrome OS file URL.  It will look something like
+     #+begin_src sh
+       file:///media/fuse/crostini_d00fa2e2d9984f71d0fa0ea743f880b213c6ca8d_termina_penguin/mydocument.html
+     #+end_src
+
+     You can use that path in the Chrome OS browser. 
+
+
+**** Tetris
+     Sadly, the DPI scaling murders poor little Tetris.  The game appears in a very tiny
+     little area that makes play difficult.  [[file:Screenshot 2019-01-01 at 6.10.32 PM.png]]
+
+     Emacs can be restarted in low density mode, but I don't like to keep that for general
+     Emacs use.
+**** Language modes
+     So far, so good - tested Python, Clojure, Elisp.  ESS is next!
+**** Keyboard shortcuts
+     The minimalist keyboard with specialized keys is a challenge here.  I have a few
+     often-used functions that I map to function keys.  It's possible to use the top row
+     of keys as function keys, but in that case you need the =launcher= key (CAPS LOCKS on
+     most keyboards) to access the intended actions for those keys.  Unfortunately, I map
+     the launcher to Control, which means I have no launcher key to use.  
+
+     So ... for now I have remapped the actual control keys to =launcher=.  Now my only
+     usable control key is the launcher-in-place-of-caps-lock.  I use left-control in
+     combo with the top row of keys in order to activate function 1-10.
+**** Transparency
+     does not work - wmctrl issues
+** Network considerations including SSH, VPN and SOCKS5 proxy
+   + Show shell proof that we are running in =lxc=.
+** Windows apps (wine)
+** Icons for Linux apps
+** screencasting
+** Cloud connections
+** Tie-in with (Pixel) phone
+   
+http://google.com
+* Set up Linux (Beta) for the first time
+** Settings -> Linux (Beta)
+  Wait for downloads, then containers will be started up and you will be presented with a shell on Debian 9
+** Fix teeny mouse pointer (not evident in Terminal)               :noexport:
+   In Emacs, Atom, VS Code etc ... the mouse pointer is very small.
+
+   If you want to change it, do the following =dconf= command in the shell:
+   #+begin_src sh
+     dconf write /org/gnome/desktop/interface/cursor-size 48
+   #+end_src
+
+   Then restart the Linux subsystem with a right click on the the Terminal icon in the
+   shelf, choose "Shut down Linux (Beta)"
+** Update Debian, install basic packages
+  #+BEGIN_SRC sh
+    sudo apt update
+    sudo apt upgrade
+    sudo apt install tmux wget curl git locate jq htop telnet nmap finger netcat fonts-inconsolata fortune cowsay openjdk-8-jdk command-not-found
+
+  #+END_SRC
+** Install dev tools for software builds on device
+  #+BEGIN_SRC sh
+    sudo apt install autoconf automake libtool texinfo build-essential xorg-dev libgtk2.0-dev libjpeg-dev libncurses5-dev libdbus-1-dev libgif-dev libtiff-dev libm17n-dev libpng-dev librsvg2-dev libotf-dev libgnutls28-dev libxml2-dev
+
+  #+END_SRC
+** Install emacs 26.1
+   + Compile and install
+     #+begin_src sh
+       tar zxf emacs-26.1.tar.gz 
+       cd emacs-26.1
+       ./configure
+       make
+       sudo make install
+     #+end_src
+
+   + Make the icon show by creating a =.desktop= file.
+     #+begin_src sh
+       sudo cp -iv /usr/local/share/icons/hicolor/48x48/apps/emacs.png /usr/share/pixmaps/
+       sudo cp -iv /usr/local/share/icons/hicolor/scalable/apps/emacs.svg /usr/share/pixmaps/
+     #+end_src
+     
+     Save to =/usr/share/applications/emacs.desktop=
+     #+begin_src shell-script
+       [Desktop Entry]
+       Name=Emacs
+       GenericName=Text Editor
+       Comment=Edit text
+       MimeType=text/english;text/plain;text/x-makefile;text/x-c++hdr;text/x-c++src;text/x-chdr;text/x-csrc;text/x-java;text/x-moc;text/x-pascal;text/x-tcl;text/x-tex;application/x-shellscript;text/x-c;text/x-c++;
+       Exec=/usr/local/bin/emacs %F
+       Icon=emacs
+       Type=Application
+       Terminal=false
+       Categories=Development;TextEditor;
+       StartupWMClass=Emacs
+       Keywords=Text;Editor;
+       X-Desktop-File-Install-Version=0.22
+
+     #+end_src
+
+** Install gimp
+  #+BEGIN_SRC sh
+    sudo apt install imagemagick gimp
+  #+END_SRC
+** Install cloud platform CLIs
+   #+begin_src sh
+     # AWS
+     sudo apt -y install python3-pip
+     sudo pip3 install awscli
+     ; aws configure
+     # GCP
+     export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
+     echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+     sudo apt update && sudo apt -y install google-cloud-sdk
+     ; gcloud init
+     # Azure
+     sudo apt -y install apt-transport-https lsb-release software-properties-common -y
+     export AZ_REPO=$(lsb_release -cs)
+     echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | \
+         sudo tee /etc/apt/sources.list.d/azure-cli.list
+     sudo apt-key --keyring /etc/apt/trusted.gpg.d/Microsoft.gpg adv \
+          --keyserver packages.microsoft.com \
+          --recv-keys BC528686B50D79E339D3721CEB3E94ADBE1229CF
+     sudo apt update
+     sudo apt -y install azure-cli
+     ; az login
+   #+end_src
+** Install VSCode
+   #+begin_src sh
+     curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+     sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/
+     sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
+
+     sudo apt -y install apt-transport-https
+     sudo apt update
+     sudo apt -y install code # or code-insiders
+   #+end_src
+** Install Atom editor
+
+   + Download the =.deb= package from [[https://atom.io/][atom.io]]
+   + Using the Files app, move the file from local to Linux Files
+   + Right click on the package and choose install (or do it from the CLI)
+** Install Intellij IDEA
+   + Visit the [[https://www.jetbrains.com/idea/download/index.html#section=linux][jetbrains site]]
+   + Download the package: [[https://download.jetbrains.com/idea/ideaIC-2019.1.tar.gz][this is Community v2019.1]]
+   + compile and install
+** CANCELLED Install Snappy package manager              :noexport:CANCELLED:
+   :LOGBOOK:
+   - State "CANCELLED"  from              [2019-04-10 Wed 08:37]
+   :END:
+   + As of Chrome OS V74, snappy needs to use the fuse file system. First we install that
+*** Install squashfuse
+    #+begin_src sh
+      git clone git@github.com:vasi/squashfuse.git
+      cd squashfuse
+      ./autogen.sh
+      ./configure
+      make
+      sudo make install
+      sudo ldconfig # assure /usr/local/lib is included in the load path
+      sudo apt install snapd
+    #+end_src
+** CANCELLED Install Intellij using snappy               :noexport:CANCELLED:
+   :LOGBOOK:
+   - State "CANCELLED"  from              [2019-04-10 Wed 08:37]
+   :END:
+    #+begin_src sh
+      sudo snappy install intellij-idea-community --classic
+    #+end_src
+** Use Cisco AnyConnect from ChromeOS
+   Install the Cisco AnyConnect android app from the Play Store.
+** Use =openconnect= VPN from inside the Linux container
+   You will first need to create the =tun= device.  To do this, open the =crostini=
+   terminal by pressing Ctl-Alt-T.  Issue the following command at the =crosh>= prompt:
+   #+begin_src sh
+     vmc start termina
+   #+end_src
+
+   This brings up a powerful shell which will allow you to create devices used in the
+   =lxc= containers. At the =(termina)= prompt, issue this command:
+   #+begin_src sh
+     # lxc config device del penguin tun unix-char path=/dev/net/tun
+     lxc config device add penguin tun unix-char path=/dev/net/tun
+   #+end_src
+
+   Back in the Debian shell, you should now see the following:
+   #+begin_src sh
+     gregorygrubbs@penguin:~$ ls -l /dev/net/tun 
+     crw-rw---- 1 root root 10, 200 Jan  1 10:21 /dev/net/tun
+   #+end_src
+
+   Install openconnect, and start it in the background using your credentials:
+   #+begin_src sh
+     sudo apt -y install openconnect inetutils-ping
+     sudo openconnect -b <myvpn.whatever.com>
+   #+end_src
+
+   Once a successful connection has established, you may see some warning messages about
+   iptables or missing =/proc/= paths.  Test that it is running despite the warnings
+   #+begin_src 
+   ps -ef | grep openconnect
+   ping <some.vpn-protected.address.whatever.com>
+   #+end_src
+** Getting Chrome OS to read files from Linux
+   + To find the odd =fuse= file path that Chrome OS uses, place a =.html= file in your
+     home directory on Linux.  Go to the Files app, browse to the Linux files, right click
+     on the HTML file, choose "Open with ... View".  Chrome will open with a file URL that
+     looks something like 
+     file:///media/fuse/crostini_8a90641edungodlylonghex_termina_penguin/my.html
+
+   + You can open file URLs by using that long prefix and invoking
+     =/usr/bin/sensible-browser= from the Linux shell
+
+   + Alternatively, you can install a lightweight HTTPD server, and use the address of
+     your container in Chrome.
+     #+begin_src sh
+     sudo apt -y install bind9-host lighttpd
+     #+end_src
+** Docker
+   #+begin_src sh
+     # Install prereqs
+     sudo apt -y install \
+          apt-transport-https \
+          ca-certificates \
+          curl \
+          gnupg2 \
+          software-properties-common
+     # Add key
+     curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+     # Add Docker repository
+     sudo add-apt-repository \
+        "deb [arch=amd64] https://download.docker.com/linux/debian \
+        $(lsb_release -cs) \
+        stable"
+     sudo apt update
+     sudo apt -y install docker-ce
+   #+end_src
+* GCP Directory API
+  gg-directory-api
+| Client ID                                                                | Secret                   | API Key                                 |
+|--------------------------------------------------------------------------+--------------------------+-----------------------------------------|
+| 935008526857-i0na2ectn5hs2oav2qec72nnl8lrhq0a.apps.googleusercontent.com | kTyABfxHc72r_nejWEdeEzm3 | AIzaSyAVtRz6AQR_0Yx66jce-D7ccEjfBW4tkjo |
+
+
+* Crostini
+
+** Steam
+How to install Steam
+
+Obligatory disclaimer: Installing Steam in crostini is very much a work in progress and
+does not result in many playable games. This wiki is a compilation of steps developed by
+many helpful redditors, credit marked within. This wiki contains steps for Steam for Linux
+and Steam for Windows (emulated through wine). For both versions, no developer mode
+needed, although you do currently need to be on the dev channel in Chrome OS.
+
+*** Steam for Linux
+Credit to [[https://www.reddit.com/u/Zikben][/u/Zikben]] for a helpful step-by-step process, with a few additions.
+
+Add your user to the video and audio groups.
+#+begin_src sh :results none
+sudo usermod -a -G video,audio $USER
+#+end_src
+
+
+Modify your sources (=/etc/apt/sources.list=) to include additional software needed. Use
+your editor of choice and add contrib and non-free to both lines as shown:
+
+#+begin_src conf
+deb http://deb.debian.org/debian stretch main contrib non-free
+deb http://security.debian.org/ stretch/updates main contrib non-free
+#+end_src
+
+Add i386 infrastructure:
+#+begin_src sh
+sudo dpkg --add-architecture i386
+#+end_src
+
+#+RESULTS:
+
+Update and upgrade your system:
+#+begin_src sh
+sudo apt update && sudo apt dist-upgrade
+#+end_src
+
+#+RESULTS:
+
+Install the following packages, and accept all of the terms as prompted:
+#+begin_src sh
+sudo apt install libgl1-mesa-dri:i386 libgl1-mesa-glx:i386 libglapi-mesa:i386 steam
+#+end_src
+
+Launch steam and enjoy! It will download and install updates upon first run.
+
+*** Optional Steam Beta Opt-in
+Steam for Linux users can enable the Steam Beta with Steam Play with Proton, Valve's new 'Wine for Steam' option. Proton gives Steam users the ability to install/run 'Windows-only' content within the Linux Steam client without setting up separate Wine/exe installs (official announcement here).
+
+Once Steam is installed and you've signed in, use the following steps to enable Steam Beta w/Proton:
+1)Steam > Settings > Account > Beta Participation > CHANGE button > Toggle Beta Participation -- Steam will restart
+2)Steam > Settings > Steam Play > Advanced > Check 'Enable Steam Play for all titles' box
+3)Steam > Settings > Steam Play > Advanced > Toggle 'Compatibility tool' option to beta > OK -- Steam will restart
+
+You should now have the option to "Install with Steam Play" with content that was previously unavailable on Linux. Not all games will work, and due to no hardware acceleration in Crostini many games will be slow/unplayable... but don't let that stop you from testing out content.
+
+Perhaps we'll need a /r/Crostini "Steam Games in Crostini Compatibility Chart" wiki page in the near future?
+
+Steam for Windows
+To install Steam for Windows, the first step is to get Wine working. Wine (originally an acronym for "Wine Is Not an Emulator") is a compatibility layer capable of running Windows applications on several POSIX-compliant operating systems, such as Linux, macOS, & BSD. WineHQ has a few steps we need to follow to get it working (credit to this article for installation steps).
+
+First, enable 32 bit packages (skip this step if you already installed Steam for Linux following the above instructions):
+sudo dpkg --add-architecture i386
+
+Install needed software to begin, including wget and gnupg.
+sudo apt install wget gnupg
+
+Add sources key to system:
+wget -nc https://dl.winehq.org/wine-builds/Release.key
+
+sudo apt-key add Release.key
+
+update and upgrade:
+sudo apt update && sudo apt dist-upgrade
+
+Edit sources list (/etc/apt/sources.list) with your editor of choice to include WineHQ packages:
+deb https://dl.winehq.org/wine-builds/debian/ stretch main
+
+Install Wine, selecting the Development branch to get the latest 3.X version:
+sudo apt install --install-recommends winehq-devel
+
+Devel contains applications, scripts, header files, and libraries for building applications that use wine and/or winelib.
+
+or
+
+sudo apt install --install-recommends winehq-staging
+
+Staging comes with the CMST settings for better graphical performances
+
+Download the latest Steam for Windows installer:
+wget https://steamcdn-a.akamaihd.net/client/installer/SteamSetup.exe
+
+Run the Steam installer, allowing it to install some missing packages such as Mono and Gecko:
+wine SteamSetup.exe
+
+It will update. Once prompted, log in. Note: you may need to right-click on the login box first in order to get text input working. Steam may show a dialog with no options, in which case close it, force close in terminal, and restart Steam.
+
+Steam Errors and Fixes
+Crostini users may run into some Steam errors along the way -- here are some common errors, their fixes, and a brief explanation of what's going on.
+
+Steam for Linux Errors:
+
+Error: Unable to determine CPU Frequency. Try defining CPU_MHZ.
+Fix: export CPU_MHZ=<CPU_SPEED_in_MHZ> Example: 1.5GHz owners would enter: export CPU_MHZ=1500.000
+Explanation: Error occurs when clock calibration fails on boot and cpu MHz output of /proc/cpuinfo is 0.000. This can be confirmed by dmesg | grep -i tsc. Steam doesn't like when the /proc/cpuinfo MHZ output is 0.000 and errors out but fortunately allows us to, instead, define the CPU_MHZ value. Seems this lack of cpu MHz output in /proc/cpuinfo is due to a race condition. At this time it is unknown if there is a way to force the clock calibration to try again, this would be ideal as it would correct the 0.000 cpu MHz output in /proc/cpuinfo and truly fix the issue rather than working around it by defining a superficial CPU_MHZ value just to make Steam happy.
+
+Error: Assertion Failed: Could not open connection to X
+Error: Assertion Failed: failed to initialize update status ui, or create initial window
+Fix: sudo ln -s /opt/google/cros-containers/bin/sommelier.elf /usr/bin/; systemctl --user restart sommelier*service --all; export DISPLAY=:0
+Explanation: Errors occur when sommelier services have failed which stops X from working. The services sometimes fail due to the sommelier.elf symlink not being created yet so making sure the symlink is set is always the first step before restarting the services. Credit to u/bzub for documenting the issue here.
+
+Error: find: ‘/home/<USER>/.steam/ubuntu12_32/steam-runtime’: No such file or directory error
+Fix: mkdir ~/.steam/ubuntu12_32/steam-runtime
+Explanation: Error occurs when the steam-runtime directory doesn't exist in the Steam default location so you can simply create one.
+
+Steam for Windows Errors:
+
+???
+
