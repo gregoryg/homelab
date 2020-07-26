@@ -1,22 +1,22 @@
 nodes:
-    - address: todd
+    - address: todd.magichome
       user: gregj
       role:
         - controlplane
         - etcd
-    - address: chewbacca
+    - address: chewbacca.magichome
       user: gregj
       role:
         - worker
-    - address: cuphead
+    - address: cuphead.magichome
       user: gregj
       role:
         - worker
-    - address: marvin
+    - address: marvin.magichome
       user: gregj
       role:
         - worker
-    - address: birdperson
+    - address: birdperson.magichome
       user: gregj
       role:
         - worker
