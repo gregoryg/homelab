@@ -34,6 +34,7 @@
           libXft-devel \
           systemd-devel \
           libjansson-devel \
+          mailutils-devel \
           gtk3-devel
    #+end_src
 
@@ -41,7 +42,7 @@
 #+begin_src bash
   cd emacs-source
   ./autogen.sh
-  ./configure --with-imagemagick
+  ./configure --with-imagemagick --with-mailutils
   make
   sudo make install
 #+end_src
