@@ -34,7 +34,7 @@ ssh_key_path: ~/.ssh/k8s-local
 ssh_agent_auth: true
 
 # Set the name of the Kubernetes cluster  
-cluster_name: gortzilla
+cluster_name: cowzilla
 
 
 services:
