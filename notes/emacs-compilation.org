@@ -35,14 +35,15 @@
           systemd-devel \
           libjansson-devel \
           mailutils-devel \
-          gtk3-devel
+          gtk3-devel \
+          webkit2gtk3-devel
    #+end_src
 
 * Configure and compile
 #+begin_src bash
   cd emacs-source
   ./autogen.sh
-  ./configure --with-imagemagick --with-mailutils
+  ./configure --with-imagemagick --with-mailutils --with-xwidgets
   make
   sudo make install
 #+end_src
