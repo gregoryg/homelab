@@ -25,13 +25,13 @@
    The cownonical Cow Me! script
    #+begin_src bash :shebang #!/usr/bin/env bash :tangle ~/bin/cowme
      COWPATH=/usr/share/cows:~/bin
-     IFS=',' read -r -a SAFE_COWS <<< 'bud-frogs,bunny,chameleon,small,three-eyes,tux,rancher,rancher-trademarked'
-     mycow=${SAFE_COWS[$((RANDOM % ${#SAFE_COWS[@]}))]}
+     IFS=',' read -r -a safe_cows <<< 'bud-frogs,bunny,chameleon,small,three-eyes,tux,rancher,rancher-trademarked'
+     mycow=${safe_cows[$((RANDOM % ${#safe_cows[@]}))]}
      case ${mycow} in
          rancher*|tux|chameleon)
          db='linux computers'
          ;;
-         *)
+         ,*)
          db=
      esac
      cowcmd='cowsay'
