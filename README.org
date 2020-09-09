@@ -24,15 +24,22 @@
 
    The cownonical Cow Me! script
    #+begin_src bash :shebang #!/usr/bin/env bash :tangle ~/bin/cowme
-     COWPATH=/usr/share/cows:~/bin
-     IFS=',' read -r -a safe_cows <<< 'bud-frogs,bunny,chameleon,small,three-eyes,tux,rancher,rancher-trademarked'
-     mycow=${safe_cows[$((RANDOM % ${#safe_cows[@]}))]}
+     # Optionally specify a cow - whether or not in the safe list
+     mycow=$1
+     export COWPATH=/usr/share/cows:~/projects/homelab/cows
+     if [ -z ${mycow} ] ; then
+         IFS=',' read -r -a safe_cows <<< 'default,default,default,default,bud-frogs,chameleon,small,three-eyes,tux,rancher,rancher-trademarked,kitten,robotfindskitten,owl'
+         mycow=${safe_cows[$((RANDOM % ${#safe_cows[@]}))]}
+     fi
      case ${mycow} in
          rancher*|tux|chameleon)
-         db='linux computers'
-         ;;
+             db='linux computers debian science startrek'
+             ;;
+         owl|satanic)
+             db='cookie definitions'
+             ;;
          ,*)
-         db=
+             db=
      esac
      cowcmd='cowsay'
      if [[ $((RANDOM % 2)) == 0 ]]; then
@@ -40,7 +47,7 @@
      fi
 
      if [[ $(command -v fortune 2>/dev/null) && $(command -v cowsay 2>/dev/null) ]] ; then
-         IFS=',' read -r -a cowopts <<< "b,g,p,s,t,w,y"
+         IFS=',' read -r -a cowopts <<< "b,g,p,s,t,w,y,d"
          fortune -s ${db} | ${cowcmd} -f ${mycow} -${cowopts[$((RANDOM % ${#cowopts[@]}))]}
          echo
      fi
