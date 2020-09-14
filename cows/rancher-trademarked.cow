@@ -1,0 +1,15 @@
+##
+## Rancher Labs cow with R-trademark
+##
+# $thoughts = "/";
+$the_cow = <<EOC;
+               $thoughts
+                $thoughts
+                 $thoughts
+  _____________[____]  ®
+ /|                |
+' |             |__|
+  |  __________   |
+  |  |         |  |
+  |__|         |__|
+EOC
