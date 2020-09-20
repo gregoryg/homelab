@@ -38,7 +38,7 @@
          owl|satanic)
              db='cookie definitions'
              ;;
-         ,*)
+         *)
              db=
      esac
      cowcmd='cowsay'
