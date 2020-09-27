@@ -47,3 +47,6 @@
   make
   sudo make install
 #+end_src
+* gccemacs hints
+  + Thread with libgccjit compile help: https://news.ycombinator.com/item?id=24120261
+  + Reddit thread: https://www.reddit.com/r/emacs/comments/gikoag/install_native_emacs_instructions/
