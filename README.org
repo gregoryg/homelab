@@ -28,7 +28,7 @@
      mycow=$1
      export COWPATH=/usr/share/cows:~/projects/homelab/cows
      if [ -z ${mycow} ] ; then
-         IFS=',' read -r -a safe_cows <<< 'default,default,default,default,bud-frogs,chameleon,small,three-eyes,tux,rancher,rancher-trademarked,kitten,robotfindskitten,owl'
+         IFS=',' read -r -a safe_cows <<< 'default,default,default,default,bud-frogs,chameleon,elephant,small,three-eyes,tux,rancher,rancher-trademarked,kitten,robotfindskitten,owl'
          mycow=${safe_cows[$((RANDOM % ${#safe_cows[@]}))]}
      fi
      case ${mycow} in
