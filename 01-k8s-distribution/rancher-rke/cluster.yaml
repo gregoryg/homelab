@@ -1,12 +1,14 @@
 nodes:
-    - address: todd.magichome
+    # - address: todd.magichome
+    #   user: gregj
+    #   role:
+    #     - controlplane
+    #     - etcd
+    - address: cuphead.magichome
       user: gregj
       role:
         - controlplane
         - etcd
-    - address: cuphead.magichome
-      user: gregj
-      role:
         - worker
     - address: birdperson.magichome
       user: gregj
