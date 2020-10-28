@@ -43,7 +43,7 @@
 #+begin_src bash
   cd emacs-source
   ./autogen.sh
-  ./configure --with-imagemagick --with-mailutils --with-xwidgets
+  ./configure --with-imagemagick --with-mailutils --with-xwidgets --with-nativecomp --with-json
   make
   sudo make install
 #+end_src
