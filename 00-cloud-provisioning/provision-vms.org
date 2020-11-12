@@ -1,0 +1,264 @@
+#+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :tangle no :eval never-export
+* Provision HA VMs in GCP
+
+** Run the provisioning script
+
+  This script creates 3 etcd nodes backed by high-IOPS disk, 3 controlplane nodes and
+  $NUM_WORKERS worker nodes
+
+  The script is modeled after the =gregoryg= fork of Kelsey Hightower's Kubernetes the
+  Hard Way repo.
+  + [[https://github.com/gregoryg/kubernetes-the-hard-way][gregoryg's fork kubernetes-the-hard-way]]
+  + [[https://github.com/kelseyhightower/kubernetes-the-hard-way][kelseyhightower/kubernetes-the-hard-way]] - the original
+
+  #+begin_src bash :tangle ~/bin/provision-rancher-ha-gcp.sh
+    NUM_CONTROL=3
+    NUM_ETCD=0   # 0 for co-location with controlplane
+    NUM_WORKERS=4
+
+    # build up lists of nodes for use with PDSH and suchlike
+    rm -vf /tmp/worker-nodes.txt /tmp/control-nodes.txt /tmp/all-nodes.txt
+    gcloud compute networks create gg-rancher-ha --subnet-mode custom
+
+    # Create the =kubernetes= subnet in the =gg-rancher-ha= VPC network:
+
+    # Create the =gg-rancher-ha= custom VPC network:
+    gcloud compute networks subnets create kubernetes \
+      --network gg-rancher-ha \
+      --range 10.240.0.0/24
+
+    # Create the Cloud NAT and Cloud Router for outbound internet access
+
+    gcloud compute routers create ggrha-router \
+        --network gg-rancher-ha
+
+    gcloud compute routers nats create ggrha-nat \
+        --router=ggrha-router \
+        --auto-allocate-nat-external-ips \
+        --nat-all-subnet-ip-ranges \
+        --enable-logging
+
+    # Create a firewall rule that allows internal communication across all protocols:
+
+
+    gcloud compute firewall-rules create gg-rancher-ha-allow-internal \
+      --allow tcp,udp,icmp \
+      --network gg-rancher-ha \
+      --source-ranges 10.240.0.0/24,10.200.0.0/16
+
+    # Create a firewall rule that allows external SSH, ICMP, and HTTPS:
+
+
+    gcloud compute firewall-rules create gg-rancher-ha-allow-external \
+      --allow tcp:22,tcp:6443,icmp \
+      --network gg-rancher-ha \
+      --source-ranges 0.0.0.0/0
+
+    gcloud compute addresses create gg-rancher-ha \
+      --region $(gcloud config get-value compute/region)
+
+    # Create a small instance as a bastion/gateway host - the only VM with a public IP
+        gcloud compute instances create gg-bastion \
+          --async \
+          --boot-disk-size 200GB \
+          --can-ip-forward \
+          --image-family ubuntu-1604-lts \
+          --image-project ubuntu-os-cloud \
+          --machine-type e2-small \
+          --private-network-ip 10.240.0.1${i} \
+          --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
+          --subnet kubernetes \
+          --tags gg-rancher-ha,control \
+          --labels owner=ggrubbs,expiration=48h
+
+
+    # Create three compute instances which will host the Kubernetes control plane:
+
+    CONTROL_INSTANCE_TYPE=e2-standard-4
+      for i in $(seq 0 $((${NUM_CONTROL} - 1))) ; do
+      # for i in 0 1 2; do
+        gcloud compute instances create gg-control-${i} \
+          --async \
+          --no-address \
+          --boot-disk-size 200GB \
+          --can-ip-forward \
+          --image-family ubuntu-1604-lts \
+          --image-project ubuntu-os-cloud \
+          --machine-type ${CONTROL_INSTANCE_TYPE} \
+          --private-network-ip 10.240.0.1${i} \
+          --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
+          --subnet kubernetes \
+          --tags gg-rancher-ha,control \
+          --labels owner=ggrubbs,expiration=48h
+        echo gg-control-${i} >> /tmp/control-nodes.txt
+      done
+
+    # Create ${NUM_WORKERS} compute instances which will host the Kubernetes worker nodes:
+
+    WORKER_INSTANCE_TYPE=e2-standard-8
+      for i in $(seq 0 $((${NUM_WORKERS} - 1))) ; do
+      # for i in 0 1 2; do
+        gcloud compute instances create gg-worker-${i} \
+          --async \
+          --no-address \
+          --boot-disk-size 200GB \
+          --can-ip-forward \
+          --image-family ubuntu-1604-lts \
+          --image-project ubuntu-os-cloud \
+          --machine-type ${WORKER_INSTANCE_TYPE} \
+          --metadata pod-cidr=10.200.${i}.0/24 \
+          --private-network-ip 10.240.0.2${i} \
+          --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
+          --subnet kubernetes \
+          --tags gg-rancher-ha,worker \
+          --labels owner=ggrubbs,expiration=48h
+        echo gg-worker-${i} >> /tmp/worker-nodes.txt
+      done
+    cat /tmp/control-nodes.txt /tmp/worker-nodes.txt > /tmp/all-nodes.txt 
+  #+end_src
+
+** Get the hosts added to ~/.ssh/known_hosts
+   #+begin_src bash
+     for i in `cat /tmp/all-nodes.txt ` ; do
+         echo $i
+         gcloud compute ssh $i --command=pwd
+     done
+   #+end_src
+
+** Setup one node to use as bastion host
+   Useful since no nodes have external IPs
+   #+begin_src bash :session rancher-rke-sh
+     (cd /tmp; gcloud compute scp all-nodes.txt control-nodes.txt worker-nodes.txt gg-control-0:)
+   #+end_src
+
+   From here on out, use =gg-control-0= as a bastion host
+
+   Open a shell on the bastion host as buffer named =gg-control-0-sh=
+   #+begin_src emacs-lisp
+     (cd "/gcssh:gregj@gg-control-0:")
+     (shell "gg-control-0-sh")
+   #+end_src
+   #+begin_src bash 
+     sudo apt update && sudo apt -y upgrade && sudo apt -y install pdsh
+     for i in in `cat all-nodes.txt` ; do
+         ssh -o StrictHostKeyChecking=no $i pwd
+     done
+     WCOLL=all-nodes.txt pdsh -R ssh pwd
+   #+end_src
+
+** Update all nodes and install Docker
+   #+begin_src bash :async :session gg-control-0-sh
+     WCOLL=all-nodes.txt pdsh -R ssh 'sudo apt update && sudo apt -y upgrade && sudo apt -y install docker.io '
+     WCOLL=all-nodes.txt pdsh -R ssh 'sudo usermod -G docker -a gregj && sudo systemctl daemon-reload && sudo systemctl restart docker'
+     WCOLL=all-nodes.txt pdsh -R ssh 'docker ps'
+   #+end_src
+
+** Create the RKE cluster
+*** Download the =rke= CLI to bastion host
+    Current [2020-11-06 Fri] version: 1.2.1
+    #+begin_src bash :session gg-control-0-sh :async :results value
+      wget 'https://github.com/rancher/rke/releases/download/v1.2.1/rke_linux-amd64'
+      chmod a+rx rke_linux-amd64
+      ./rke_linux-amd64 -v
+    #+end_src
+    
+*** Our canonical RKE config
+    Tangle directly  to the bastion host
+   #+begin_src yaml :tangle /gcssh:gg-control-0:gcp-cluster.yaml
+     nodes:
+         - address: gg-control-0
+           user: gregj
+           role:
+             - controlplane
+             - etcd
+         - address: gg-control-1
+           user: gregj
+           role:
+             - controlplane
+             - etcd
+         - address: gg-control-2
+           user: gregj
+           role:
+             - controlplane
+             - etcd
+         - address: gg-worker-0
+           user: gregj
+           role:
+             - worker
+         - address: gg-worker-1
+           user: gregj
+           role:
+             - worker
+         - address: gg-worker-2
+           user: gregj
+           role:
+             - worker
+         - address: gg-worker-3
+           user: gregj
+           role:
+             - worker
+     # If set to true, RKE will not fail when unsupported Docker versions are found
+     ignore_docker_version: false
+
+     # Cluster level SSH private key
+     # Used if no ssh information is set for the node
+     # ssh_key_path: ~/.ssh/k8s-local
+     # 
+     # Enable use of SSH agent to use SSH private keys with passphrase
+     # This requires the environment `SSH_AUTH_SOCK` configured pointing
+     # to your SSH agent which has the private key added
+     ssh_agent_auth: true
+
+     # Set the name of the Kubernetes cluster  
+     cluster_name: uncowlanut
+
+
+     services:
+
+     authorization:
+         mode: rbac
+
+     # Add-ons are deployed using kubernetes jobs. RKE will give
+     # up on trying to get the job status after this timeout in seconds..
+     addon_job_timeout: 30
+
+     # Specify network plugin-in (canal, calico, flannel, weave, or none)
+     # GJG remember that Canal is really Flannel+Calico https://rancher.com/blog/2019/2019-03-21-comparing-kubernetes-cni-providers-flannel-calico-canal-and-weave/
+     network:
+         plugin: canal
+
+     # Specify DNS provider (coredns or kube-dns)
+     dns:
+         provider: coredns
+
+     addons_include:
+       - https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.1/aio/deploy/recommended.yaml
+       - https://gist.githubusercontent.com/superseb/499f2caa2637c404af41cfb7e5f4a938/raw/930841ac00653fdff8beca61dab9a20bb8983782/k8s-dashboard-user.yml
+       - https://github.com/jetstack/cert-manager/releases/download/v0.15.1/cert-manager.yaml
+   #+end_src
+*** Run =rke up=
+    #+begin_src bash :session gg-control-0-sh :async :results value
+      ./rke_linux-amd64 up --config gcp-cluster.yaml
+    #+end_src
+
+    #+RESULTS:
+    : 1
+
+*** Get kubectl and test
+    #+begin_src bash :session gg-control-0-sh :async :results value
+      sudo apt-get update && sudo apt-get install -y apt-transport-https gnupg2 curl
+      curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+      echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
+      sudo apt-get update
+      sudo apt-get install -y kubectl
+    #+end_src
+    #+begin_src bash :session gg-control-0-sh :async :results value
+      mkdir -p ~/.kube
+      cp -v kube_config_gcp-cluster.yaml ~/.kube/config
+      kubectl get nodes
+    #+end_src
+
+    #+RESULTS:
+    : 0
+
+** On to Rancher to install these thangs!
