@@ -20,10 +20,10 @@
     rm -vf /tmp/worker-nodes.txt /tmp/control-nodes.txt /tmp/all-nodes.txt
     gcloud compute networks create gg-rancher-ha --subnet-mode custom
 
-    # Create the =kubernetes= subnet in the =gg-rancher-ha= VPC network:
+    # Create the =gg-kubernetes= subnet in the =gg-rancher-ha= VPC network:
 
     # Create the =gg-rancher-ha= custom VPC network:
-    gcloud compute networks subnets create kubernetes \
+    gcloud compute networks subnets create gg-kubernetes \
       --network gg-rancher-ha \
       --range 10.240.0.0/24
 
@@ -65,9 +65,9 @@
           --image-family ubuntu-1604-lts \
           --image-project ubuntu-os-cloud \
           --machine-type e2-small \
-          --private-network-ip 10.240.0.1${i} \
+          --private-network-ip 10.240.0.2 \
           --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
-          --subnet kubernetes \
+          --subnet gg-kubernetes \
           --tags gg-rancher-ha,control \
           --labels owner=ggrubbs,expiration=48h
 
@@ -87,7 +87,7 @@
           --machine-type ${CONTROL_INSTANCE_TYPE} \
           --private-network-ip 10.240.0.1${i} \
           --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
-          --subnet kubernetes \
+          --subnet gg-kubernetes \
           --tags gg-rancher-ha,control \
           --labels owner=ggrubbs,expiration=48h
         echo gg-control-${i} >> /tmp/control-nodes.txt
@@ -109,7 +109,7 @@
           --metadata pod-cidr=10.200.${i}.0/24 \
           --private-network-ip 10.240.0.2${i} \
           --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
-          --subnet kubernetes \
+          --subnet gg-kubernetes \
           --tags gg-rancher-ha,worker \
           --labels owner=ggrubbs,expiration=48h
         echo gg-worker-${i} >> /tmp/worker-nodes.txt
@@ -117,26 +117,42 @@
     cat /tmp/control-nodes.txt /tmp/worker-nodes.txt > /tmp/all-nodes.txt 
   #+end_src
 
-** Get the hosts added to ~/.ssh/known_hosts
+** Add bastion to ~/.ssh/known_hosts
    #+begin_src bash
-     for i in `cat /tmp/all-nodes.txt ` ; do
-         echo $i
-         gcloud compute ssh $i --command=pwd
-     done
+    gcloud compute ssh gg-bastion --command=pwd
    #+end_src
+
+   #+RESULTS:
+   : /home/gregj
 
 ** Setup one node to use as bastion host
-   Useful since no nodes have external IPs
+   Useful since no cluster nodes have external IPs
    #+begin_src bash :session rancher-rke-sh
-     (cd /tmp; gcloud compute scp all-nodes.txt control-nodes.txt worker-nodes.txt gg-control-0:)
+     (cd /tmp; gcloud compute scp all-nodes.txt control-nodes.txt worker-nodes.txt gg-bastion:)
    #+end_src
 
-   From here on out, use =gg-control-0= as a bastion host
 
-   Open a shell on the bastion host as buffer named =gg-control-0-sh=
-   #+begin_src emacs-lisp
-     (cd "/gcssh:gregj@gg-control-0:")
-     (shell "gg-control-0-sh")
+
+   From here on out, use =gg-bastion= as a bastion host
+
+   Open a shell on the bastion host as buffer named =gg-bastion-sh=
+
+   The whole reason we create a separate bastion node with an external IP is that `gcloud
+   compute ssh` is such a royal pain in the ass - timing out connections in mere seconds,
+   then taking many seconds to silently reconnect every time you want to issue a command
+   at the shell.  Just using SSH directly is much more responsive.
+  #+name: bastion_ip
+   #+begin_src bash 
+    # Get public IP
+    gcloud compute instances describe gg-bastion --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
+   #+end_src
+
+   #+RESULTS: bastion_ip
+
+
+   #+begin_src emacs-lisp :var ip=bastion_ip
+     (cd (concat "/ssh:gregj@" ip ":"))
+     (shell "gg-bastion-sh")
    #+end_src
    #+begin_src bash 
      sudo apt update && sudo apt -y upgrade && sudo apt -y install pdsh
@@ -147,7 +163,7 @@
    #+end_src
 
 ** Update all nodes and install Docker
-   #+begin_src bash :async :session gg-control-0-sh
+   #+begin_src bash :async :session gg-bastion-sh
      WCOLL=all-nodes.txt pdsh -R ssh 'sudo apt update && sudo apt -y upgrade && sudo apt -y install docker.io '
      WCOLL=all-nodes.txt pdsh -R ssh 'sudo usermod -G docker -a gregj && sudo systemctl daemon-reload && sudo systemctl restart docker'
      WCOLL=all-nodes.txt pdsh -R ssh 'docker ps'
@@ -156,15 +172,20 @@
 ** Create the RKE cluster
 *** Download the =rke= CLI to bastion host
     Current [2020-11-06 Fri] version: 1.2.1
-    #+begin_src bash :session gg-control-0-sh :async :results value
+    #+begin_src bash :session gg-bastion-sh :async :results value
       wget 'https://github.com/rancher/rke/releases/download/v1.2.1/rke_linux-amd64'
       chmod a+rx rke_linux-amd64
       ./rke_linux-amd64 -v
+      sudo mv -iv ./rke_linux-amd64 /usr/local/bin/rke
+      rke
     #+end_src
+
+    #+RESULTS:
+    : 0
     
 *** Our canonical RKE config
     Tangle directly  to the bastion host
-   #+begin_src yaml :tangle /gcssh:gg-control-0:gcp-cluster.yaml
+   #+begin_src yaml :tangle /gcssh:gg-bastion:gcp-cluster.yaml
      nodes:
          - address: gg-control-0
            user: gregj
@@ -225,7 +246,7 @@
      # Specify network plugin-in (canal, calico, flannel, weave, or none)
      # GJG remember that Canal is really Flannel+Calico https://rancher.com/blog/2019/2019-03-21-comparing-kubernetes-cni-providers-flannel-calico-canal-and-weave/
      network:
-         plugin: canal
+         plugin: calico
 
      # Specify DNS provider (coredns or kube-dns)
      dns:
@@ -237,28 +258,51 @@
        - https://github.com/jetstack/cert-manager/releases/download/v0.15.1/cert-manager.yaml
    #+end_src
 *** Run =rke up=
-    #+begin_src bash :session gg-control-0-sh :async :results value
-      ./rke_linux-amd64 up --config gcp-cluster.yaml
+    #+begin_src bash :session gg-bastion-sh :async :results value
+      rke up --config gcp-cluster.yaml
     #+end_src
 
     #+RESULTS:
     : 1
 
 *** Get kubectl and test
-    #+begin_src bash :session gg-control-0-sh :async :results value
+    #+begin_src bash :session gg-bastion-sh :async :results value
       sudo apt-get update && sudo apt-get install -y apt-transport-https gnupg2 curl
       curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
       echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
       sudo apt-get update
       sudo apt-get install -y kubectl
     #+end_src
-    #+begin_src bash :session gg-control-0-sh :async :results value
+    #+begin_src bash :session gg-bastion-sh :async :results value
       mkdir -p ~/.kube
       cp -v kube_config_gcp-cluster.yaml ~/.kube/config
       kubectl get nodes
+      source <(kubectl completion bash)
+      alias k='kubectl'
+      complete -F __start_kubectl k
     #+end_src
 
     #+RESULTS:
     : 0
 
 ** On to Rancher to install these thangs!
+ 
+*** Get Helm on the bastion node
+    #+begin_src bash :session gg-bastion-sh :async :results value
+      wget 'https://get.helm.sh/helm-v3.4.1-linux-amd64.tar.gz'
+      tar xf helm-v3.4.1-linux-amd64.tar.gz
+      sudo cp -v linux-amd64/helm /usr/local/bin/
+      helm version
+    #+end_src
+
+    #+RESULTS:
+    : 0
+
+*** Install Rancher 2.5 monitoring
+    #+begin_src bash :session gg-bastion-sh :async :results value
+      helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      helm repo add stable https://charts.helm.sh/stable
+      helm repo update
+      helm install rancher-monitoring prometheus-community/kube-prometheus-stack --namespace cattle-monitoring-system --create-namespace
+    #+end_src
+
