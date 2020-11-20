@@ -127,10 +127,12 @@
 
 ** Setup one node to use as bastion host
    Useful since no cluster nodes have external IPs
-   #+begin_src bash :session rancher-rke-sh
+   #+begin_src bash :session rancher-rke-sh :results value
      (cd /tmp; gcloud compute scp all-nodes.txt control-nodes.txt worker-nodes.txt gg-bastion:)
    #+end_src
 
+   #+RESULTS:
+   : 0
 
 
    From here on out, use =gg-bastion= as a bastion host
@@ -148,14 +150,24 @@
    #+end_src
 
    #+RESULTS: bastion_ip
+   : 34.106.230.205
 
+   #+begin_src bash :var ip=bastion_ip :results value
+     # Assure that it is not conflicting in known_hosts
+     ssh-keygen -R ${ip}
+     ssh gregj@${ip} -o StrictHostKeyChecking=no pwd
+   #+end_src
+
+   #+RESULTS:
+   : 0
 
    #+begin_src emacs-lisp :var ip=bastion_ip
+     (call-process-shell-command (concat "ssh -o StrictHostKeyChecking=no gregj@" ip " id"))
      (cd (concat "/ssh:gregj@" ip ":"))
      (shell "gg-bastion-sh")
    #+end_src
    #+begin_src bash 
-     sudo apt update && sudo apt -y upgrade && sudo apt -y install pdsh
+     sudo apt update && sudo apt -y upgrade ; sudo apt -y install pdsh
      for i in in `cat all-nodes.txt` ; do
          ssh -o StrictHostKeyChecking=no $i pwd
      done
@@ -173,9 +185,8 @@
 *** Download the =rke= CLI to bastion host
     Current [2020-11-06 Fri] version: 1.2.1
     #+begin_src bash :session gg-bastion-sh :async :results value
-      wget 'https://github.com/rancher/rke/releases/download/v1.2.1/rke_linux-amd64'
+      wget 'https://github.com/rancher/rke/releases/download/v1.0.14/rke_linux-amd64'
       chmod a+rx rke_linux-amd64
-      ./rke_linux-amd64 -v
       sudo mv -iv ./rke_linux-amd64 /usr/local/bin/rke
       rke
     #+end_src
@@ -185,7 +196,7 @@
     
 *** Our canonical RKE config
     Tangle directly  to the bastion host
-   #+begin_src yaml :tangle /gcssh:gg-bastion:gcp-cluster.yaml
+   #+begin_src yaml :var ip=bastion_ip :tangle /gcssh:gg-bastion:gcp-cluster.yaml
      nodes:
          - address: gg-control-0
            user: gregj
@@ -246,7 +257,7 @@
      # Specify network plugin-in (canal, calico, flannel, weave, or none)
      # GJG remember that Canal is really Flannel+Calico https://rancher.com/blog/2019/2019-03-21-comparing-kubernetes-cni-providers-flannel-calico-canal-and-weave/
      network:
-         plugin: calico
+         plugin: canal
 
      # Specify DNS provider (coredns or kube-dns)
      dns:
