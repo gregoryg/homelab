@@ -438,3 +438,26 @@
     + [[https://kubernetes.io/docs/concepts/storage/persistent-volumes/#csi-volume-expansion][CSI Volume Expansion]] (k8s.io)
     + Resizing in-use volumes can only be done on specific storage classes that support
       dynamic resizing.  It is effected by editing the PersistentVolumeClaim object.
+* Cracking the structure of Rancher application ingress URLs
+  + Examples of working parent-authenticated URLs
+    + Rancher Server
+      + Grafana dashboard
+        + https://rancher.hypecyclist.org:8443/api/v1/namespaces/cattle-monitoring-system/services/http:rancher-monitoring-grafana:80/proxy/?orgId=1
+
+    + Managed Cluster
+      + Grafana dashboard
+        + https://rancher.hypecyclist.org:8443/k8s/clusters/c-r5dj9/api/v1/namespaces/cattle-monitoring-system/services/http:rancher-monitoring-grafana:80/proxy/?orgId=1
+        + https://rancher.hypecyclist.org:8443/k8s/clusters/c-r5dj9/api/v1/namespaces/longhorn-system/services/http:longhorn-frontend:80/proxy/
+      + Longhorn UI
+        + https://rancher.hypecyclist.org:8443/k8s/clusters/c-r5dj9/api/v1/namespaces/longhorn-system/services/http:longhorn-frontend:80/proxy/dashboard
+    + Could it be this
+      | L/M | Rancher URL                          | local vs managed     | cluster ID      | API    | namespace                | services   | URL to service                     | etc            |
+      |-----+--------------------------------------+----------------------+-----------------+--------+--------------------------+------------+------------------------------------+----------------|
+      | M   | https://rancher.hypecyclist.org:8443 | null or k8s/clusters | null or c-r5dj9 | api/v1 | longhorn-system          | 'services' | http:longhorn-frontend:80          | proxy          |
+      | M   | https://rancher.hypecyclist.org:8443 | k8s/clusters         | c-r5dj9         | api/v1 | cattle-monitoring-system | 'services' | http:rancher-monitoring-grafana:80 | proxy/+orgId=1 |
+      | L   | https://rancher.hypecyclist.org:8443 | null                 | null            | api/v1 | cattle-monitoring-system | 'services' | http:rancher-monitoring-grafana:80 | proxy/+orgId=1 |
+
+
+
+
+          
