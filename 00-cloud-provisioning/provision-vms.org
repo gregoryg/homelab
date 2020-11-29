@@ -122,17 +122,11 @@
     gcloud compute ssh gg-bastion --command=pwd
    #+end_src
 
-   #+RESULTS:
-   : /home/gregj
-
 ** Setup one node to use as bastion host
    Useful since no cluster nodes have external IPs
    #+begin_src bash :session rancher-rke-sh :results value
      (cd /tmp; gcloud compute scp all-nodes.txt control-nodes.txt worker-nodes.txt gg-bastion:)
    #+end_src
-
-   #+RESULTS:
-   : 0
 
 
    From here on out, use =gg-bastion= as a bastion host
@@ -149,17 +143,11 @@
     gcloud compute instances describe gg-bastion --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
    #+end_src
 
-   #+RESULTS: bastion_ip
-   : 34.106.230.205
-
    #+begin_src bash :var ip=bastion_ip :results value
      # Assure that it is not conflicting in known_hosts
      ssh-keygen -R ${ip}
      ssh gregj@${ip} -o StrictHostKeyChecking=no pwd
    #+end_src
-
-   #+RESULTS:
-   : 0
 
    #+begin_src emacs-lisp :var ip=bastion_ip
      (call-process-shell-command (concat "ssh -o StrictHostKeyChecking=no gregj@" ip " id"))
@@ -190,13 +178,10 @@
       sudo mv -iv ./rke_linux-amd64 /usr/local/bin/rke
       rke
     #+end_src
-
-    #+RESULTS:
-    : 0
     
 *** Our canonical RKE config
     Tangle directly  to the bastion host
-   #+begin_src yaml :var ip=bastion_ip :tangle /gcssh:gg-bastion:gcp-cluster.yaml
+   #+begin_src yaml :var ip=bastion_ip :tangle /gssh:gg-bastion:gcp-cluster.yaml
      nodes:
          - address: gg-control-0
            user: gregj
@@ -273,9 +258,6 @@
       rke up --config gcp-cluster.yaml
     #+end_src
 
-    #+RESULTS:
-    : 1
-
 *** Get kubectl and test
     #+begin_src bash :session gg-bastion-sh :async :results value
       sudo apt-get update && sudo apt-get install -y apt-transport-https gnupg2 curl
@@ -285,16 +267,17 @@
       sudo apt-get install -y kubectl
     #+end_src
     #+begin_src bash :session gg-bastion-sh :async :results value
+      ## GJG
       mkdir -p ~/.kube
       cp -v kube_config_gcp-cluster.yaml ~/.kube/config
       kubectl get nodes
       source <(kubectl completion bash)
       alias k='kubectl'
+      alias kn='kubectl config set-context --current --namespace '
+      alias kx='kubectl config get-contexts'
       complete -F __start_kubectl k
     #+end_src
 
-    #+RESULTS:
-    : 0
 
 ** On to Rancher to install these thangs!
  
@@ -305,9 +288,6 @@
       sudo cp -v linux-amd64/helm /usr/local/bin/
       helm version
     #+end_src
-
-    #+RESULTS:
-    : 0
 
 *** Install Rancher 2.5 monitoring
     #+begin_src bash :session gg-bastion-sh :async :results value
