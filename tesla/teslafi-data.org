@@ -59,14 +59,14 @@
 | remote_start_enabled           | teslafi |              2 | tinyint      | True,                                                                                                        |
 | vehicle_id                     | vehicle |              2 | int          | 964294878,                                                                                                   |
 | display_name                   | teslafi |              7 | string       | Rocinante,,Mars,mars,Life, the Universe, and Everything,Pi,168281                                            |
-| color                          |         |              2 | string       | None,                                                                                                        |
-| backseat_token                 |         |              4 | string       | ,<invalid>,Tesla                                                                                             |
+| color                          | teslafi |              2 | string       | None,                                                                                                        |
+| backseat_token                 | teslafi |              4 | string       | ,<invalid>,Tesla                                                                                             |
 | notifications_enabled          | teslafi |              2 | tinyint      | True,                                                                                                        |
 | vin                            | vehicle |              2 | int          | 5YJSA1E23GF168281,                                                                                           |
-| backseat_token_updated_at      |         |              5 | string       | None,,SAE,<invalid>,IEC                                                                                      |
-| id                             |         |              7 | int          | 48425142754332872,,20022329975927118,43086368022341435,13701344598455490,12810537511800891,51241647929424375 |
-| tokens                         |         |              1 | string       |                                                                                                              |
-| id_s                           |         |              2 | int          | 48425142754332872,                                                                                           |
+| backseat_token_updated_at      | teslafi |              5 | string       | None,,SAE,<invalid>,IEC                                                                                      |
+| id                             | teslafi |              7 | int          | 48425142754332872,,20022329975927118,43086368022341435,13701344598455490,12810537511800891,51241647929424375 |
+| tokens                         | teslafi |              1 | string       |                                                                                                              |
+| id_s                           | teslafi |              2 | int          | 48425142754332872,                                                                                           |
 | state                          | teslafi |              7 | string       | online,waking,offline,unknown,asleep,,shutdown                                                               |
 | user_charge_enable_request     | teslafi |              6 | tinyint      | None,,False,True,1,0                                                                                         |
 | time_to_full_charge            | teslafi |            737 | decimal(2,2) |                                                                                                              |
@@ -74,132 +74,135 @@
 | charge_enable_request          | teslafi |              5 | tinyint      | True,,False,1,0                                                                                              |
 | charge_to_max_range            | teslafi |              5 | tinyint      | False,,True,0,1                                                                                              |
 | charger_phases                 |         |              3 | smallint     | None,,1                                                                                                      |
-| battery_heater_on              |         |              6 | tinyint      | None,,False,True,0,1                                                                                         |
-| managed_charging_start_time    |         |              2 | string       | None,                                                                                                        |
-| battery_range                  |         |          19629 | decimal(4,2) |                                                                                                              |
-| charger_power                  |         |            147 | int          |                                                                                                              |
-| charge_limit_soc               |         |             29 | int          |                                                                                                              |
-| charger_pilot_current          |         |             26 | int          |                                                                                                              |
-| charge_port_latch              |         |              4 | string       | Engaged,,<invalid>,Disengaged                                                                                |
-| battery_current                |         |              1 | string       |                                                                                                              |
-| charger_actual_current         |         |             50 | int          |                                                                                                              |
-| scheduled_charging_pending     |         |              5 | tinyint      | False,,True,0,1                                                                                              |
-| fast_charger_type              |         |              6 | string       | <invalid>,,Tesla,Supercharger,Chademo,ACSingleWireCAN                                                        |
-| usable_battery_level           |         |            101 | int          |                                                                                                              |
-| motorized_charge_port          |         |              3 | tinyint      | True,,1                                                                                                      |
-| charge_limit_soc_std           |         |              2 | int          | 90,                                                                                                          |
-| not_enough_power_to_heat       |         |              4 | tinyint      | None,False,,0                                                                                                |
-| battery_level                  |         |            101 | int          |                                                                                                              |
-| charge_energy_added            |         |           4862 | decimal(2,2) |                                                                                                              |
-| charge_port_door_open          |         |              6 | tinyint      | False,,None,True,1,0                                                                                         |
-| max_range_charge_counter       |         |              5 | int          | 0,,1,2,None                                                                                                  |
-| charge_limit_soc_max           |         |              2 | int          | 100,                                                                                                         |
-| ideal_battery_range            |         |          22493 | decimal(4,2) |                                                                                                              |
-| managed_charging_active        |         |              3 | tinyint      | False,,0                                                                                                     |
-| charging_state                 |         |              8 | string       | None,Disconnected,,Charging,NoPower,Complete,Stopped,Starting                                                |
-| fast_charger_present           |         |              6 | tinyint      | False,,None,True,0,1                                                                                         |
-| trip_charging                  |         |              6 | tinyint      | None,False,,True,0,1                                                                                         |
-| managed_charging_user_canceled |         |              3 | tinyint      | False,,0                                                                                                     |
-| scheduled_charging_start_time  |         |             23 | int          |                                                                                                              |
-| est_battery_range              |         |          60351 | decimal(4,2) |                                                                                                              |
-| charge_rate                    |         |           2807 | decimal(4,2) |                                                                                                              |
-| charger_voltage                |         |            189 | int          |                                                                                                              |
-| charge_current_request_max     |         |             26 | int          |                                                                                                              |
+| battery_heater_on              | teslafi |              6 | tinyint      | None,,False,True,0,1                                                                                         |
+| managed_charging_start_time    | teslafi |              2 | string       | None,                                                                                                        |
+| battery_range                  | teslafi |          19629 | decimal(4,2) |                                                                                                              |
+| charger_power                  | teslafi |            147 | int          |                                                                                                              |
+| charge_limit_soc               | teslafi |             29 | int          |                                                                                                              |
+| charger_pilot_current          | teslafi |             26 | int          |                                                                                                              |
+| charge_port_latch              | teslafi |              4 | string       | Engaged,,<invalid>,Disengaged                                                                                |
+| battery_current                | teslafi |              1 | string       |                                                                                                              |
+| charger_actual_current         | teslafi |             50 | int          |                                                                                                              |
+| scheduled_charging_pending     | teslafi |              5 | tinyint      | False,,True,0,1                                                                                              |
+| fast_charger_type              | teslafi |              6 | string       | <invalid>,,Tesla,Supercharger,Chademo,ACSingleWireCAN                                                        |
+| usable_battery_level           | teslafi |            101 | int          |                                                                                                              |
+| motorized_charge_port          | teslafi |              3 | tinyint      | True,,1                                                                                                      |
+| charge_limit_soc_std           | teslafi |              2 | int          | 90,                                                                                                          |
+| not_enough_power_to_heat       | teslafi |              4 | tinyint      | None,False,,0                                                                                                |
+| battery_level                  | teslafi |            101 | int          |                                                                                                              |
+| charge_energy_added            | teslafi |           4862 | decimal(2,2) |                                                                                                              |
+| charge_port_door_open          | teslafi |              6 | tinyint      | False,,None,True,1,0                                                                                         |
+| max_range_charge_counter       | teslafi |              5 | int          | 0,,1,2,None                                                                                                  |
+| charge_limit_soc_max           | teslafi |              2 | int          | 100,                                                                                                         |
+| ideal_battery_range            | teslafi |          22493 | decimal(4,2) |                                                                                                              |
+| managed_charging_active        | teslafi |              3 | tinyint      | False,,0                                                                                                     |
+| charging_state                 | teslafi |                | string       |                                                                                                              |
+| fast_charger_present           | teslafi |              6 | tinyint      | False,,None,True,0,1                                                                                         |
+| trip_charging                  | teslafi |              6 | tinyint      | None,False,,True,0,1                                                                                         |
+| managed_charging_user_canceled | teslafi |              3 | tinyint      | False,,0                                                                                                     |
+| scheduled_charging_start_time  | teslafi |             23 | int          |                                                                                                              |
+| est_battery_range              | teslafi |          60351 | decimal(4,2) |                                                                                                              |
+| charge_rate                    | teslafi |           2807 | decimal(4,2) |                                                                                                              |
+| charger_voltage                | teslafi |            189 | int          |                                                                                                              |
+| charge_current_request_max     | teslafi |             26 | int          |                                                                                                              |
 | eu_vehicle                     | vehicle |              3 | tinyint      | False,,0                                                                                                     |
-| charge_miles_added_ideal       |         |            604 | decimal(4,2) |                                                                                                              |
-| charge_limit_soc_min           |         |              2 | int          | 50,                                                                                                          |
-| charge_miles_added_rated       |         |            486 | decimal(4,2) |                                                                                                              |
-| inside_temp                    |         |            604 | decimal(4,2) |                                                                                                              |
-| longitude                      |         |         123683 | float        |                                                                                                              |
-| heading                        |         |            362 | int          |                                                                                                              |
-| gps_as_of                      |         |        1671417 | int          |                                                                                                              |
-| latitude                       |         |         130756 | float        |                                                                                                              |
-| speed                          |         |            104 | int          |                                                                                                              |
-| shift_state                    |         |              6 | string       | None,,P,D,R,N                                                                                                |
-| seat_heater_rear_right         |         |              6 | string       | 0,,3,2,F,T                                                                                                   |
-| seat_heater_rear_left_back     |         |              3 | string       | 0,,N                                                                                                         |
-| seat_heater_left               |         |              7 | string       | 0,,3,2,1,F,T                                                                                                 |
-| passenger_temp_setting         |         |             32 | decimal(4,2) |                                                                                                              |
-| passenger_temp_setting         |         |             32 | decimal(4,2) |                                                                                                              |
-| is_auto_conditioning_on        |         |              6 | tinyint      | None,,False,True,0,1                                                                                         |
-| driver_temp_setting            |         |             31 | decimal(4,2) |                                                                                                              |
-| outside_temp                   |         |            622 | decimal(4,2) |                                                                                                              |
-| seat_heater_rear_center        |         |              6 | string       | 0,,F,T,3,2                                                                                                   |
-| is_rear_defroster_on           |         |              5 | tinyint      | False,,True,0,1                                                                                              |
-| seat_heater_rear_right_back    |         |              3 | string       | 0,,N                                                                                                         |
-| smart_preconditioning          |         |              2 | tinyint      | False,                                                                                                       |
-| seat_heater_right              |         |              7 | string       | 0,,3,2,1,F,T                                                                                                 |
-| fan_status                     |         |             13 | int          | 0,,5,6,4,10,9,8,7,3,11,2,1                                                                                   |
-| is_front_defroster_on          |         |              7 | int          | None,,0,3,1,False,True                                                                                       |
-| seat_heater_rear_left          |         |              6 | string       | 0,,2,F,T,3                                                                                                   |
-| gui_charge_rate_units          |         |              2 | string       | mi/hr,                                                                                                       |
-| gui_24_hour_time               |         |              2 | tinyint      | False,                                                                                                       |
-| gui_temperature_units          |         |              2 | string       | F,                                                                                                           |
-| gui_range_display              |         |              2 | string       | Rated,                                                                                                       |
-| gui_distance_units             |         |              2 | string       | mi/hr,                                                                                                       |
-| sun_roof_installed             |         |              2 | int          | 2,                                                                                                           |
-| rhd                            |         |              3 | tinyint      | False,,0                                                                                                     |
+| charge_miles_added_ideal       | teslafi |            604 | decimal(4,2) |                                                                                                              |
+| charge_limit_soc_min           | teslafi |              2 | int          | 50,                                                                                                          |
+| charge_miles_added_rated       | teslafi |            486 | decimal(4,2) |                                                                                                              |
+| inside_temp                    | teslafi |            604 | decimal(4,2) |                                                                                                              |
+| longitude                      | teslafi |         123683 | float        |                                                                                                              |
+| heading                        | teslafi |            362 | int          |                                                                                                              |
+| gps_as_of                      | teslafi |        1671417 | int          |                                                                                                              |
+| latitude                       | teslafi |         130756 | float        |                                                                                                              |
+| speed                          | teslafi |            104 | int          |                                                                                                              |
+| shift_state                    | teslafi |              6 | string       | None,,P,D,R,N                                                                                                |
+| seat_heater_rear_right         | teslafi |              6 | string       | 0,,3,2,F,T                                                                                                   |
+| seat_heater_rear_left_back     | teslafi |              3 | string       | 0,,N                                                                                                         |
+| seat_heater_left               | teslafi |              7 | string       | 0,,3,2,1,F,T                                                                                                 |
+| passenger_temp_setting         | teslafi |             32 | decimal(4,2) |                                                                                                              |
+| is_auto_conditioning_on        | teslafi |              6 | tinyint      | None,,False,True,0,1                                                                                         |
+| driver_temp_setting            | teslafi |             31 | decimal(4,2) |                                                                                                              |
+| outside_temp                   | teslafi |            622 | decimal(4,2) |                                                                                                              |
+| seat_heater_rear_center        | teslafi |              6 | string       | 0,,F,T,3,2                                                                                                   |
+| is_rear_defroster_on           | teslafi |              5 | tinyint      | False,,True,0,1                                                                                              |
+| seat_heater_rear_right_back    | teslafi |              3 | string       | 0,,N                                                                                                         |
+| smart_preconditioning          | teslafi |              2 | tinyint      | False,                                                                                                       |
+| seat_heater_right              | teslafi |              7 | string       | 0,,3,2,1,F,T                                                                                                 |
+| fan_status                     | teslafi |             13 | int          | 0,,5,6,4,10,9,8,7,3,11,2,1                                                                                   |
+| is_front_defroster_on          | teslafi |              7 | int          | None,,0,3,1,False,True                                                                                       |
+| seat_heater_rear_left          | teslafi |              6 | string       | 0,,2,F,T,3                                                                                                   |
+| gui_charge_rate_units          | teslafi |              2 | string       | mi/hr,                                                                                                       |
+| gui_24_hour_time               | teslafi |              2 | tinyint      | False,                                                                                                       |
+| gui_temperature_units          | teslafi |              2 | string       | F,                                                                                                           |
+| gui_range_display              | teslafi |              2 | string       | Rated,                                                                                                       |
+| gui_distance_units             | teslafi |              2 | string       | mi/hr,                                                                                                       |
+| sun_roof_installed             | vehicle |              2 | int          | 2,                                                                                                           |
+| rhd                            | teslafi |              3 | tinyint      | False,,0                                                                                                     |
 | remote_start_supported         | vehicle |              3 | tinyint      | True,,1                                                                                                      |
-| homelink_nearby                |         |              5 | tinyint      | True,,False,1,0                                                                                              |
+| homelink_nearby                | teslafi |              5 | tinyint      | True,,False,1,0                                                                                              |
 | parsed_calendar_supported      | vehicle |              3 | tinyint      | True,,1                                                                                                      |
-| spoiler_type                   |         |              2 | int          | None,                                                                                                        |
-| ft                             |         |              3 | int          | 0,,16                                                                                                        |
-| odometer                       |         |         247581 | float        |                                                                                                              |
-| remote_start                   |         |              6 | tinyint      | False,,None,True,0,1                                                                                         |
-| pr                             |         |              3 | int          | 0,,8                                                                                                         |
+| spoiler_type                   | teslafi |              2 | int          | None,                                                                                                        |
+| ft                             | teslafi |              3 | int          | 0,,16                                                                                                        |
+| odometer                       | teslafi |         247581 | float        |                                                                                                              |
+| remote_start                   | teslafi |              6 | tinyint      | False,,None,True,0,1                                                                                         |
+| pr                             | teslafi |              3 | int          | 0,,8                                                                                                         |
 | has_spoiler                    | vehicle |              7 | string       | False,,LatLo,off,camp,dog,on                                                                                 |
 | roof_color                     |         |              2 | string       | None,                                                                                                        |
 | perf_config                    | vehicle |              2 | string       | P1,                                                                                                          |
-| valet_mode                     |         |              4 | tinyint      | False,,True,0                                                                                                |
+| valet_mode                     | teslafi |              4 | tinyint      | False,,True,0                                                                                                |
 | calendar_supported             | vehicle |              3 | tinyint      | True,,1                                                                                                      |
-| pf                             |         |              3 | int          | 0,,2                                                                                                         |
-| sun_roof_percent_open          |         |             54 | int          |                                                                                                              |
+| pf                             | teslafi |              3 | int          | 0,,2                                                                                                         |
+| sun_roof_percent_open          | teslafi |             54 | int          |                                                                                                              |
 | third_row_seats                | vehicle |              2 | tinyint      | None,                                                                                                        |
 | seat_type                      | vehicle |              2 | int          | 1,                                                                                                           |
-| api_version                    |         |              8 | int          | 3,,4,6,7,8,9,10                                                                                              |
+| api_version                    | teslafi |              8 | int          | 3,,4,6,7,8,9,10                                                                                              |
 | rear_seat_heaters              | vehicle |              2 | int          | 1,                                                                                                           |
-| rt                             |         |              3 | int          | 0,,32                                                                                                        |
+| rt                             | teslafi |              3 | int          | 0,,32                                                                                                        |
 | exterior_color                 | vehicle |              2 | string       | MetallicBlack,                                                                                               |
-| df                             |         |              3 | int          | 0,,1                                                                                                         |
-| autopark_state                 |         |              7 | string       | unavailable,,standby,active_reverse,ready,active_forward,disabled                                            |
-| sun_roof_state                 |         |              5 | string       | unknown,,closed,vent,moving                                                                                  |
+| df                             | teslafi |              3 | int          | 0,,1                                                                                                         |
+| autopark_state                 | teslafi |              7 | string       | unavailable,,standby,active_reverse,ready,active_forward,disabled                                            |
+| sun_roof_state                 | teslafi |              5 | string       | unknown,,closed,vent,moving                                                                                  |
 | notifications_supported        | vehicle |              3 | tinyint      | True,,1                                                                                                      |
-| vehicle_name                   |         |              5 | string       | Rocinante,,Mars,mars,Life, the Universe, and Everything                                                      |
-| dr                             |         |              3 | int          | 0,,4                                                                                                         |
-| autopark_style                 |         |              3 | string       | dead_man,,standard                                                                                           |
-| car_type                       |         |              3 | string       | s2,,model                                                                                                    |
-| wheel_type                     |         |              2 | string       | AeroTurbine19,                                                                                               |
-| locked                         |         |              6 | tinyint      | True,,False,None,1,0                                                                                         |
-| center_display_state           |         |              9 | int          | 0,,2,4,3,None,7,8,9                                                                                          |
-| last_autopark_error            |         |              2 | string       | no_error,                                                                                                    |
-| car_version                    |         |             70 | string       |                                                                                                              |
-| dark_rims                      |         |              5 | int          | False,,0,2,1                                                                                                 |
-| autopark_state_v2              |         |              6 | string       | ready,,standby,active_forward,active_reverse,disabled                                                        |
-| inside_tempF                   |         |            113 | decimal(4,2) |                                                                                                              |
-| driver_temp_settingF           |         |             20 | decimal(4,2) |                                                                                                              |
-| outside_tempF                  |         |            526 | decimal(4,2) |                                                                                                              |
-| odometerF                      |         |         204056 | float        |                                                                                                              |
-| idleNumber                     |         |           5467 | int          |                                                                                                              |
-| sleepNumber                    |         |            739 | int          |                                                                                                              |
-| driveNumber                    |         |           3619 | int          |                                                                                                              |
-| chargeNumber                   |         |           1248 | int          |                                                                                                              |
-| polling                        |         |             12 | string       | ,False,True,Offline,Data,Login Fail,Data URL,Time Out,Timeout,Unauthoriz,0,1                                 |
-| idleTime                       |         |           6344 | int          |                                                                                                              |
-| running                        |         |              2 | tinyint      | 0,1                                                                                                          |
-| rerunning                      |         |              2 | tinyint      | 0,1                                                                                                          |
-| maxRange                       |         |             61 | decimal(4,2) |                                                                                                              |
-| left_temp_direction            |         |           1641 | int          |                                                                                                              |
-| max_avail_temp                 |         |              3 | decimal(4,2) | 28.0,,25.0                                                                                                   |
-| is_climate_on                  |         |              5 | tinyint      | False,,True,0,1                                                                                              |
-| right_temp_direction           |         |           1641 | int          |                                                                                                              |
-| min_avail_temp                 |         |              3 | decimal(4,2) | 15.0,,19.0                                                                                                   |
-| rear_seat_type                 |         |              3 | int          | 1,,0                                                                                                         |
-| power                          |         |            470 | int          |                                                                                                              |
-| steering_wheel_heater          |         |              5 | tinyint      | ,False,True,0,1                                                                                              |
-| wiper_blade_heater             |         |              5 | tinyint      | ,False,True,0,1                                                                                              |
-| side_mirror_heaters            |         |              5 | tinyint      | ,False,True,0,1                                                                                              |
-| elevation                      |         |         149972 | float        |                                                                                                              |
+| vehicle_name                   | teslafi |              5 | string       | Rocinante,,Mars,mars,Life, the Universe, and Everything                                                      |
+| dr                             | teslafi |              3 | int          | 0,,4                                                                                                         |
+| autopark_style                 | teslafi |              3 | string       | dead_man,,standard                                                                                           |
+| car_type                       | teslafi |              3 | string       | s2,,model                                                                                                    |
+| wheel_type                     | vehicle |              2 | string       | AeroTurbine19,                                                                                               |
+| locked                         | teslafi |              6 | tinyint      | True,,False,None,1,0                                                                                         |
+| center_display_state           | teslafi |              9 | int          | 0,,2,4,3,None,7,8,9                                                                                          |
+| last_autopark_error            | teslafi |              2 | string       | no_error,                                                                                                    |
+| car_version                    | teslafi |             70 | string       |                                                                                                              |
+| dark_rims                      | teslafi |              5 | int          | False,,0,2,1                                                                                                 |
+| autopark_state_v2              | teslafi |              6 | string       | ready,,standby,active_forward,active_reverse,disabled                                                        |
+| inside_tempF                   | teslafi |            113 | decimal(4,2) |                                                                                                              |
+| driver_temp_settingF           | teslafi |             20 | decimal(4,2) |                                                                                                              |
+| outside_tempF                  | teslafi |            526 | decimal(4,2) |                                                                                                              |
+| odometerF                      | teslafi |         204056 | float        |                                                                                                              |
+| idleNumber                     | teslafi |           5467 | int          |                                                                                                              |
+| sleepNumber                    | teslafi |            739 | int          |                                                                                                              |
+| driveNumber                    | teslafi |           3619 | int          |                                                                                                              |
+| chargeNumber                   | teslafi |           1248 | int          |                                                                                                              |
+| polling                        | teslafi |             12 | string       | ,False,True,Offline,Data,Login Fail,Data URL,Time Out,Timeout,Unauthoriz,0,1                                 |
+| idleTime                       | teslafi |           6344 | int          |                                                                                                              |
+| running                        | teslafi |              2 | tinyint      | 0,1                                                                                                          |
+| rerunning                      | teslafi |              2 | tinyint      | 0,1                                                                                                          |
+| maxRange                       | teslafi |             61 | decimal(4,2) |                                                                                                              |
+| left_temp_direction            | teslafi |           1641 | int          |                                                                                                              |
+| max_avail_temp                 | teslafi |              3 | decimal(4,2) | 28.0,,25.0                                                                                                   |
+| is_climate_on                  | teslafi |              5 | tinyint      | False,,True,0,1                                                                                              |
+| right_temp_direction           | teslafi |           1641 | int          |                                                                                                              |
+| min_avail_temp                 | teslafi |              3 | decimal(4,2) | 15.0,,19.0                                                                                                   |
+| rear_seat_type                 | teslafi |              3 | int          | 1,,0                                                                                                         |
+| power                          | teslafi |            470 | int          |                                                                                                              |
+| steering_wheel_heater          | teslafi |              5 | tinyint      | ,False,True,0,1                                                                                              |
+| wiper_blade_heater             | teslafi |              5 | tinyint      | ,False,True,0,1                                                                                              |
+| side_mirror_heaters            | teslafi |              5 | tinyint      | ,False,True,0,1                                                                                              |
+| elevation                      | teslafi |         149972 | float        |                                                                                                              |
+|                                |         |                |              |                                                                                                              |
 * Create optimized tables from raw
+** Vehicle table
+   Only unchanging fields related to the vehicle(s)
+   ID is =vehicle_id= from the API
   #+begin_src sqlite
     CREATE TABLE vehicle AS
     select distinct(vehicle_id) AS vehicle_id,
@@ -213,35 +216,358 @@
            1 AS remote_start_supported,
            1 AS parsed_calendar_supported,
            0 AS third_row_seats,
+           2 AS sun_roof_installed,
            1 AS seat_type,
-           1 AS rear_seat_heaters
+           1 AS rear_seat_heaters,
+           'AeroTurbine19' AS wheel_type
     FROM teslafi_raw
     WHERE vehicle_id <> '' AND vehicle_id IS NOT NULL;
-
-    CREATE TABLE teslafi AS
-    select cast(data_id AS int) AS data_id ,
-           datetime(Date) AS date_recorded,
-           cast(IIF(calendar_enabled = 'None', NULL, calendar_enabled = 'True') AS UNSIGNED tinyint) AS calendar_enabled,
-           cast(IIF(remote_start_enabled = 'None', NULL, remote_start_enabled = 'True') AS UNSIGNED tinyint) AS remote_start_enabled,
-           display_name,
-           cast(IIF(notifications_enabled = 'None', NULL, notifications_enabled = 'True') AS UNSIGNED tinyint) AS notifications_enabled,
-           state,
-           cast(IIF(user_charge_enable_request = 'None', NULL, user_charge_enable_request = 'True') AS UNSIGNED tinyint) AS user_charge_enable_request,
-       
-           cast(iif(charge_enable_request = 'None', NULL, charge_enable_request = 'True') AS tinyint) AS charge_enable_request,
-           cast(iif(charge_to_max_range = 'None', NULL, charge_to_max_range = 'True') AS tinyint) AS charge_to_max_range,
-           cast(time_to_full_charge AS decimal(4,2)) AS time_to_full_charge,
-           cast(charge_current_request AS decimal(4,2)) AS charge_current_request,
-           cast(battery_level AS decimal(4,2)) AS battery_level,
-           cast(battery_range AS decimal(4,2)) AS battery_range,
-           cast(odometer AS float) AS odometer,
-           cast(driveNumber AS int) AS driveNumber,
-           cast(chargeNumber AS int) AS chargeNumber,
-           cast(idleNumber AS int) AS idleNumber,
-           cast(sleepNumber AS int) AS sleepNumber
-    FROM teslafi_raw
-    LIMIT 10;
   #+end_src
+** Teslafi table
+    #+begin_src sqlite
+      CREATE TABLE teslafi AS
+      select cast(data_id AS int) AS data_id,
+             datetime(Date) AS date_recorded,
+             CAST(CASE
+                      WHEN calendar_enabled = '' THEN NULL
+                      WHEN calendar_enabled = 'True'
+                           OR calendar_enabled = '1' THEN 1
+                      WHEN calendar_enabled = 'False'
+                           OR calendar_enabled = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS calendar_enabled,
+             CAST(CASE
+                      WHEN remote_start_enabled = '' THEN NULL
+                      WHEN remote_start_enabled = 'True'
+                           OR remote_start_enabled = '1' THEN 1
+                      WHEN remote_start_enabled = 'False'
+                           OR remote_start_enabled = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS remote_start_enabled,
+             CAST(CASE
+                      WHEN notifications_enabled = '' THEN NULL
+                      WHEN notifications_enabled = 'True'
+                           OR notifications_enabled = '1' THEN 1
+                      WHEN notifications_enabled = 'False'
+                           OR notifications_enabled = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS notifications_enabled,
+             CAST(CASE
+                      WHEN user_charge_enable_request = '' THEN NULL
+                      WHEN user_charge_enable_request = 'True'
+                           OR user_charge_enable_request = '1' THEN 1
+                      WHEN user_charge_enable_request = 'False'
+                           OR user_charge_enable_request = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS user_charge_enable_request,
+             CAST(CASE
+                      WHEN charge_enable_request = '' THEN NULL
+                      WHEN charge_enable_request = 'True'
+                           OR charge_enable_request = '1' THEN 1
+                      WHEN charge_enable_request = 'False'
+                           OR charge_enable_request = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS charge_enable_request,
+             CAST(CASE
+                      WHEN charge_to_max_range = '' THEN NULL
+                      WHEN charge_to_max_range = 'True'
+                           OR charge_to_max_range = '1' THEN 1
+                      WHEN charge_to_max_range = 'False'
+                           OR charge_to_max_range = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS charge_to_max_range,
+             CAST(CASE
+                      WHEN battery_heater_on = '' THEN NULL
+                      WHEN battery_heater_on = 'True'
+                           OR battery_heater_on = '1' THEN 1
+                      WHEN battery_heater_on = 'False'
+                           OR battery_heater_on = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS battery_heater_on,
+             CAST(CASE
+                      WHEN scheduled_charging_pending = '' THEN NULL
+                      WHEN scheduled_charging_pending = 'True'
+                           OR scheduled_charging_pending = '1' THEN 1
+                      WHEN scheduled_charging_pending = 'False'
+                           OR scheduled_charging_pending = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS scheduled_charging_pending,
+             CAST(CASE
+                      WHEN motorized_charge_port = '' THEN NULL
+                      WHEN motorized_charge_port = 'True'
+                           OR motorized_charge_port = '1' THEN 1
+                      WHEN motorized_charge_port = 'False'
+                           OR motorized_charge_port = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS motorized_charge_port,
+             CAST(CASE
+                      WHEN not_enough_power_to_heat = '' THEN NULL
+                      WHEN not_enough_power_to_heat = 'True'
+                           OR not_enough_power_to_heat = '1' THEN 1
+                      WHEN not_enough_power_to_heat = 'False'
+                           OR not_enough_power_to_heat = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS not_enough_power_to_heat,
+             CAST(CASE
+                      WHEN charge_port_door_open = '' THEN NULL
+                      WHEN charge_port_door_open = 'True'
+                           OR charge_port_door_open = '1' THEN 1
+                      WHEN charge_port_door_open = 'False'
+                           OR charge_port_door_open = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS charge_port_door_open,
+             CAST(CASE
+                      WHEN managed_charging_active = '' THEN NULL
+                      WHEN managed_charging_active = 'True'
+                           OR managed_charging_active = '1' THEN 1
+                      WHEN managed_charging_active = 'False'
+                           OR managed_charging_active = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS managed_charging_active,
+             CAST(CASE
+                      WHEN fast_charger_present = '' THEN NULL
+                      WHEN fast_charger_present = 'True'
+                           OR fast_charger_present = '1' THEN 1
+                      WHEN fast_charger_present = 'False'
+                           OR fast_charger_present = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS fast_charger_present,
+             CAST(CASE
+                      WHEN trip_charging = '' THEN NULL
+                      WHEN trip_charging = 'True'
+                           OR trip_charging = '1' THEN 1
+                      WHEN trip_charging = 'False'
+                           OR trip_charging = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS trip_charging,
+             CAST(CASE
+                      WHEN managed_charging_user_canceled = '' THEN NULL
+                      WHEN managed_charging_user_canceled = 'True'
+                           OR managed_charging_user_canceled = '1' THEN 1
+                      WHEN managed_charging_user_canceled = 'False'
+                           OR managed_charging_user_canceled = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS managed_charging_user_canceled,
+             CAST(CASE
+                      WHEN is_auto_conditioning_on = '' THEN NULL
+                      WHEN is_auto_conditioning_on = 'True'
+                           OR is_auto_conditioning_on = '1' THEN 1
+                      WHEN is_auto_conditioning_on = 'False'
+                           OR is_auto_conditioning_on = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS is_auto_conditioning_on,
+             CAST(CASE
+                      WHEN is_rear_defroster_on = '' THEN NULL
+                      WHEN is_rear_defroster_on = 'True'
+                           OR is_rear_defroster_on = '1' THEN 1
+                      WHEN is_rear_defroster_on = 'False'
+                           OR is_rear_defroster_on = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS is_rear_defroster_on,
+             CAST(CASE
+                      WHEN smart_preconditioning = '' THEN NULL
+                      WHEN smart_preconditioning = 'True'
+                           OR smart_preconditioning = '1' THEN 1
+                      WHEN smart_preconditioning = 'False'
+                           OR smart_preconditioning = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS smart_preconditioning,
+             CAST(CASE
+                      WHEN gui_24_hour_time = '' THEN NULL
+                      WHEN gui_24_hour_time = 'True'
+                           OR gui_24_hour_time = '1' THEN 1
+                      WHEN gui_24_hour_time = 'False'
+                           OR gui_24_hour_time = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS gui_24_hour_time,
+             CAST(CASE
+                      WHEN rhd = '' THEN NULL
+                      WHEN rhd = 'True'
+                           OR rhd = '1' THEN 1
+                      WHEN rhd = 'False'
+                           OR rhd = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS rhd,
+             CAST(CASE
+                      WHEN homelink_nearby = '' THEN NULL
+                      WHEN homelink_nearby = 'True'
+                           OR homelink_nearby = '1' THEN 1
+                      WHEN homelink_nearby = 'False'
+                           OR homelink_nearby = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS homelink_nearby,
+             CAST(CASE
+                      WHEN remote_start = '' THEN NULL
+                      WHEN remote_start = 'True'
+                           OR remote_start = '1' THEN 1
+                      WHEN remote_start = 'False'
+                           OR remote_start = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS remote_start,
+             CAST(CASE
+                      WHEN valet_mode = '' THEN NULL
+                      WHEN valet_mode = 'True'
+                           OR valet_mode = '1' THEN 1
+                      WHEN valet_mode = 'False'
+                           OR valet_mode = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS valet_mode,
+             CAST(CASE
+                      WHEN locked = '' THEN NULL
+                      WHEN locked = 'True'
+                           OR locked = '1' THEN 1
+                      WHEN locked = 'False'
+                           OR locked = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS locked,
+             CAST(CASE
+                      WHEN running = '' THEN NULL
+                      WHEN running = 'True'
+                           OR running = '1' THEN 1
+                      WHEN running = 'False'
+                           OR running = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS running,
+             CAST(CASE
+                      WHEN rerunning = '' THEN NULL
+                      WHEN rerunning = 'True'
+                           OR rerunning = '1' THEN 1
+                      WHEN rerunning = 'False'
+                           OR rerunning = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS rerunning,
+             CAST(CASE
+                      WHEN is_climate_on = '' THEN NULL
+                      WHEN is_climate_on = 'True'
+                           OR is_climate_on = '1' THEN 1
+                      WHEN is_climate_on = 'False'
+                           OR is_climate_on = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS is_climate_on,
+             CAST(CASE
+                      WHEN steering_wheel_heater = '' THEN NULL
+                      WHEN steering_wheel_heater = 'True'
+                           OR steering_wheel_heater = '1' THEN 1
+                      WHEN steering_wheel_heater = 'False'
+                           OR steering_wheel_heater = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS steering_wheel_heater,
+             CAST(CASE
+                      WHEN wiper_blade_heater = '' THEN NULL
+                      WHEN wiper_blade_heater = 'True'
+                           OR wiper_blade_heater = '1' THEN 1
+                      WHEN wiper_blade_heater = 'False'
+                           OR wiper_blade_heater = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS wiper_blade_heater,
+             CAST(CASE
+                      WHEN side_mirror_heaters = '' THEN NULL
+                      WHEN side_mirror_heaters = 'True'
+                           OR side_mirror_heaters = '1' THEN 1
+                      WHEN side_mirror_heaters = 'False'
+                           OR side_mirror_heaters = '0' THEN 0
+                      ELSE 99
+                  END AS tinyint) AS side_mirror_heaters,
+             display_name,
+             state,
+             color,
+             backseat_token,
+             backseat_token_updated_at,
+             tokens,
+             managed_charging_start_time,
+             charge_port_latch,
+             battery_current,
+             fast_charger_type,
+             charging_state,
+             shift_state,
+             seat_heater_rear_right,
+             seat_heater_rear_left_back,
+             seat_heater_left,
+             seat_heater_rear_center,
+             seat_heater_rear_right_back,
+             seat_heater_right,
+             seat_heater_rear_left,
+             gui_charge_rate_units,
+             gui_temperature_units,
+             gui_range_display,
+             gui_distance_units,
+             autopark_state,
+             sun_roof_state,
+             vehicle_name,
+             autopark_style,
+             car_type,
+             last_autopark_error,
+             car_version,
+             autopark_state_v2,
+             polling,
+             CAST(id AS int) AS id,
+             CAST(id_s AS int) AS id_s,
+             CAST(charger_power AS int) AS charger_power,
+             CAST(charge_limit_soc AS int) AS charge_limit_soc,
+             CAST(charger_pilot_current AS int) AS charger_pilot_current,
+             CAST(charger_actual_current AS int) AS charger_actual_current,
+             CAST(usable_battery_level AS int) AS usable_battery_level,
+             CAST(charge_limit_soc_std AS int) AS charge_limit_soc_std,
+             CAST(battery_level AS int) AS battery_level,
+             CAST(max_range_charge_counter AS int) AS max_range_charge_counter,
+             CAST(charge_limit_soc_max AS int) AS charge_limit_soc_max,
+             CAST(scheduled_charging_start_time AS int) AS scheduled_charging_start_time,
+             CAST(charger_voltage AS int) AS charger_voltage,
+             CAST(charge_current_request_max AS int) AS charge_current_request_max,
+             CAST(charge_limit_soc_min AS int) AS charge_limit_soc_min,
+             CAST(heading AS int) AS heading,
+             CAST(gps_as_of AS int) AS gps_as_of,
+             CAST(speed AS int) AS speed,
+             CAST(fan_status AS int) AS fan_status,
+             CAST(is_front_defroster_on AS int) AS is_front_defroster_on,
+             CAST(spoiler_type AS int) AS spoiler_type,
+             CAST(charger_phases AS smallint) AS charger_phases,
+             CAST(ft AS int) AS ft,
+             CAST(pr AS int) AS pr,
+             CAST(pf AS int) AS pf,
+             CAST(sun_roof_percent_open AS int) AS sun_roof_percent_open,
+             CAST(api_version AS int) AS api_version,
+             CAST(rt AS int) AS rt,
+             CAST(df AS int) AS df,
+             CAST(dr AS int) AS dr,
+             CAST(center_display_state AS int) AS center_display_state,
+             CAST(dark_rims AS int) AS dark_rims,
+             CAST(idleNumber AS int) AS idleNumber,
+             CAST(sleepNumber AS int) AS sleepNumber,
+             CAST(driveNumber AS int) AS driveNumber,
+             CAST(chargeNumber AS int) AS chargeNumber,
+             CAST(idleTime AS int) AS idleTime,
+             CAST(left_temp_direction AS int) AS left_temp_direction,
+             CAST(right_temp_direction AS int) AS right_temp_direction,
+             CAST(rear_seat_type AS int) AS rear_seat_type,
+             CAST(power AS int) AS power,
+             CAST(longitude AS float) AS longitude,
+             CAST(latitude AS float) AS latitude,
+             CAST(odometer AS float) AS odometer,
+             CAST(odometerF AS float) AS odometerF,
+             CAST(elevation AS float) AS elevation,
+             CAST(time_to_full_charge AS decimal(2,2)) AS time_to_full_charge,
+             CAST(charge_current_request AS decimal(4,2)) AS charge_current_request,
+             CAST(battery_range AS decimal(4,2)) AS battery_range,
+             CAST(charge_energy_added AS decimal(2,2)) AS charge_energy_added,
+             CAST(ideal_battery_range AS decimal(4,2)) AS ideal_battery_range,
+             CAST(est_battery_range AS decimal(4,2)) AS est_battery_range,
+             CAST(charge_rate AS decimal(4,2)) AS charge_rate,
+             CAST(charge_miles_added_ideal AS decimal(4,2)) AS charge_miles_added_ideal,
+             CAST(charge_miles_added_rated AS decimal(4,2)) AS charge_miles_added_rated,
+             CAST(inside_temp AS decimal(4,2)) AS inside_temp,
+             CAST(passenger_temp_setting AS decimal(4,2)) AS passenger_temp_setting,
+             CAST(driver_temp_setting AS decimal(4,2))        AS driver_temp_setting,
+             CAST(outside_temp AS decimal(4,2)) AS outside_temp,
+             CAST(inside_tempF AS decimal(4,2)) AS inside_tempF,
+             CAST(driver_temp_settingF AS decimal(4,2)) AS driver_temp_settingF,
+             CAST(outside_tempF AS decimal(4,2)) AS outside_tempF,
+             CAST(maxRange AS decimal(4,2)) AS maxRange,
+             CAST(max_avail_temp AS decimal(4,2)) AS max_avail_temp,
+             CAST(min_avail_temp AS decimal(4,2)) AS min_avail_temp
+         FROM teslafi_raw
+      LIMIT 10;
+    #+end_src
 
 * Interesting queries
 ** Wh/mi used in drives longer than n miles
