@@ -1,13 +1,15 @@
 nodes:
-    - address: cuphead.magichome
+    # - address: cuphead.magichome
+    #   user: gregj
+    #   role:
+    #     - worker
+    #     - etcd
+    #     - controlplane
+    - address: todd.magichome
       user: gregj
       role:
         - controlplane
         - etcd
-    - address: todd.magichome
-      user: gregj
-      role:
-        - worker
     - address: birdperson.magichome
       user: gregj
       role:
@@ -38,6 +40,14 @@ cluster_name: cowzilla
 
 
 services:
+  kube-api:
+    extra_args:
+      feature-gates: EphemeralContainers=true
+    pod_security_policy: false
+    service_node_port_range: 30000-32767
+  kube-scheduler:
+    extra_args:
+      feature-gates: EphemeralContainers=true
 
 authorization:
     mode: rbac
