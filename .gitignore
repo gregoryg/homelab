@@ -3,3 +3,4 @@ pdsh/
 mysql-data/
 *.rkestate
 kube_config_cluster.yaml
+manifests/
