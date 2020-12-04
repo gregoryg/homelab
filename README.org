@@ -10,20 +10,33 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 27.0.91 (Org mode 9.3.6)
-#+setupfile: ~/projects/emacs/org-html-themes/setup/theme-readtheorg.setup
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
 # #+setupfile: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
-#+PROPERTY: header-args:sh :comments org :shebang #!/usr/bin/env bash :tangle deploy-all.sh :eval never-export
+#+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :tangle deploy-all.sh :eval never-export
 
 * Literate document setup
   This README is a literate programming document.  When this document is loaded in Emacs
   with Org Mode, it can generate scripts and configuration for the documented steps.
+
+
+** Set up shell session
+   This starts up or resuses a shell session named =homelab-sh= for interactive use.  Some
+   setup in this document may use this session for stateful operations.
+
+   #+begin_src emacs-lisp :keep-windows t :results none
+     (switch-to-buffer (shell "homelab-sh"))
+     (switch-to-buffer "README.org")
+     (delete-other-windows  )
+     (switch-to-buffer-other-window "homelab-sh")
+     (switch-to-buffer-other-window "README.org")
+   #+end_src
 
 * Binaries and config
 ** Cow me, baby
    Assure =fortune= and =cowsay= are installed
 
    The cownonical Cow Me! script
-   #+begin_src bash :shebang #!/usr/bin/env bash :tangle ~/bin/cowme :results replace output
+   #+begin_src bash :tangle ~/bin/cowme :results replace output
      # Optionally specify a cow - whether or not in the safe list
      mycow=$1
      export COWPATH=/usr/share/cows:~/projects/homelab/cows
@@ -52,6 +65,123 @@
          echo
      fi
    #+end_src
+* Squid caching proxy
+** Server
+  Instructions for setting up on Debian
+  #+begin_src bash
+    sudo apt install squid
+  #+end_src
+
+  Add caching for large objects! Put this in =/etc/squid/conf.d/gregs-cache.conf=
+  #+begin_src conf
+    # http_port 3128 transparent
+    http_access allow all
+    # ref https://superuser.com/a/972702/74209
+    # we want to cache large objects
+    maximum_object_size 6 GB
+    cache_dir ufs /var/spool/squid 30720 16 256
+    cache_mem 256 MB
+    maximum_object_size_in_memory 512 KB
+    cache_replacement_policy heap LFUDA
+    range_offset_limit -1
+    quick_abort_min -1 KB
+  #+end_src
+** Client
+*** Apt
+    in =/etc/apt/apt.conf.d/proxy.conf=
+    #+begin_src conf
+      Acquire::http::Proxy "http://172.16.17.4:3128/";
+      Acquire::https::Proxy "http://172.16.17.4:3128/";
+    #+end_src
+*** Everything on openSUSE
+    Change the following in =/etc/sysconfig/proxy
+    #+begin_src conf
+      PROXY_ENABLED="yes"
+      HTTP_PROXY="http://172.16.17.4:3128/"
+      HTTPS_PROXY="http://172.16.17.4:3128/"
+      NO_PROXY="localhost,127.0.0.1,172.16.17.0/24"
+    #+end_src
+* Docker registry for caching images
+
+** The problem
+    When setting up a Kubernetes RKE cluster, the same Docker image gets pulled on
+    separate connections to each of the nodes.  A pull-through Docker registry would solve
+    the problem, acting as a caching server for Docker images.
+
+    However, Docker's built-in support will only work with images in the primary Docker
+    registry.
+     + [[https://dev.to/mayeu/saving-time-and-bandwidth-by-caching-docker-images-with-a-local-registry-98b][Saving Time and Bandwidth by Caching Docker Images With a Local Registry - DEV]]
+
+** Solution
+     =docker-registry-proxy= works with multiple registries.
+     + [[https://github.com/rpardini/docker-registry-proxy][GitHub - rpardini/docker-registry-proxy: An HTTPS Proxy for Docker providing ...]]
+
+** Server setup
+   This is a proxy that also defaults to 3128 (already used by Squid) - so I'm forwarding
+   to port 6128
+    #+begin_src bash :tangle ~/bin/start-docker-registry-proxy.sh
+      docker run -d --rm --name docker_registry_proxy -it \
+             -p 0.0.0.0:6128:3128 \
+             -v /data/docker_mirror_cache:/docker_mirror_cache \
+             -v /data/docker_mirror_certs:/ca \
+             -e REGISTRIES="k8s.gcr.io gcr.io quay.io" \
+             -e AUTH_REGISTRIES="auth.docker.io:gregoryg:NLCsEKtk6cNeE5 quay.io:gregoryg:AJYgeUXbfjiRFNPiyM5Wrc+NiEBkIPe1lpjkp2erB6xaETMZowuaU6qLEkbFB7h+Rr4ExAoRrstcpLSt4c3zJtEJM/+mLQ3GCaQ9OeQ1Plc=" \
+             rpardini/docker-registry-proxy:latest
+             # tiangolo/docker-registry-proxy:latest
+
+
+             # -e REGISTRIES="k8s.gcr.io gcr.io quay.io your.own.registry another.public.registry" \
+             # -e AUTH_REGISTRIES="auth.docker.io:dockerhub_username:dockerhub_password your.own.registry:username:password" \
+    #+end_src
+** Client setup
+
+   TODO: figure out where certificates go in openSUSE Tumbleweed
+
+    Create file =/etc/systemd/system/docker.service.d/http-proxy.conf=
+    #+begin_src conf
+      [Service]
+      Environment="HTTP_PROXY=http://172.16.17.4:6128/"
+      Environment="HTTPS_PROXY=http://172.16.17.4:6128/"
+      Environment="NO_PROXY=localhost,127.0.0.1,docker-registry.example.com,.corp,quay.io"
+    #+end_src
+
+    Get the CA certificate from the proxy and make it a trusted root
+    #+begin_src bash
+      curl http://172.16.17.4:6128/ca.crt | sudo tee /usr/share/ca-certificates/docker_registry_proxy.crt
+      echo "docker_registry_proxy.crt" | sudo tee -a /etc/ca-certificates.conf
+      sudo update-ca-certificates --fresh
+    #+end_src
+
+    Reload and restart
+    #+begin_src bash
+    sudo systemctl daemon-reload
+    sudo systemctl restart docker
+    #+end_src
+
+** Testing the clients
+
+   + Clear =dockerd= of everything not currently running: 
+     #+begin_src bash
+       docker system prune -a -f beware.
+     #+end_src
+   + Pull something, like
+     #+begin_src bash
+       docker pull ubuntu:20.04
+     #+end_src
+   + Watch the caching proxy logs on Lab-Server1
+     #+begin_src bash
+       docker logs docker_registry_proxy --follow
+     #+end_src
+
+    Then do, for example, docker pull k8s.gcr.io/kube-proxy-amd64:v1.10.4 and watch the
+     logs on the caching proxy, it should list a lot of MISSes.
+
+    Then, clean again, and pull again. You should see HITs! Success.
+
+    Do the same for docker pull ubuntu and rejoice.
+
+    Test your own registry caching and authentication the same way; you don't need docker
+     login, or .docker/config.json anymore.
 * Setting up Kubernetes distributions
 ** Set up initial barebones cluster
 *** Apache Kubernetes using Kubeadm
@@ -131,8 +261,8 @@
    + TODO: Investigate reserving host network IPs
      #+begin_src bash :session homelab-sh 
        # use new namespace metallb-system
-       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
-       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
+       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
+       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/metallb.yaml
        # On first install only
        kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
      #+end_src
@@ -352,7 +482,7 @@
            until [ $(kubectl get pods -l app=multivol -o jsonpath='{.items[*].status.phase}' | grep 'Running' -o | wc -l) -eq 3  ]; do sleep 1; done
            kubectl describe deployment multivol | grep Mounts: -A 4
         #+end_src
-     
+
 *** Create volume shared between pods                                  :NEXT:
     :LOGBOOK:
     - State "MAYBE"      from "STARTED"    [2020-02-24 Mon 08:36]
@@ -374,7 +504,7 @@
               --set efsProvisioner.awsRegion=us-west-2 \
               stable/efs-provisioner
        #+end_src
-      
+
     + We will define a deployment with 3 replicas.  Each pod will mount the same persistent
       volume.  As before, the pods will mount a volume based on a PersistentVolumeClaim.
 
@@ -693,6 +823,11 @@
       kubectl create deployment web --image=nginx
       kubectl expose deployment web --port=80 --target-port=80
     #+end_src
+
+    #+RESULTS:
+    | deployment.apps/web | created |
+    | service/web         | exposed |
+
 *** Create and apply network policy to prohibit ingress to our deployment
     #+begin_src yaml :dir 02-pod-networking/ :tangle (concat (org-entry-get nil "tangle-dir" t) "/manifests/illuminatio-example-deny-all-netpol.yaml")
       apiVersion: networking.k8s.io/v1
@@ -709,11 +844,24 @@
     #+begin_src bash :dir 02-pod-networking/manifests/
       kubectl apply -f illuminatio-example-deny-all-netpol.yaml
     #+end_src
+
+    #+RESULTS:
+    : networkpolicy.networking.k8s.io/web-deny-all created
+
 *** Test with Illuminatio
     #+begin_src bash
       illuminatio run
     #+end_src
+* Observability
+** Kubevious
+   [[https://github.com/kubevious/kubevious][GitHub - kubevious/kubevious: Kubevious - application centric Kubernetes UI a...]]
 
+   #+begin_src bash
+     kubectl create namespace kubevious
+     helm repo add kubevious https://helm.kubevious.io
+     helm upgrade --atomic -i kubevious kubevious/kubevious --version 0.7.26 -n kubevious
+     kubectl port-forward $(kubectl get pods -n kubevious -l "app.kubernetes.io/component=kubevious-ui" -o jsonpath="{.items[0].metadata.name}") 8080:80 -n kubevious 
+   #+end_src
 * Storage
 * Cracking the structure of Rancher application ingress URLs
   + Examples of working parent-authenticated URLs
@@ -733,8 +881,30 @@
       | M   | https://rancher.hypecyclist.org:8443 | null or k8s/clusters | null or c-r5dj9 | api/v1 | longhorn-system          | 'services' | http:longhorn-frontend:80          | proxy          |
       | M   | https://rancher.hypecyclist.org:8443 | k8s/clusters         | c-r5dj9         | api/v1 | cattle-monitoring-system | 'services' | http:rancher-monitoring-grafana:80 | proxy/+orgId=1 |
       | L   | https://rancher.hypecyclist.org:8443 | null                 | null            | api/v1 | cattle-monitoring-system | 'services' | http:rancher-monitoring-grafana:80 | proxy/+orgId=1 |
+** Use the Rancher API to get URLS
+*** Authentication
+    set env vars =rancher_access= and =rancher_secret= to the Access Key and Secret Key
+    values from the Rancher UI API Keys
 
+    For now, do this manually in the =homelab-sh= session
+*** Get list of clusters known to Rancher Server with relevant info
+    #+begin_src bash :session homelab-sh
+      curl -s -k \
+           -u "${rancher_access}:${rancher_secret}" \
+           -X GET \
+           -H 'Accept: application/json' \
+           -H 'Content-Type: application/json' \
+           'https://rancher.hypecyclist.org:8443/v3/clusters/' > /tmp/rancher-clusters.json
+    #+end_src
 
+    #+RESULTS:
 
+    #+begin_src bash :results table
+      cat /tmp/rancher-clusters.json | \
+          jq -r '.data[] | "\(.name)\t\(.id)"'
+    #+end_src
 
-          
+    #+RESULTS:
+    | cowzilla | c-x82td |
+    | local    | local   |
+
