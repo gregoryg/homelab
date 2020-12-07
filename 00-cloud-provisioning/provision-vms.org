@@ -133,10 +133,6 @@
 
    Open a shell on the bastion host as buffer named =gg-bastion-sh=
 
-   The whole reason we create a separate bastion node with an external IP is that `gcloud
-   compute ssh` is such a royal pain in the ass - timing out connections in mere seconds,
-   then taking many seconds to silently reconnect every time you want to issue a command
-   at the shell.  Just using SSH directly is much more responsive.
   #+name: bastion_ip
    #+begin_src bash 
     # Get public IP
@@ -149,12 +145,12 @@
      ssh gregj@${ip} -o StrictHostKeyChecking=no pwd
    #+end_src
 
-   #+begin_src emacs-lisp :var ip=bastion_ip
+   #+begin_src emacs-lisp :var ip=bastion_ip :results none
      (call-process-shell-command (concat "ssh -o StrictHostKeyChecking=no gregj@" ip " id"))
      (cd (concat "/ssh:gregj@" ip ":"))
      (shell "gg-bastion-sh")
    #+end_src
-   #+begin_src bash 
+   #+begin_src bash :session gg-bastion-sh :results none
      sudo apt update && sudo apt -y upgrade ; sudo apt -y install pdsh
      for i in in `cat all-nodes.txt` ; do
          ssh -o StrictHostKeyChecking=no $i pwd
@@ -173,7 +169,7 @@
 *** Download the =rke= CLI to bastion host
     Current [2020-11-06 Fri] version: 1.2.1
     #+begin_src bash :session gg-bastion-sh :async :results value
-      wget 'https://github.com/rancher/rke/releases/download/v1.0.14/rke_linux-amd64'
+      wget 'https://github.com/rancher/rke/releases/download/v1.2.1/rke_linux-amd64'
       chmod a+rx rke_linux-amd64
       sudo mv -iv ./rke_linux-amd64 /usr/local/bin/rke
       rke
