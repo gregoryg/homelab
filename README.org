@@ -568,6 +568,30 @@
     + [[https://kubernetes.io/docs/concepts/storage/persistent-volumes/#csi-volume-expansion][CSI Volume Expansion]] (k8s.io)
     + Resizing in-use volumes can only be done on specific storage classes that support
       dynamic resizing.  It is effected by editing the PersistentVolumeClaim object.
+* Rancher Server
+** Test full certificate chain of Rancher Server
+   #+begin_src bash
+     docker run superseb/ranchercheck https://rancher.hypecyclist.org:8443
+   #+end_src
+** Clean up after RKE
+* RKE
+** Clean up after RKE
+   #+begin_src bash
+     # on all nodes - get rid of ALL docker containers -- too general if anything else may be running
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'docker stop `docker ps -aq`'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'docker rm `docker ps -aq`'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh '# remove CNI and Longhorn remnants'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo rm -rfv /var/lib/longhorn/* /data/longhorn/* /etc/cni/*'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh '# iptables'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo iptables -F -t nat'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo iptables -X -t nat'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo iptables -F -t mangle'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo iptables -X -t mangle'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo iptables -F'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo iptables -X'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo systemctl restart docker'
+
+   #+end_src
 * Networking
   :PROPERTIES:
   :tangle-dir: 02-pod-networking/
