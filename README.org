@@ -145,9 +145,15 @@
       Environment="NO_PROXY=localhost,127.0.0.1,docker-registry.example.com,.corp,quay.io"
     #+end_src
 
-    Get the CA certificate from the proxy and make it a trusted root
+    Get the CA certificate from the proxy and make it a trusted root.  The directory for
+    the certificate differs on OpenSUSE and Ubuntu
     #+begin_src bash
-      curl http://172.16.17.4:6128/ca.crt | sudo tee /usr/share/ca-certificates/docker_registry_proxy.crt
+      if [ -d "/etc/pki/trust/anchors"] ; then
+          certdir=/etc/pki/trust/anchors
+      else
+          certdir=/usr/share/ca-certificates
+      fi
+      curl http://172.16.17.4:6128/ca.crt | sudo tee ${certdir}/docker_registry_proxy.crt
       echo "docker_registry_proxy.crt" | sudo tee -a /etc/ca-certificates.conf
       sudo update-ca-certificates --fresh
     #+end_src
