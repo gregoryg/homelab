@@ -965,4 +965,20 @@
         "update": "https://rancher.hypecyclist.org:8443/v3/clusters/c-vb78v"
       }
     }
+* Dell XPS 13" 2 in 1 Laptop - Linux stuff
+** Buzzing from headphone jack when nothing is playing
+   The key is to set an option in the =snd-hda-intel= module.  =power_save=0= means never
+   go into power saving mode
+   + On Ubuntu 20.4
+     in =/etc/modprobe.d/alsa-base.conf=
+     #+begin_src conf
+       # GJG stop the buzzing from headphone jack
+       options snd-hda-intel power_save=0 power_save_controller=N
+     #+end_src
+   + On openSUSE Tumbleweed
+     in =/etc/modprobe.d/42-power-audio.conf=
+     #+begin_src conf
+       options snd_hda_intel power_save=0 power_save_controller=0  
+     #+end_src
+
 
