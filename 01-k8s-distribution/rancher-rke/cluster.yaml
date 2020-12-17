@@ -1,24 +1,22 @@
 nodes:
-    # - address: cuphead.magichome
-    #   user: gregj
-    #   role:
-    #     - worker
-    #     - etcd
-    #     - controlplane
     - address: todd.magichome
       user: gregj
       role:
         - controlplane
         - etcd
+    - address: cuphead.magichome
+      user: gregj
+      role:
+        - worker
     - address: birdperson.magichome
       user: gregj
       role:
         - worker
-    - address: marvin.magichome
+    - address: chewbacca.magichome
       user: gregj
       role:
         - worker
-    - address: chewbacca.magichome
+    - address: marvin.magichome
       user: gregj
       role:
         - worker
@@ -35,7 +33,7 @@ ssh_key_path: ~/.ssh/k8s-local
 #to your SSH agent which has the private key added
 ssh_agent_auth: true
 
-# Set the name of the Kubernetes cluster  
+# Set the name of the Kubernetes cluster
 cluster_name: cowzilla
 
 
