@@ -136,10 +136,12 @@
     #+end_src
 ** Client setup
 
-   TODO: figure out where certificates go in openSUSE Tumbleweed
-
     Create file =/etc/systemd/system/docker.service.d/http-proxy.conf=
-    #+begin_src conf
+    #+begin_src bash
+      sudo mkdir -p /etc/systemd/system/docker.service.d
+    #+end_src
+
+    #+begin_src conf :tangle /sudo::/etc/systemd/system/docker.service.d/http-proxy.conf
       [Service]
       Environment="HTTP_PROXY=http://172.16.17.4:6128/"
       Environment="HTTPS_PROXY=http://172.16.17.4:6128/"
