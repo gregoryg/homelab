@@ -151,7 +151,7 @@
     Get the CA certificate from the proxy and make it a trusted root.  The directory for
     the certificate differs on OpenSUSE and Ubuntu
     #+begin_src bash
-      if [ -d "/etc/pki/trust/anchors"] ; then
+      if [ -d "/etc/pki/trust/anchors" ] ; then
           certdir=/etc/pki/trust/anchors
       else
           certdir=/usr/share/ca-certificates
