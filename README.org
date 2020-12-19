@@ -88,19 +88,19 @@
     quick_abort_min -1 KB
   #+end_src
 ** Client
-*** Apt
+*** Apt for Ubuntu and Debian
     in =/etc/apt/apt.conf.d/proxy.conf=
     #+begin_src conf
       Acquire::http::Proxy "http://172.16.17.4:3128/";
       Acquire::https::Proxy "http://172.16.17.4:3128/";
     #+end_src
 *** Everything on openSUSE
-    Change the following in =/etc/sysconfig/proxy
+    Change the following in =/etc/sysconfig/proxy=
     #+begin_src conf
       PROXY_ENABLED="yes"
       HTTP_PROXY="http://172.16.17.4:3128/"
       HTTPS_PROXY="http://172.16.17.4:3128/"
-      NO_PROXY="localhost,127.0.0.1,172.16.17.0/24"
+      NO_PROXY="localhost,127.0.0.1,172.16.17.0/24,.magichome"
     #+end_src
 * Docker registry for caching images
 
