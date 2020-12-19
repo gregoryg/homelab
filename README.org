@@ -163,8 +163,8 @@
 
     Reload and restart
     #+begin_src bash
-    sudo systemctl daemon-reload
-    sudo systemctl restart docker
+      sudo systemctl daemon-reload
+      sudo systemctl restart docker
     #+end_src
 
 ** Testing the clients
@@ -981,7 +981,5 @@
    + On openSUSE Tumbleweed
      in =/etc/modprobe.d/42-power-audio.conf=
      #+begin_src conf
-       options snd_hda_intel power_save=0 power_save_controller=0  
+       options snd_hda_intel power_save=0 power_save_controller=0
      #+end_src
-
-
