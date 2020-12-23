@@ -16,10 +16,10 @@ nodes:
       user: gregj
       role:
         - worker
-    - address: marvin.magichome
-      user: gregj
-      role:
-        - worker
+    # - address: marvin.magichome
+    #   user: gregj
+    #   role:
+    #     - worker
 # If set to true, RKE will not fail when unsupported Docker versions
 # are found
 ignore_docker_version: false
