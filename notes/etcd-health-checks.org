@@ -1,7 +1,4 @@
 * Etcd on RKE notes
-  :LOGBOOK:
-  - State "DONE"       from "TODO"       [2020-12-23 Wed 14:04]
-  :END:
 
 ** Use fast IOPS disk on Etcd nodes
  To improve immediate performance as well as provide room for high volume future
