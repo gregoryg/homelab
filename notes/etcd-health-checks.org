@@ -1,0 +1,60 @@
+* Etcd on RKE notes
+  :LOGBOOK:
+  - State "DONE"       from "TODO"       [2020-12-23 Wed 14:04]
+  :END:
+
+** Use fast IOPS disk on Etcd nodes
+ To improve immediate performance as well as provide room for high volume future
+ growth in managed workloads, Etcd will be allocated disk appropriate for its
+ high-speed atomic reads and writes.
+
+ Rancher Labs recommends using SSD or NVMe volumes with at least 10,000 rated IOPS.
+
+** Check Etcd health and status
+
+  On RKE clusters, there will be a Docker container named =etcd= running on nodes that
+  have the =etcd= role.
+
+  By far the easiest way to observe what's happening in the =etcd= database is by
+  leveraging the already-authenticated =etcdctl= command in that container.
+
+  Here are some helpful health check commands using that feature
+
+*** Check that Etcd has no alarms
+  #+begin_src bash
+  docker exec etcd etcdctl alarm list
+  #+end_src
+
+*** Check that the endpoint is healthy
+  #+begin_src bash
+    docker exec \
+           -e ETCDCTL_ENDPOINTS=$(docker exec etcd /bin/sh -c \
+                                         "etcdctl member list | \
+                                          cut -d, -f5 | \
+                                           sed -e 's/ //g' | \
+                                            paste -sd ','") \
+           etcd etcdctl endpoint health
+  #+end_src
+  #+begin_example
+    https://172.16.17.12:2379 is healthy: successfully committed proposal: took = 8.598288ms
+  #+end_example
+
+*** Check that Etcd Raft term is equal
+
+  #+begin_src bash
+    docker exec \
+           -e ETCDCTL_ENDPOINTS=$(docker exec etcd /bin/sh -c \
+                                         "etcdctl member list | \
+                                          cut -d, -f5 | \
+                                           sed -e 's/ //g' | \
+                                           paste -sd ','") \
+           etcd etcdctl endpoint status --write-out table
+  #+end_src
+
+  #+begin_example
+    +---------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+    |         ENDPOINT          |        ID        | VERSION | DB SIZE | IS LEADER | IS LEARNER | RAFT TERM | RAFT INDEX | RAFT APPLIED INDEX | ERRORS |
+    +---------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+    | https://172.16.17.12:2379 | 5bdee38aac7044b3 |  3.4.13 |   30 MB |      true |      false |         3 |     440093 |             440093 |        |
+    +---------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
+  #+end_example
