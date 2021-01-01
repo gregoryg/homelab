@@ -114,7 +114,7 @@
           --labels owner=ggrubbs,expiration=48h
         echo gg-worker-${i} >> /tmp/worker-nodes.txt
       done
-    cat /tmp/control-nodes.txt /tmp/worker-nodes.txt > /tmp/all-nodes.txt 
+    cat /tmp/control-nodes.txt /tmp/worker-nodes.txt > /tmp/all-nodes.txt
   #+end_src
 
 ** Add bastion to ~/.ssh/known_hosts
@@ -124,22 +124,24 @@
 
 ** Setup one node to use as bastion host
    Useful since no cluster nodes have external IPs
-   #+begin_src bash :session rancher-rke-sh :results value
+   #+begin_src bash :session rancher-rke-sh :results none
      (cd /tmp; gcloud compute scp all-nodes.txt control-nodes.txt worker-nodes.txt gg-bastion:)
    #+end_src
-
 
    From here on out, use =gg-bastion= as a bastion host
 
    Open a shell on the bastion host as buffer named =gg-bastion-sh=
 
   #+name: bastion_ip
-   #+begin_src bash 
+   #+begin_src bash
     # Get public IP
     gcloud compute instances describe gg-bastion --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
    #+end_src
 
-   #+begin_src bash :var ip=bastion_ip :results value
+   #+RESULTS: bastion_ip
+   : 35.232.50.253
+
+   #+begin_src bash :var ip=bastion_ip :results none
      # Assure that it is not conflicting in known_hosts
      ssh-keygen -R ${ip}
      ssh gregj@${ip} -o StrictHostKeyChecking=no pwd
@@ -174,7 +176,7 @@
       sudo mv -iv ./rke_linux-amd64 /usr/local/bin/rke
       rke
     #+end_src
-    
+
 *** Our canonical RKE config
     Tangle directly  to the bastion host
    #+begin_src yaml :var ip=bastion_ip :tangle /gssh:gg-bastion:gcp-cluster.yaml
@@ -216,13 +218,13 @@
      # Cluster level SSH private key
      # Used if no ssh information is set for the node
      # ssh_key_path: ~/.ssh/k8s-local
-     # 
+     #
      # Enable use of SSH agent to use SSH private keys with passphrase
      # This requires the environment `SSH_AUTH_SOCK` configured pointing
      # to your SSH agent which has the private key added
      ssh_agent_auth: true
 
-     # Set the name of the Kubernetes cluster  
+     # Set the name of the Kubernetes cluster
      cluster_name: uncowlanut
 
 
@@ -274,9 +276,12 @@
       complete -F __start_kubectl k
     #+end_src
 
+    #+RESULTS:
+    : gregj@gg-bastion:~$ gregj@gg-bastion:~$ gregj@gg-bastion:~$ gregj@gg-bastion:~$ gregj@gg-bastion:~$ 0
+
 
 ** On to Rancher to install these thangs!
- 
+
 *** Get Helm on the bastion node
     #+begin_src bash :session gg-bastion-sh :async :results value
       wget 'https://get.helm.sh/helm-v3.4.1-linux-amd64.tar.gz'
@@ -292,4 +297,3 @@
       helm repo update
       helm install rancher-monitoring prometheus-community/kube-prometheus-stack --namespace cattle-monitoring-system --create-namespace
     #+end_src
-
