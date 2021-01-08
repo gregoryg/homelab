@@ -60,6 +60,8 @@ resource "google_compute_instance" "vm_gg" {
   }
 }
 
+# TODO: fix the timing hacks - "delay" should look for cluster readiness - kubectl cs perhaps
+# TODO: Consider using the gavinbunney/kubectl provider
 # Delay hack part 1
 resource "null_resource" "before" {
   depends_on = [rancher2_cluster.cluster_gg]
