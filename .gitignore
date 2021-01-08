@@ -5,3 +5,4 @@ mysql-data/
 kube_config_cluster.yaml
 manifests/
 .terraform/
+.terraform.lock.hcl
