@@ -1,0 +1,30 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:t
+#+options: todo:t |:t
+#+title: Food and Drink Recipes
+#+date: <2020-04-04 Sat>
+#+author: Gregory Grubbs
+#+email: gregory.grubbs@gmail.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 27.0.60 (Org mode 9.3.6)
+#+setupfile: ~/projects/emacs/org-html-themes/setup/theme-readtheorg.setup
+* Food
+* Drink
+** Mezcal/Aperol drink
+   Drink served up by [[https://www.murphysmountaingrill.com/drink][Murphy's Mountain Grill]]
+
+   #+begin_quote
+   *Smoked OUT!*
+
+   Pasilla Chili Coriander Mezcal Infusion, Aperol, 
+
+   Sweet Vermouth, Lime Juice, Orange Bitters
+   #+end_quote
+
+   + 2 oz chili-infused mezcal
+   + 1 oz Aperol (maybe less)
+   + 1/2-1 oz sweet vermouth
+   + 1/2 oz lime juice
