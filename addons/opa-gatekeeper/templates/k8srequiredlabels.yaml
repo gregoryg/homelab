@@ -1,0 +1,148 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  annotations:
+    meta.helm.sh/release-name: rancher-gatekeeper
+    meta.helm.sh/release-namespace: cattle-gatekeeper-system
+  creationTimestamp: "2021-01-11T22:55:59Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  managedFields:
+  - apiVersion: templates.gatekeeper.sh/v1beta1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:meta.helm.sh/release-name: {}
+          f:meta.helm.sh/release-namespace: {}
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/managed-by: {}
+      f:spec:
+        .: {}
+        f:crd:
+          .: {}
+          f:spec:
+            .: {}
+            f:names:
+              .: {}
+              f:kind: {}
+            f:validation:
+              .: {}
+              f:openAPIV3Schema:
+                .: {}
+                f:properties:
+                  .: {}
+                  f:labels:
+                    .: {}
+                    f:items:
+                      .: {}
+                      f:properties:
+                        .: {}
+                        f:allowedRegex:
+                          .: {}
+                          f:type: {}
+                        f:key:
+                          .: {}
+                          f:type: {}
+                      f:type: {}
+                    f:type: {}
+                  f:message:
+                    .: {}
+                    f:type: {}
+        f:targets: {}
+    manager: Go-http-client
+    operation: Update
+    time: "2021-01-11T22:55:59Z"
+  - apiVersion: templates.gatekeeper.sh/v1beta1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        .: {}
+        f:byPod: {}
+        f:created: {}
+    manager: gatekeeper
+    operation: Update
+    time: "2021-01-11T22:56:47Z"
+  name: k8srequiredlabels
+  resourceVersion: "5361"
+  selfLink: /apis/templates.gatekeeper.sh/v1beta1/constrainttemplates/k8srequiredlabels
+  uid: a1e9c645-ab29-4288-aa12-779585769d39
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        openAPIV3Schema:
+          properties:
+            labels:
+              items:
+                properties:
+                  allowedRegex:
+                    type: string
+                  key:
+                    type: string
+                type: object
+              type: array
+            message:
+              type: string
+  targets:
+  - rego: |
+      package k8srequiredlabels
+
+      get_message(parameters, _default) = msg {
+        not parameters.message
+        msg := _default
+      }
+
+      get_message(parameters, _default) = msg {
+        msg := parameters.message
+      }
+
+      violation[{"msg": msg, "details": {"missing_labels": missing}}] {
+        provided := {label | input.review.object.metadata.labels[label]}
+        required := {label | label := input.parameters.labels[_].key}
+        missing := required - provided
+        count(missing) > 0
+        def_msg := sprintf("you must provide labels: %v", [missing])
+        msg := get_message(input.parameters, def_msg)
+      }
+
+      violation[{"msg": msg}] {
+        value := input.review.object.metadata.labels[key]
+        expected := input.parameters.labels[_]
+        expected.key == key
+        # do not match if allowedRegex is not defined, or is an empty string
+        expected.allowedRegex != ""
+        not re_match(expected.allowedRegex, value)
+        def_msg := sprintf("Label <%v: %v> does not satisfy allowed regex: %v", [key, value, expected.allowedRegex])
+        msg := get_message(input.parameters, def_msg)
+      }
+    target: admission.k8s.gatekeeper.sh
+status:
+  byPod:
+  - id: gatekeeper-audit-f7cdf5bbf-wz2mh
+    observedGeneration: 1
+    operations:
+    - audit
+    - status
+    templateUID: a1e9c645-ab29-4288-aa12-779585769d39
+  - id: gatekeeper-controller-manager-6558599f65-bgvr5
+    observedGeneration: 1
+    operations:
+    - webhook
+    templateUID: a1e9c645-ab29-4288-aa12-779585769d39
+  - id: gatekeeper-controller-manager-6558599f65-jbw5g
+    observedGeneration: 1
+    operations:
+    - webhook
+    templateUID: a1e9c645-ab29-4288-aa12-779585769d39
+  - id: gatekeeper-controller-manager-6558599f65-l5hqs
+    observedGeneration: 1
+    operations:
+    - webhook
+    templateUID: a1e9c645-ab29-4288-aa12-779585769d39
+  created: true

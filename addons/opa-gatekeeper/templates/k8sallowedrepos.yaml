@@ -1,0 +1,115 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  annotations:
+    meta.helm.sh/release-name: rancher-gatekeeper
+    meta.helm.sh/release-namespace: cattle-gatekeeper-system
+  creationTimestamp: "2021-01-11T22:55:59Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  managedFields:
+  - apiVersion: templates.gatekeeper.sh/v1beta1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:meta.helm.sh/release-name: {}
+          f:meta.helm.sh/release-namespace: {}
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/managed-by: {}
+      f:spec:
+        .: {}
+        f:crd:
+          .: {}
+          f:spec:
+            .: {}
+            f:names:
+              .: {}
+              f:kind: {}
+            f:validation:
+              .: {}
+              f:openAPIV3Schema:
+                .: {}
+                f:properties:
+                  .: {}
+                  f:repos:
+                    .: {}
+                    f:items:
+                      .: {}
+                      f:type: {}
+                    f:type: {}
+        f:targets: {}
+    manager: Go-http-client
+    operation: Update
+    time: "2021-01-11T22:55:59Z"
+  - apiVersion: templates.gatekeeper.sh/v1beta1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        .: {}
+        f:byPod: {}
+        f:created: {}
+    manager: gatekeeper
+    operation: Update
+    time: "2021-01-11T22:56:54Z"
+  name: k8sallowedrepos
+  resourceVersion: "5374"
+  selfLink: /apis/templates.gatekeeper.sh/v1beta1/constrainttemplates/k8sallowedrepos
+  uid: 21097ac8-fb89-45cc-b6a7-9b696bdc33eb
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sAllowedRepos
+      validation:
+        openAPIV3Schema:
+          properties:
+            repos:
+              items:
+                type: string
+              type: array
+  targets:
+  - rego: |
+      package k8sallowedrepos
+
+      violation[{"msg": msg}] {
+        container := input.review.object.spec.containers[_]
+        satisfied := [good | repo = input.parameters.repos[_] ; good = startswith(container.image, repo)]
+        not any(satisfied)
+        msg := sprintf("container <%v> has an invalid image repo <%v>, allowed repos are %v", [container.name, container.image, input.parameters.repos])
+      }
+
+      violation[{"msg": msg}] {
+        container := input.review.object.spec.initContainers[_]
+        satisfied := [good | repo = input.parameters.repos[_] ; good = startswith(container.image, repo)]
+        not any(satisfied)
+        msg := sprintf("container <%v> has an invalid image repo <%v>, allowed repos are %v", [container.name, container.image, input.parameters.repos])
+      }
+    target: admission.k8s.gatekeeper.sh
+status:
+  byPod:
+  - id: gatekeeper-audit-f7cdf5bbf-wz2mh
+    observedGeneration: 1
+    operations:
+    - audit
+    - status
+    templateUID: 21097ac8-fb89-45cc-b6a7-9b696bdc33eb
+  - id: gatekeeper-controller-manager-6558599f65-bgvr5
+    observedGeneration: 1
+    operations:
+    - webhook
+    templateUID: 21097ac8-fb89-45cc-b6a7-9b696bdc33eb
+  - id: gatekeeper-controller-manager-6558599f65-jbw5g
+    observedGeneration: 1
+    operations:
+    - webhook
+    templateUID: 21097ac8-fb89-45cc-b6a7-9b696bdc33eb
+  - id: gatekeeper-controller-manager-6558599f65-l5hqs
+    observedGeneration: 1
+    operations:
+    - webhook
+    templateUID: 21097ac8-fb89-45cc-b6a7-9b696bdc33eb
+  created: true

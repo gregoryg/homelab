@@ -1,0 +1,92 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  annotations:
+    description: Controls running of privileged containers.
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"templates.gatekeeper.sh/v1beta1","kind":"ConstraintTemplate","metadata":{"annotations":{"description":"Controls running of privileged containers."},"name":"k8spspprivilegedcontainer"},"spec":{"crd":{"spec":{"names":{"kind":"K8sPSPPrivilegedContainer"}}},"targets":[{"rego":"package k8spspprivileged\n\nviolation[{\"msg\": msg, \"details\": {}}] {\n    c := input_containers[_]\n    c.securityContext.privileged\n    msg := sprintf(\"Privileged container is not allowed: %v, securityContext: %v\", [c.name, c.securityContext])\n}\n\ninput_containers[c] {\n    c := input.review.object.spec.containers[_]\n}\n\ninput_containers[c] {\n    c := input.review.object.spec.initContainers[_]\n}\n","target":"admission.k8s.gatekeeper.sh"}]}}
+  creationTimestamp: "2021-01-11T23:01:10Z"
+  generation: 1
+  managedFields:
+  - apiVersion: templates.gatekeeper.sh/v1beta1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        .: {}
+        f:byPod: {}
+        f:created: {}
+    manager: gatekeeper
+    operation: Update
+    time: "2021-01-11T23:01:10Z"
+  - apiVersion: templates.gatekeeper.sh/v1beta1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:description: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+      f:spec:
+        .: {}
+        f:crd:
+          .: {}
+          f:spec:
+            .: {}
+            f:names:
+              .: {}
+              f:kind: {}
+        f:targets: {}
+    manager: kubectl-client-side-apply
+    operation: Update
+    time: "2021-01-11T23:01:10Z"
+  name: k8spspprivilegedcontainer
+  resourceVersion: "6224"
+  selfLink: /apis/templates.gatekeeper.sh/v1beta1/constrainttemplates/k8spspprivilegedcontainer
+  uid: 5a1575ab-ee08-49ed-b87f-0717846e3e29
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sPSPPrivilegedContainer
+  targets:
+  - rego: |
+      package k8spspprivileged
+
+      violation[{"msg": msg, "details": {}}] {
+          c := input_containers[_]
+          c.securityContext.privileged
+          msg := sprintf("Privileged container is not allowed: %v, securityContext: %v", [c.name, c.securityContext])
+      }
+
+      input_containers[c] {
+          c := input.review.object.spec.containers[_]
+      }
+
+      input_containers[c] {
+          c := input.review.object.spec.initContainers[_]
+      }
+    target: admission.k8s.gatekeeper.sh
+status:
+  byPod:
+  - id: gatekeeper-audit-f7cdf5bbf-wz2mh
+    observedGeneration: 1
+    operations:
+    - audit
+    - status
+    templateUID: 5a1575ab-ee08-49ed-b87f-0717846e3e29
+  - id: gatekeeper-controller-manager-6558599f65-bgvr5
+    observedGeneration: 1
+    operations:
+    - webhook
+    templateUID: 5a1575ab-ee08-49ed-b87f-0717846e3e29
+  - id: gatekeeper-controller-manager-6558599f65-jbw5g
+    observedGeneration: 1
+    operations:
+    - webhook
+    templateUID: 5a1575ab-ee08-49ed-b87f-0717846e3e29
+  - id: gatekeeper-controller-manager-6558599f65-l5hqs
+    observedGeneration: 1
+    operations:
+    - webhook
+    templateUID: 5a1575ab-ee08-49ed-b87f-0717846e3e29
+  created: true
