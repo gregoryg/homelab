@@ -33,7 +33,7 @@ resource "rancher2_cluster" "cluster_gg" {
 
 # Worker nodes and control plane
 resource "google_compute_instance" "vm_gg" {
-  name         = "rke-${random_id.instance_id.hex}-${count.index}"
+  name         = "gg-${random_id.instance_id.hex}-${count.index}"
   machine_type = var.type
   count = var.numnodes
 
@@ -45,7 +45,7 @@ resource "google_compute_instance" "vm_gg" {
   }
 
   metadata = {
-     ssh-keys = "rancher:${file("~/.ssh/id_rsa.pub")}"
+     ssh-keys = "rancher:${file("~/.ssh/google_compute_engine.pub")}"
   }
 
   metadata_startup_script = data.template_file.startup-script_data.rendered
@@ -62,6 +62,8 @@ resource "google_compute_instance" "vm_gg" {
 
 # TODO: fix the timing hacks - "delay" should look for cluster readiness - kubectl cs perhaps
 # TODO: Consider using the gavinbunney/kubectl provider
+# TODO: Separate Control Plane/ Etcd and Worker roles on nodes
+# TODO: Remove public IPs, provision bastion host
 # Delay hack part 1
 resource "null_resource" "before" {
   depends_on = [rancher2_cluster.cluster_gg]
@@ -70,6 +72,7 @@ resource "null_resource" "before" {
 # Delay hack part 2
 resource "null_resource" "delay" {
   provisioner "local-exec" {
+    # command = "until echo \"${rancher2_cluster.cluster_gg.kube_config}\" > /tmp/k.yaml && kubectl --kubeconfig /tmp/k.yaml get cs ; do sleep 20s; done"
     command = "sleep ${var.delaysec}"
   }
 
