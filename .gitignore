@@ -6,3 +6,5 @@ kube_config_cluster.yaml
 manifests/
 .terraform/
 .terraform.lock.hcl
+*terraform.tfstate
+*terraform.tfstate.backup
