@@ -1,5 +1,9 @@
 # Terraform resources
-
+# TODO: fix the timing hacks - "delay" should look for cluster readiness - kubectl cs perhaps
+# TODO: Consider using the gavinbunney/kubectl provider
+# TODO: Separate Control Plane/ Etcd and Worker roles on nodes
+# TODO: Remove public IPs, provision bastion host
+# TODO: Add storage to worker nodes
 # Random ID
 resource "random_id" "instance_id" {
  byte_length = 3
@@ -31,6 +35,28 @@ resource "rancher2_cluster" "cluster_gg" {
   }
 }
 
+# resource "rancher2_node_pool" "masters" {
+#   cluster_id = rancher2_cluster.cluster_gg.id
+#   name = "control-etcd"
+#   hostname_prefix = "gg-control-etcd"
+#   node_template_id = google_compute_instance.vm_gg.id
+#   quantity = 1
+#   control_plane = true
+#   etcd = true
+#   worker = false
+# }
+
+# resource "rancher2_node_pool" "workers" {
+#   cluster_id = rancher2_cluster.cluster_gg.id
+#   name = "control-etcd"
+#   hostname_prefix = "gg-control-etcd"
+#   node_template_id = google_compute_instance.vm_gg.id
+#   quantity = 1
+#   control_plane = false
+#   etcd = false
+#   worker = true
+# }
+
 # Worker nodes and control plane
 resource "google_compute_instance" "vm_gg" {
   name         = "gg-${random_id.instance_id.hex}-${count.index}"
@@ -60,10 +86,6 @@ resource "google_compute_instance" "vm_gg" {
   }
 }
 
-# TODO: fix the timing hacks - "delay" should look for cluster readiness - kubectl cs perhaps
-# TODO: Consider using the gavinbunney/kubectl provider
-# TODO: Separate Control Plane/ Etcd and Worker roles on nodes
-# TODO: Remove public IPs, provision bastion host
 # Delay hack part 1
 resource "null_resource" "before" {
   depends_on = [rancher2_cluster.cluster_gg]
