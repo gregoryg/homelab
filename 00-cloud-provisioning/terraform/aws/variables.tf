@@ -1,7 +1,7 @@
 # Input variables
 
 # Node image
-variable "image" { 
+variable "image" {
 	default = "ami-024e928dca73bfe66"
 }
 
@@ -77,4 +77,3 @@ variable "rancher-token" { }
 variable "ec2-access-key" { }
 
 variable "ec2-secret-key" { }
-

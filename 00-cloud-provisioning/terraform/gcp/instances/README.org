@@ -1,0 +1,3 @@
+* Source
+  + [[https://learn.hashicorp.com/tutorials/terraform/google-cloud-platform-build][Build Infrastructure | Terraform - HashiCorp Learn]]
+  + 

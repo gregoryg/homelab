@@ -4,10 +4,10 @@ nodes:
       role:
         - controlplane
         - etcd
-    - address: cuphead.magichome
-      user: gregj
-      role:
-        - worker
+    # - address: cuphead.magichome
+    #   user: gregj
+    #   role:
+    #     - worker
     - address: birdperson.magichome
       user: gregj
       role:

@@ -1,13 +1,13 @@
 # Terraform backend configuration
 
 terraform {
-  backend "remote" {
-    organization = "xxxxxxxxxxx"
+  # backend "remote" {
+  #   organization = "xxxxxxxxxxx"
 
-    workspaces {
-      name = "compute-test-eu-central"
-    }
-  }
+  #   workspaces {
+  #     name = "compute-test-eu-central"
+  #   }
+  # }
 
   required_providers {
     local = {
@@ -28,4 +28,3 @@ terraform {
     }
   }
 }
-
