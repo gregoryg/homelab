@@ -183,7 +183,7 @@
      (shell "gg-bastion-sh")
    #+end_src
    #+begin_src bash :session gg-bastion-sh :results none
-     sudo apt update && sudo apt -y upgrade ; sudo apt -y install pdsh
+     sudo apt update ; sudo apt -y install pdsh
      for i in in `cat all-nodes.txt` ; do
          ssh -o StrictHostKeyChecking=no $i pwd
      done
@@ -191,8 +191,12 @@
    #+end_src
 
 ** Update all nodes and install Docker
-   #+begin_src bash :async :session gg-bastion-sh
-     WCOLL=all-nodes.txt pdsh -R ssh 'sudo apt update && sudo apt -y upgrade && sudo apt -y install docker.io '
+   #+begin_src bash :async :session gg-bastion-sh :var clusteros=cluster-os
+     if [ ${clusteros} == "leap" ] ; then
+         WCOLL=all-nodes.txt pdsh -R ssh 'sudo zypper ref && sudo zypper in -y docker'
+     else
+         WCOLL=all-nodes.txt pdsh -R ssh 'sudo apt update && sudo apt -y upgrade && sudo apt -y install docker.io '
+     fi
      WCOLL=all-nodes.txt pdsh -R ssh 'sudo usermod -G docker -a gregj && sudo systemctl daemon-reload && sudo systemctl restart docker'
      WCOLL=all-nodes.txt pdsh -R ssh 'docker ps'
    #+end_src
@@ -294,6 +298,7 @@
       sudo apt-get update
       sudo apt-get install -y kubectl
     #+end_src
+
     #+begin_src bash :session gg-bastion-sh :async :results value
       ## GJG
       mkdir -p ~/.kube
@@ -305,9 +310,6 @@
       alias kx='kubectl config get-contexts'
       complete -F __start_kubectl k
     #+end_src
-
-    #+RESULTS:
-    : gregj@gg-bastion:~$ gregj@gg-bastion:~$ gregj@gg-bastion:~$ gregj@gg-bastion:~$ gregj@gg-bastion:~$ 0
 
 
 ** On to Rancher to install these thangs!
