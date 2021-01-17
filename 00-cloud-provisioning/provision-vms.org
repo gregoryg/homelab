@@ -1,21 +1,54 @@
 #+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :tangle no :eval never-export
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
 * Provision HA VMs in GCP
 
 ** Run the provisioning script
 
-  This script creates 3 etcd nodes backed by high-IOPS disk, 3 controlplane nodes and
-  $NUM_WORKERS worker nodes
+  This script creates 3 etcd nodes backed by high-IOPS disk, 3 controlplane nodes,
+  $NUM_WORKERS worker nodes and a bastion / gateway host.
 
   The script is modeled after the =gregoryg= fork of Kelsey Hightower's Kubernetes the
   Hard Way repo.
   + [[https://github.com/gregoryg/kubernetes-the-hard-way][gregoryg's fork kubernetes-the-hard-way]]
   + [[https://github.com/kelseyhightower/kubernetes-the-hard-way][kelseyhightower/kubernetes-the-hard-way]] - the original
 
-  #+begin_src bash :tangle ~/bin/provision-rancher-ha-gcp.sh
+  We create images with a particular OS for all cluster nodes, and separately for the
+  bastion host
+
+  The =cluster-os= will be referred to in subsequent install scripts.  Select a value from
+  the first column in =os-sets= table
+  #+name: cluster-os
+  | leap |
+
+  #+name: os-sets
+  | OS     | image-family    | image-project  |
+  |--------+-----------------+----------------|
+  | debian | debian-10       | debian-cloud   |
+  | ubuntu | ubuntu-2004-lts | ubuntu-cloud   |
+  | leap   | opensuse-leap   | opensuse-cloud |
+
+ #+name: cluster-image-family
+  #+begin_src bash :var ostable=os-sets :var clusteros=cluster-os :results table replace
+    echo ${ostable[$clusteros]}|cut -d' ' -f1
+  #+end_src
+ #+name: cluster-image-project
+  #+begin_src bash :var ostable=os-sets :var clusteros=cluster-os :results table replace
+    echo ${ostable[$clusteros]}|cut -d' ' -f2
+  #+end_src
+
+
+  #+begin_src bash :tangle ~/bin/provision-rancher-ha-gcp.sh :var IMAGE_FAMILY=cluster-image-family :var IMAGE_PROJECT=cluster-image-project
     NUM_CONTROL=3
     NUM_ETCD=0   # 0 for co-location with controlplane
     NUM_WORKERS=4
-
+    # family / project pairs such as
+    ## ubuntu-1604-lts / ubuntu-os-cloud
+    ## opensuse-leap / opensuse-cloud
+    ## debian-10 / debian-cloud
+    # IMAGE_FAMILY=${IMAGE_FAMILY}
+    # IMAGE_PROJECT=${IMAGE_PROJECT}
+    BASTION_IMAGE_FAMILY=debian-10
+    BASTION_IMAGE_PROJECT=debian-cloud
     # build up lists of nodes for use with PDSH and suchlike
     rm -vf /tmp/worker-nodes.txt /tmp/control-nodes.txt /tmp/all-nodes.txt
     gcloud compute networks create gg-rancher-ha --subnet-mode custom
@@ -62,14 +95,14 @@
           --async \
           --boot-disk-size 200GB \
           --can-ip-forward \
-          --image-family ubuntu-1604-lts \
-          --image-project ubuntu-os-cloud \
+          --image-family ${BASTION_IMAGE_FAMILY} \
+          --image-project ${BASTION_IMAGE_PROJECT} \
           --machine-type e2-small \
           --private-network-ip 10.240.0.2 \
           --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
           --subnet gg-kubernetes \
           --tags gg-rancher-ha,control \
-          --labels owner=ggrubbs,expiration=48h
+          --labels owner=greg_grubbs,donotdelete=true
 
 
     # Create three compute instances which will host the Kubernetes control plane:
@@ -82,14 +115,14 @@
           --no-address \
           --boot-disk-size 200GB \
           --can-ip-forward \
-          --image-family ubuntu-1604-lts \
-          --image-project ubuntu-os-cloud \
+          --image-family ${IMAGE_FAMILY} \
+          --image-project ${IMAGE_PROJECT} \
           --machine-type ${CONTROL_INSTANCE_TYPE} \
           --private-network-ip 10.240.0.1${i} \
           --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
           --subnet gg-kubernetes \
           --tags gg-rancher-ha,control \
-          --labels owner=ggrubbs,expiration=48h
+          --labels owner=greg_grubbs,donotdelete=true
         echo gg-control-${i} >> /tmp/control-nodes.txt
       done
 
@@ -103,15 +136,15 @@
           --no-address \
           --boot-disk-size 200GB \
           --can-ip-forward \
-          --image-family ubuntu-1604-lts \
-          --image-project ubuntu-os-cloud \
+          --image-family ${IMAGE_FAMILY} \
+          --image-project ${IMAGE_PROJECT} \
           --machine-type ${WORKER_INSTANCE_TYPE} \
           --metadata pod-cidr=10.200.${i}.0/24 \
           --private-network-ip 10.240.0.2${i} \
           --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
           --subnet gg-kubernetes \
           --tags gg-rancher-ha,worker \
-          --labels owner=ggrubbs,expiration=48h
+          --labels owner=greg_grubbs,donotdelete=true
         echo gg-worker-${i} >> /tmp/worker-nodes.txt
       done
     cat /tmp/control-nodes.txt /tmp/worker-nodes.txt > /tmp/all-nodes.txt
@@ -137,9 +170,6 @@
     # Get public IP
     gcloud compute instances describe gg-bastion --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
    #+end_src
-
-   #+RESULTS: bastion_ip
-   : 35.232.50.253
 
    #+begin_src bash :var ip=bastion_ip :results none
      # Assure that it is not conflicting in known_hosts
