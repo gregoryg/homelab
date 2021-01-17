@@ -329,3 +329,136 @@
       helm repo update
       helm install rancher-monitoring prometheus-community/kube-prometheus-stack --namespace cattle-monitoring-system --create-namespace
     #+end_src
+
+** Clean it all up once the fun is over
+   #+begin_src bash :tangle ~/bin/cleanup-rancher-ha-gcp.sh
+     # Delete the controller and worker compute instances:
+
+
+     gcloud -q compute instances delete \
+            $(gcloud compute instances list --filter="tags.items=gg-rancher-ha" --format="csv(name)[no-heading]") \
+            --zone $(gcloud config get-value compute/zone)
+
+     # Delete Cloud NAT and Cloud Router
+
+     gcloud -q compute routers nats delete ggrha-nat --router ggrha-router
+     gcloud -q compute routers delete ggrha-router
+
+     # Delete the external load balancer network resources:
+
+
+     gcloud -q compute forwarding-rules delete kubernetes-forwarding-rule \
+            --region $(gcloud config get-value compute/region)
+
+     gcloud -q compute target-pools delete kubernetes-target-pool
+
+     gcloud -q compute http-health-checks delete kubernetes
+
+     gcloud -q compute addresses delete gg-rancher-ha
+
+     # Delete the =gg-rancher-ha= firewall rules:
+
+
+     gcloud -q compute firewall-rules delete \
+            gg-rancher-ha-allow-nginx-service \
+            gg-rancher-ha-allow-internal \
+            gg-rancher-ha-allow-external \
+            gg-rancher-ha-allow-health-check
+
+     # Delete the =gg-rancher-ha= network VPC:
+
+
+     gcloud -q compute routes delete \
+            kubernetes-route-10-200-0-0-24 \
+            kubernetes-route-10-200-1-0-24 \
+            kubernetes-route-10-200-2-0-24
+
+     gcloud -q compute networks subnets delete gg-kubernetes
+
+     gcloud -q compute networks delete gg-rancher-ha
+   #+end_src
+* Terraform play
+** GCP
+   +
+*** individual instances vs instance groups
+    + Create instance templates
+      #+begin_src bash  :var IMAGE_FAMILY=cluster-image-family :var IMAGE_PROJECT=cluster-image-project :results output
+        gcloud beta compute --project=rancher-dev \
+               instance-templates create gg-leap-4-k3s \
+               --machine-type=e2-standard-4 \
+               --network=projects/rancher-dev/global/networks/default \
+               --no-address \
+               --tags=http-server,https-server \
+               --image-family=${IMAGE_FAMILY} \
+               --image-project=${IMAGE_PROJECT} \
+               --boot-disk-size=100GB \
+               --boot-disk-type=pd-ssd \
+               --boot-disk-device-name=gg-leap-4-k3s \
+               --no-shielded-secure-boot \
+               --shielded-vtpm \
+               --shielded-integrity-monitoring \
+               --tags gg-k3s \
+               --labels=owner=greg_grubbs,donotdelete=true \
+               --reservation-affinity=any
+      #+end_src
+
+
+    + CLI to create an instance group from the preceding instance template
+      #+begin_src bash
+        # no auto-scaling
+        gcloud compute --project=rancher-dev \
+               instance-groups managed create gg-k3s-leap-servers \
+               --base-instance-name=gg-k3s-server \
+               --template=gg-leap-4-k3s \
+               --size=2 \
+               --zone=us-central1-b
+        gcloud compute --project=rancher-dev \
+               instance-groups managed create gg-k3s-leap-agents \
+               --base-instance-name=gg-k3s-agent \
+               --template=gg-leap-4-k3s \
+               --size=4 \
+               --zone=us-central1-b
+
+
+        # auto-scaling
+        # gcloud beta compute --project "rancher-dev" \
+        #        instance-groups managed set-autoscaling "gg-k3s-sles-servers" \
+        #        --zone "us-central1-b" \
+        #        --cool-down-period "60" \
+        #        --max-num-replicas "10" \
+        #        --min-num-replicas "1" \
+        #        --target-cpu-utilization "0.6" \
+        #        --mode "off"
+      #+end_src
+
+    + Install k3s on servers and agents
+      #+begin_src bash
+      #+end_src
+
+    + Delete it all when the day is done
+      #+begin_src bash
+        gcloud -q compute instance-groups managed delete gg-k3s-leap-servers
+        gcloud -q compute instance-groups managed delete gg-k3s-leap-agents
+      #+end_src
+*** Using openSUSE Leap
+    + [[https://github.com/anairinac/suse_gcloud_intro][GitHub - anairinac/suse_gcloud_intro: First steps using Google Cloud Platform...]]
+      Key bits:
+      + --image-family=opensuse-leap
+      + --image-project=opensuse-cloud
+    #+begin_src bash
+      gcloud beta compute --project=rancher-dev \
+             instances create opensuse-leap-15-1 \
+             --zone=us-central1-b \
+             --machine-type=e2-medium \
+             --network=default \
+             --network-tier=PREMIUM \
+             --maintenance-policy=MIGRATE \
+             --service-account=117741801349-compute@developer.gserviceaccount.com \
+             --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
+             --image=opensuse-leap-15-1-v20190618 \
+             --image-project=opensuse-cloud \
+             --boot-disk-size=10GB \
+             --boot-disk-type=pd-standard \
+             --boot-disk-device-name=opensuse-leap-15-1 \
+             --reservation-affinity=any
+    #+end_src
