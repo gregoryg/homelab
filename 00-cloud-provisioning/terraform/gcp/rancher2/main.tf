@@ -57,9 +57,22 @@ resource "rancher2_cluster" "cluster_gg" {
 #   worker = true
 # }
 
-# Worker nodes and control plane
-resource "google_compute_instance" "vm_gg" {
-  name         = "gg-${random_id.instance_id.hex}-${count.index}"
+# disks for workers
+# TODO: parameterize count of workers
+resource "google_compute_disk" "worker_disk" {
+  count = 3
+  name = "gg-wdisk-${count.index}"
+  type = "pd-ssd"
+  size = "200"
+  labels = {
+    owner = "greg_grubbs"
+    donotodelete = "true"
+  }
+  # zone = ?
+}
+# Worker control plane/etcd and worker nodes
+resource "google_compute_instance" "vm_gg_control" {
+  name         = "gg-c-${random_id.instance_id.hex}-${count.index}"
   machine_type = var.type
   count = var.numnodes
 
@@ -74,7 +87,40 @@ resource "google_compute_instance" "vm_gg" {
      ssh-keys = "rancher:${file("~/.ssh/google_compute_engine.pub")}"
   }
 
-  metadata_startup_script = data.template_file.startup-script_data.rendered
+  metadata_startup_script = data.template_file.startup-script_data_control.rendered
+
+  tags = ["http-server", "https-server"]
+
+  network_interface {
+    # A default network is created for all GG projects
+    network       = "default"
+    access_config {
+    }
+  }
+}
+
+resource "google_compute_instance" "vm_gg_work" {
+  # TODO: use parameterized count of *worker* nodes
+  name         = "gg-w-${random_id.instance_id.hex}-${count.index}"
+  machine_type = var.type
+  count = var.numnodes
+
+  boot_disk {
+    initialize_params {
+      image = var.image
+      size = var.disksize
+    }
+  }
+
+  attached_disk {
+    source = google_compute_disk.worker_disk[count.index].name
+  }
+
+  metadata = {
+     ssh-keys = "rancher:${file("~/.ssh/google_compute_engine.pub")}"
+  }
+
+  metadata_startup_script = data.template_file.startup-script_data_worker.rendered
 
   tags = ["http-server", "https-server"]
 
@@ -125,7 +171,8 @@ resource "rancher2_app_v2" "monitor_gg" {
   chart_version = var.monchart
   values = templatefile("${path.module}/files/values.yaml", {})
 
-  depends_on = [local_file.kubeconfig,rancher2_cluster.cluster_gg,google_compute_instance.vm_gg]
+  # depends_on = [local_file.kubeconfig,rancher2_cluster.cluster_gg,google_compute_instance.vm_gg_control]
+  depends_on = [local_file.kubeconfig]
 }
 
 # Cluster logging CRD
@@ -140,7 +187,8 @@ resource "rancher2_app_v2" "syslog_crd_gg" {
   chart_name = "rancher-logging-crd"
   chart_version = var.logchart
 
-  depends_on = [rancher2_app_v2.monitor_gg,rancher2_cluster.cluster_gg,google_compute_instance.vm_gg]
+  # depends_on = [rancher2_app_v2.monitor_gg,rancher2_cluster.cluster_gg,google_compute_instance.vm_gg_work,google_compute_instance.vm_gg_control]
+  depends_on = [rancher2_app_v2.monitor_gg]
 }
 
 # Cluster logging
@@ -155,5 +203,6 @@ resource "rancher2_app_v2" "syslog_gg" {
   chart_name = "rancher-logging"
   chart_version = var.logchart
 
-  depends_on = [rancher2_app_v2.syslog_crd_gg,rancher2_cluster.cluster_gg,google_compute_instance.vm_gg]
+  # depends_on = [rancher2_app_v2.syslog_crd_gg,rancher2_cluster.cluster_gg,google_compute_instance.vm_gg_control,google_compute_instance.vm_gg_work]
+  depends_on = [rancher2_app_v2.syslog_crd_gg]
 }
