@@ -263,6 +263,25 @@
     + Check with =kubectl get sc=
     + Note that you can also install Longhorn using the Rancher UI if you are using that:
       Rancher -> Apps -> Launch -> Longhorn
+*** Longhorn Service Monitor to feed Prometheus
+    #+begin_src yaml
+      apiVersion: monitoring.coreos.com/v1
+      kind: ServiceMonitor
+      metadata:
+        name: longhorn-prometheus-servicemonitor
+        namespace: cattle-monitoring-system
+        labels:
+          name: longhorn-prometheus-servicemonitor
+      spec:
+        selector:
+          matchLabels:
+            app: longhorn-manager
+        namespaceSelector:
+          matchNames:
+          - longhorn-system
+        endpoints:
+        - port: manager
+    #+end_src
 ** Set up Load Balancing and Ingress Controller
    + First step, let's make it possible to create =LoadBalancer= resources
    + On our bare metal cluster, we'll use MetalLB - be sure to check [[https://github.com/metallb/metallb/releases][releases]] to get the

@@ -9,4 +9,14 @@ usermod -G docker -a rancher
 systemctl start rpc-statd.service
 systemctl enable rpc-statd.service
 ${registration_command}
+# set up extra disk on workers if it exists
+sudo lsblk /dev/sdb
+if [ "$?" -eq 0 ] ; then
+    echo "well let's get going then"
+    sudo mkfs.ext4 -F -E lazy_itable_init=0,lazy_journal_init=0,discard /dev/sdb;
+    sudo mkdir /data
+    sudo mount -o discard,defaults /dev/sdb /data/
+    sudo mkdir /data/longhorn
+    echo '/dev/sdb /data ext4 discard,defaults 0 1' | sudo tee -a /etc/fstab
+fi
 exit 0

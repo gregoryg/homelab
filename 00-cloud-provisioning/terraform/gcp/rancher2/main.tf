@@ -1,9 +1,7 @@
 # Terraform resources
 # TODO: fix the timing hacks - "delay" should look for cluster readiness - kubectl cs perhaps
 # TODO: Consider using the gavinbunney/kubectl provider
-# TODO: Separate Control Plane/ Etcd and Worker roles on nodes
 # TODO: Remove public IPs, provision bastion host
-# TODO: Add storage to worker nodes
 # Random ID
 resource "random_id" "instance_id" {
  byte_length = 3
@@ -60,7 +58,7 @@ resource "rancher2_cluster" "cluster_gg" {
 # disks for workers
 # TODO: parameterize count of workers
 resource "google_compute_disk" "worker_disk" {
-  count = 3
+  count = var.numnodes
   name = "gg-wdisk-${count.index}"
   type = "pd-ssd"
   size = "200"
@@ -74,7 +72,7 @@ resource "google_compute_disk" "worker_disk" {
 resource "google_compute_instance" "vm_gg_control" {
   name         = "gg-c-${random_id.instance_id.hex}-${count.index}"
   machine_type = var.type
-  count = var.numnodes
+  count = var.ctlnumnodes
 
   boot_disk {
     initialize_params {

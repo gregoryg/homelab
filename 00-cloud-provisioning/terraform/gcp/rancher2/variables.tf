@@ -20,9 +20,14 @@ variable "k8version" {
 	default = "v1.18.12-rancher1-1"
 }
 
-# Number of nodes
-variable "numnodes" {
+# Number of controlplane/etcd nodes
+variable "ctlnumnodes" {
 	default = 3
+}
+
+# number of worker nodes
+variable "numnodes" {
+  default = 3
 }
 
 # Monitoring chart
