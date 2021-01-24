@@ -26,6 +26,7 @@
   | debian | debian-10       | debian-cloud   |
   | ubuntu | ubuntu-2004-lts | ubuntu-cloud   |
   | leap   | opensuse-leap   | opensuse-cloud |
+  | centos | centos-7        | centos-cloud   |
 
  #+name: cluster-image-family
   #+begin_src bash :var ostable=os-sets :var clusteros=cluster-os :results table replace
@@ -182,7 +183,7 @@
      (shell "gg-bastion-sh")
    #+end_src
    #+begin_src bash :session gg-bastion-sh :results none
-     sudo apt update ; sudo apt -y install pdsh
+     sudo apt update ; sudo apt -y install pdsh wget
      for i in in `cat all-nodes.txt` ; do
          ssh -o StrictHostKeyChecking=no $i pwd
      done
