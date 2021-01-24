@@ -1002,3 +1002,12 @@
      #+begin_src conf
        options snd_hda_intel power_save=0 power_save_controller=0
      #+end_src
+* Monitoring for RabbitMQ
+  It may be necessary to create a Longhorn Volume/PVC named =data-rabbit-rabbitmq-0=
+#+begin_src bash
+  helm install rabbit bitnami/rabbitmq \
+       --set persistence.storageClass=longhorn \
+       --namespace rabbit \
+       --set metrics.enabled=true \
+       --set metrics.serviceMonitor.enabled=true
+#+end_src
