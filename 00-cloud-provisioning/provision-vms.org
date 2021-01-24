@@ -462,3 +462,110 @@
              --boot-disk-device-name=opensuse-leap-15-1 \
              --reservation-affinity=any
     #+end_src
+* Provision k3s for single-node use
+  Like vehicle install - k3s, local path provisioner
+
+   Put up a simple Centos instance
+   #+begin_src bash :session homelab-sh :async
+     IMAGE_FAMILY=centos-7
+     IMAGE_PROJECT=centos-cloud
+
+     # Use the same network as gg-bastion
+     mysubnet=$(gcloud compute instances describe gg-bastion --format='get(networkInterfaces[0].subnetwork)')
+     if [ "$?" -ne "0" ] ; then
+         echo "Bastion host gg-bastion is not running"
+     else
+         gcloud compute instances describe gg-bastion --format json|jq -r '.networkInterfaces[0].network'
+
+         gcloud compute instances create gg-k3s \
+                --async \
+                --boot-disk-size 200GB \
+                --can-ip-forward \
+                --no-address \
+                --image-family ${IMAGE_FAMILY} \
+                --image-project ${IMAGE_PROJECT} \
+                --machine-type e2-standard-4 \
+                --subnet ${mysubnet} \
+                --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
+                --tags gg-k3s \
+                --labels owner=greg_grubbs,donotdelete=true
+         # --private-network-ip 10.240.0.2 \
+
+         echo "Use bastion host to access"
+     fi
+   #+end_src
+
+   #+begin_src bash
+     echo 'export KUBECONFIG=~/.kube/config
+     source <(kubectl completion bash)
+     alias k=kubectl
+     complete -F __start_kubectl k
+     # alias yp='sudo zypper'
+     ' | tee -a ~/.bashrc
+   #+end_src
+
+   #+begin_src bash
+     # yp ref
+     # yp in -y helm
+     sudo yum makecache
+     sudo yum -y install kubectl openssl iscsi-initiator-utils
+     curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+     chmod 700 get_helm.sh
+     ./get_helm.sh
+
+     curl -sfL https://get.k3s.io | sh -
+     mkdir ~/.kube/
+     sudo cp -iv /etc/rancher/k3s/k3s.yaml /home/gregj/.kube/config
+     sudo chown gregj ~/.kube/config
+     KUBECONFIG=~/.kube/config kubectl get nodes
+   #+end_src
+
+   #+begin_src bash
+     kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+   #+end_src
+
+   #+begin_src bash
+     helm repo add bitnami https://charts.bitnami.com/bitnami
+     helm repo update
+     helm install my-release bitnami/rabbitmq
+   #+end_src
+* HA k3s
+  Make it simple from the get-go with token on first server cmd line
+  #+begin_src bash
+    INSTALL_K3S_CHANNEL=v.1.19 INSTALL_K3S-EXEC="server" K3S_TOKEN=mysecret K3S_CLUSTER_INIT=1
+  #+end_src
+
+* Harvester play on GCP
+  + Mikhail's starting document: [[https://docs.google.com/document/d/1CRoRyjBCsod6qsdTWi7OY8ez0R0fzElKhaYZmGhGgIE/edit#heading=h.fj0o1ccjvsmb][An Integrated HCI Solution for the Edge - Google Docs]]
+  + GCP starting point doc: [[https://docs.google.com/document/d/1CRoRyjBCsod6qsdTWi7OY8ez0R0fzElKhaYZmGhGgIE/edit#heading=h.fj0o1ccjvsmb][An Integrated HCI Solution for the Edge - Google Docs]]
+    This assumes Ubuntu 20.04 LTS
+
+   Put up a simple Centos instance
+   #+begin_src bash :session homelab-sh :async
+     IMAGE_FAMILY=ubuntu-2004-lts
+     IMAGE_PROJECT=ubuntu-os-cloud
+
+     gcloud compute instances create gg-harvester-builder \
+            --async \
+            --boot-disk-size 200GB \
+            --can-ip-forward \
+            --image-family ${IMAGE_FAMILY} \
+            --image-project ${IMAGE_PROJECT} \
+            --machine-type e2-small \
+            --private-network-ip 10.240.0.2 \
+            --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
+            --tags gg-harvester-builder \
+            --labels owner=greg_grubbs,donotdelete=true
+
+     # Assure that it is not conflicting in known_hosts
+     sleep 5
+     ip=$(gcloud compute instances describe gg-harvester-builder --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+     ssh-keygen -R ${ip}
+     ssh gregj@${ip} -o StrictHostKeyChecking=no pwd
+   #+end_src
+
+   #+begin_src bash
+     echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+     sudo apt-get update && sudo apt-get install google-cloud-sdk
+   #+end_src
