@@ -2,6 +2,113 @@
 #+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
 * Provision HA VMs in GCP
 
+** Select OS for cluster nodes
+   The =cluster-os= will be referred to in subsequent install scripts.  Select a value
+   from the first column in =os-sets= table
+   #+name: cluster-os
+   | centos |
+
+   #+name: os-sets
+   | OS     | image-family    | image-project  |
+   |--------+-----------------+----------------|
+   | debian | debian-10       | debian-cloud   |
+   | ubuntu | ubuntu-2004-lts | ubuntu-cloud   |
+   | leap   | opensuse-leap   | opensuse-cloud |
+   | centos | centos-7        | centos-cloud   |
+
+   #+name: cluster-image-family
+    #+begin_src bash :var ostable=os-sets :var clusteros=cluster-os :results table replace
+     echo ${ostable[$clusteros]}|cut -d' ' -f1
+   #+end_src
+   #+name: cluster-image-project
+    #+begin_src bash :var ostable=os-sets :var clusteros=cluster-os :results table replace
+     echo ${ostable[$clusteros]}|cut -d' ' -f2
+    #+end_src
+** Network resource setup and cleanup scripts
+   Provision network, subnetwork and NAT gateways for use with all nodes in this file
+
+   #+begin_src bash :tangle ~/bin/provision-gg-kubernetes-net.sh
+     gcloud compute networks create gg-rancher-ha --subnet-mode custom
+
+     # Create the =gg-kubernetes= subnet in the =gg-rancher-ha= VPC network:
+
+     # Create the =gg-rancher-ha= custom VPC network:
+     gcloud compute networks subnets create gg-kubernetes \
+            --network gg-rancher-ha \
+            --range 10.240.0.0/24
+
+     # Create the Cloud NAT and Cloud Router for outbound internet access
+
+     gcloud compute routers create ggrha-router \
+            --network gg-rancher-ha
+
+     gcloud compute routers nats create ggrha-nat \
+            --router=ggrha-router \
+            --auto-allocate-nat-external-ips \
+            --nat-all-subnet-ip-ranges \
+            --enable-logging
+
+     # Create a firewall rule that allows internal communication across all protocols:
+
+
+     gcloud compute firewall-rules create gg-rancher-ha-allow-internal \
+            --allow tcp,udp,icmp \
+            --network gg-rancher-ha \
+            --source-ranges 10.240.0.0/24,10.200.0.0/16
+
+     # Create a firewall rule that allows external SSH, ICMP, and HTTPS:
+
+
+     gcloud compute firewall-rules create gg-rancher-ha-allow-external \
+            --allow tcp:22,tcp:6443,icmp \
+            --network gg-rancher-ha \
+            --source-ranges 0.0.0.0/0
+
+     # No need for public IP
+     # gcloud compute addresses create gg-rancher-ha \
+         #   --region $(gcloud config get-value compute/region)
+
+
+   #+end_src
+   #+begin_src bash :tangle ~/bin/cleanup-gg-kubernetes-net.sh
+     # Delete Cloud NAT and Cloud Router
+
+     gcloud -q compute routers nats delete ggrha-nat --router ggrha-router
+     gcloud -q compute routers delete ggrha-router
+
+     # Delete the external load balancer network resources:
+
+
+     gcloud -q compute forwarding-rules delete kubernetes-forwarding-rule \
+            --region $(gcloud config get-value compute/region)
+
+     gcloud -q compute target-pools delete kubernetes-target-pool
+
+     gcloud -q compute http-health-checks delete kubernetes
+
+     gcloud -q compute addresses delete gg-rancher-ha
+
+     # Delete the =gg-rancher-ha= firewall rules:
+
+
+     gcloud -q compute firewall-rules delete \
+            gg-rancher-ha-allow-nginx-service \
+            gg-rancher-ha-allow-internal \
+            gg-rancher-ha-allow-external \
+            gg-rancher-ha-allow-health-check
+
+     # Delete the =gg-rancher-ha= network VPC:
+
+
+     gcloud -q compute routes delete \
+            kubernetes-route-10-200-0-0-24 \
+            kubernetes-route-10-200-1-0-24 \
+            kubernetes-route-10-200-2-0-24
+
+     gcloud -q compute networks subnets delete gg-kubernetes
+
+     gcloud -q compute networks delete gg-rancher-ha
+   #+end_src
 ** Provision the cluster nodes
 
   This script creates 3 etcd nodes backed by high-IOPS disk, 3 controlplane nodes,
@@ -15,33 +122,12 @@
   We create images with a particular OS for all cluster nodes, and separately for the
   bastion host
 
-  The =cluster-os= will be referred to in subsequent install scripts.  Select a value from
-  the first column in =os-sets= table
-  #+name: cluster-os
-  | leap |
-
-  #+name: os-sets
-  | OS     | image-family    | image-project  |
-  |--------+-----------------+----------------|
-  | debian | debian-10       | debian-cloud   |
-  | ubuntu | ubuntu-2004-lts | ubuntu-cloud   |
-  | leap   | opensuse-leap   | opensuse-cloud |
-  | centos | centos-7        | centos-cloud   |
-
- #+name: cluster-image-family
-  #+begin_src bash :var ostable=os-sets :var clusteros=cluster-os :results table replace
-    echo ${ostable[$clusteros]}|cut -d' ' -f1
-  #+end_src
- #+name: cluster-image-project
-  #+begin_src bash :var ostable=os-sets :var clusteros=cluster-os :results table replace
-    echo ${ostable[$clusteros]}|cut -d' ' -f2
-  #+end_src
 
 
   #+begin_src bash :tangle ~/bin/provision-rancher-ha-gcp.sh :var IMAGE_FAMILY=cluster-image-family :var IMAGE_PROJECT=cluster-image-project
-    NUM_CONTROL=3
+    NUM_CONTROL=1
     NUM_ETCD=0   # 0 for co-location with controlplane
-    NUM_WORKERS=4
+    NUM_WORKERS=3
     # family / project pairs such as
     ## ubuntu-1604-lts / ubuntu-os-cloud
     ## opensuse-leap / opensuse-cloud
@@ -50,47 +136,12 @@
     # IMAGE_PROJECT=${IMAGE_PROJECT}
     # build up lists of nodes for use with PDSH and suchlike
     rm -vf /tmp/worker-nodes.txt /tmp/control-nodes.txt /tmp/all-nodes.txt
-    gcloud compute networks create gg-rancher-ha --subnet-mode custom
 
-    # Create the =gg-kubernetes= subnet in the =gg-rancher-ha= VPC network:
-
-    # Create the =gg-rancher-ha= custom VPC network:
-    gcloud compute networks subnets create gg-kubernetes \
-      --network gg-rancher-ha \
-      --range 10.240.0.0/24
-
-    # Create the Cloud NAT and Cloud Router for outbound internet access
-
-    gcloud compute routers create ggrha-router \
-        --network gg-rancher-ha
-
-    gcloud compute routers nats create ggrha-nat \
-        --router=ggrha-router \
-        --auto-allocate-nat-external-ips \
-        --nat-all-subnet-ip-ranges \
-        --enable-logging
-
-    # Create a firewall rule that allows internal communication across all protocols:
-
-
-    gcloud compute firewall-rules create gg-rancher-ha-allow-internal \
-      --allow tcp,udp,icmp \
-      --network gg-rancher-ha \
-      --source-ranges 10.240.0.0/24,10.200.0.0/16
-
-    # Create a firewall rule that allows external SSH, ICMP, and HTTPS:
-
-
-    gcloud compute firewall-rules create gg-rancher-ha-allow-external \
-      --allow tcp:22,tcp:6443,icmp \
-      --network gg-rancher-ha \
-      --source-ranges 0.0.0.0/0
-
-    # No need for public IP
-    # gcloud compute addresses create gg-rancher-ha \
-    #   --region $(gcloud config get-value compute/region)
-
-
+    # assure our network exists
+    netname=$(gcloud compute networks describe gg-kubernetes --format=json|jq -r '.name')
+    if [ "${netname}" != "gg-kubernetes" ] ; then
+       ~/bin/provision-gg-kubernetes-net.sh
+    fi
     # Create three compute instances which will host the Kubernetes control plane:
 
     CONTROL_INSTANCE_TYPE=e2-standard-4
@@ -104,9 +155,9 @@
           --image-family ${IMAGE_FAMILY} \
           --image-project ${IMAGE_PROJECT} \
           --machine-type ${CONTROL_INSTANCE_TYPE} \
+          --subnet gg-kubernetes \
           --private-network-ip 10.240.0.1${i} \
           --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
-          --subnet gg-kubernetes \
           --tags gg-rancher-ha,control \
           --labels owner=greg_grubbs,donotdelete=true
         echo gg-control-${i} >> /tmp/control-nodes.txt
@@ -125,17 +176,16 @@
           --image-family ${IMAGE_FAMILY} \
           --image-project ${IMAGE_PROJECT} \
           --machine-type ${WORKER_INSTANCE_TYPE} \
+          --subnet gg-kubernetes \
           --metadata pod-cidr=10.200.${i}.0/24 \
           --private-network-ip 10.240.0.2${i} \
           --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
-          --subnet gg-kubernetes \
           --tags gg-rancher-ha,worker \
           --labels owner=greg_grubbs,donotdelete=true
         echo gg-worker-${i} >> /tmp/worker-nodes.txt
       done
     cat /tmp/control-nodes.txt /tmp/worker-nodes.txt > /tmp/all-nodes.txt
   #+end_src
-
 ** Provision the bastion host
    Put up a simple Debian bastion host
    #+begin_src bash :tangle ~/bin/provision-bastion-gcp.sh
@@ -150,9 +200,9 @@
             --image-family ${BASTION_IMAGE_FAMILY} \
             --image-project ${BASTION_IMAGE_PROJECT} \
             --machine-type e2-small \
+            --subnet gg-kubernetes \
             --private-network-ip 10.240.0.2 \
             --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
-            --subnet gg-kubernetes \
             --tags gg-bastion \
             --labels owner=greg_grubbs,donotdelete=true
 
@@ -162,7 +212,7 @@
      ssh-keygen -R ${ip}
      ssh gregj@${ip} -o StrictHostKeyChecking=no pwd
 #+end_src
-
+* Set up the bastion host
 ** Copy node names to our bastion host for use with =pdsh=
    #+begin_src bash :session rancher-rke-sh :results none
      (cd /tmp; gcloud compute scp all-nodes.txt control-nodes.txt worker-nodes.txt gg-bastion:)
@@ -175,6 +225,9 @@
     # Get public IP
     gcloud compute instances describe gg-bastion --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
    #+end_src
+
+   #+RESULTS: bastion_ip
+   : 35.238.76.204
 
 
    #+begin_src emacs-lisp :var ip=bastion_ip :results none
@@ -190,13 +243,22 @@
      WCOLL=all-nodes.txt pdsh -R ssh pwd
    #+end_src
 
+* Set up cluster nodes
 ** Update all nodes and install Docker
-   #+begin_src bash :async :session gg-bastion-sh :var clusteros=cluster-os
+
+
+   #+begin_src bash  :session gg-bastion-sh :var clusteros=cluster-os
      if [ ${clusteros} == "leap" ] ; then
          WCOLL=all-nodes.txt pdsh -R ssh 'sudo zypper ref && sudo zypper in -y docker'
+     elif [ ${clusteros} == "centos" ] ; then
+         WCOLL=all-nodes.txt pdsh -R ssh 'sudo yum -y makecache && sudo yum -y install docker'
+         WCOLL=all-nodes.txt pdsh -R ssh 'echo "LANG=en_US.utf-8
+     LC_ALL=en_US.utf-8" | sudo tee -a /etc/environment'
      else
-         WCOLL=all-nodes.txt pdsh -R ssh 'sudo apt update && sudo apt -y upgrade && sudo apt -y install docker.io '
+         WCOLL=all-nodes.txt pdsh -R ssh 'sudo apt update && sudo apt -y install docker.io '
      fi
+     WCOLL=all-nodes.txt pdsh -R ssh 'sudo groupadd -f docker'
+     WCOLL=all-nodes.txt pdsh -R ssh 'sudo systemctl enable docker && sudo systemctl start docker'
      WCOLL=all-nodes.txt pdsh -R ssh 'sudo usermod -G docker -a gregj && sudo systemctl daemon-reload && sudo systemctl restart docker'
      WCOLL=all-nodes.txt pdsh -R ssh 'docker ps'
    #+end_src
@@ -213,7 +275,7 @@
 
 *** Our canonical RKE config
     Tangle directly  to the bastion host
-   #+begin_src yaml :var ip=bastion_ip :tangle /gssh:gg-bastion:gcp-cluster.yaml
+   #+begin_src yaml :aavar ip=bastion_ip :tangle no /gssh:gg-bastion:gcp-cluster.yaml
      nodes:
          - address: gg-control-0
            user: gregj
@@ -312,25 +374,25 @@
     #+end_src
 
 
-** On to Rancher to install these thangs!
+* On to Rancher to install these thangs!
 
-*** Get Helm on the bastion node
-    #+begin_src bash :session gg-bastion-sh :async :results value
-      wget 'https://get.helm.sh/helm-v3.4.1-linux-amd64.tar.gz'
-      tar xf helm-v3.4.1-linux-amd64.tar.gz
-      sudo cp -v linux-amd64/helm /usr/local/bin/
-      helm version
-    #+end_src
+** Get Helm on the bastion node
+   #+begin_src bash :session gg-bastion-sh :async :results value
+     wget 'https://get.helm.sh/helm-v3.4.1-linux-amd64.tar.gz'
+     tar xf helm-v3.4.1-linux-amd64.tar.gz
+     sudo cp -v linux-amd64/helm /usr/local/bin/
+     helm version
+   #+end_src
 
-*** Install Rancher 2.5 monitoring
-    #+begin_src bash :session gg-bastion-sh :async :results value
-      helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-      helm repo add stable https://charts.helm.sh/stable
-      helm repo update
-      helm install rancher-monitoring prometheus-community/kube-prometheus-stack --namespace cattle-monitoring-system --create-namespace
-    #+end_src
+** Install Rancher 2.5 monitoring
+   #+begin_src bash :session gg-bastion-sh :async :results value
+     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+     helm repo add stable https://charts.helm.sh/stable
+     helm repo update
+     helm install rancher-monitoring prometheus-community/kube-prometheus-stack --namespace cattle-monitoring-system --create-namespace
+   #+end_src
 
-** Clean it all up once the fun is over
+* Clean it all up once the fun is over
    #+begin_src bash :tangle ~/bin/cleanup-rancher-ha-gcp.sh
      # Delete the controller and worker compute instances:
 
@@ -338,44 +400,6 @@
      gcloud -q compute instances delete \
             $(gcloud compute instances list --filter="tags.items=gg-rancher-ha" --format="csv(name)[no-heading]") \
             --zone $(gcloud config get-value compute/zone)
-
-     # Delete Cloud NAT and Cloud Router
-
-     gcloud -q compute routers nats delete ggrha-nat --router ggrha-router
-     gcloud -q compute routers delete ggrha-router
-
-     # Delete the external load balancer network resources:
-
-
-     gcloud -q compute forwarding-rules delete kubernetes-forwarding-rule \
-            --region $(gcloud config get-value compute/region)
-
-     gcloud -q compute target-pools delete kubernetes-target-pool
-
-     gcloud -q compute http-health-checks delete kubernetes
-
-     gcloud -q compute addresses delete gg-rancher-ha
-
-     # Delete the =gg-rancher-ha= firewall rules:
-
-
-     gcloud -q compute firewall-rules delete \
-            gg-rancher-ha-allow-nginx-service \
-            gg-rancher-ha-allow-internal \
-            gg-rancher-ha-allow-external \
-            gg-rancher-ha-allow-health-check
-
-     # Delete the =gg-rancher-ha= network VPC:
-
-
-     gcloud -q compute routes delete \
-            kubernetes-route-10-200-0-0-24 \
-            kubernetes-route-10-200-1-0-24 \
-            kubernetes-route-10-200-2-0-24
-
-     gcloud -q compute networks subnets delete gg-kubernetes
-
-     gcloud -q compute networks delete gg-rancher-ha
    #+end_src
 * Terraform play
 ** GCP
@@ -534,6 +558,87 @@
   #+begin_src bash
     INSTALL_K3S_CHANNEL=v.1.19 INSTALL_K3S-EXEC="server" K3S_TOKEN=mysecret K3S_CLUSTER_INIT=1
   #+end_src
+* Build Rancher 2.3.6
+  Put together for customer testing
+  + [X] provision nodes on GCP
+  + [X] Copy relevant CLI binaries to bastion
+    #+begin_src bash :async
+      gcloud compute ssh gregj@gg-bastion --command "mkdir -p ~/bin"
+      gcloud compute scp \
+             /usr/local/bin/rke-1.0.6 \
+             /usr/local/bin/rancher-v2.3.2 \
+             gregj@gg-bastion:bin/
+
+             # /usr/local/bin/helm-2.16.12 \
+             # /usr/local/bin/tiller-2.16.12 \
+
+    #+end_src
+
+    #+RESULTS:
+    : b9b87d4c412d1b24572f0228bb3b808c
+  + [X] Bring up the RKE cluster as of RKE 1.0.6
+
+       Tangle directly  to the bastion host
+      #+begin_src yaml :tangle /gssh:gg-bastion:gcp-2-3-6cluster.yaml
+        nodes:
+            - address: gg-control-0
+              user: gregj
+              role:
+                - controlplane
+                - etcd
+            - address: gg-worker-0
+              user: gregj
+              role:
+                - worker
+            - address: gg-worker-1
+              user: gregj
+              role:
+                - worker
+            - address: gg-worker-2
+              user: gregj
+              role:
+                - worker
+        # If set to true, RKE will not fail when unsupported Docker versions are found
+        ignore_docker_version: false
+        kubernetes_version: "v1.17.4-rancher1-2"
+        ssh_agent_auth: true
+
+        # Set the name of the Kubernetes cluster
+        cluster_name: cowxar
+        services:
+        authorization:
+            mode: rbac
+        addon_job_timeout: 30
+        network:
+            plugin: canal
+        dns:
+            provider: coredns
+        # addons_include:
+        #   - https://github.com/jetstack/cert-manager/releases/download/v0.15.1/cert-manager.yaml
+   #+end_src
+  + [ ] Run rke up
+
+  #+begin_src bash :session gg-bastion-sh
+    ~/bin/rke-1.0.6 up --config gcp-2-3-6cluster.yaml
+  #+end_src
+
+  + [ ] install Helm cahrt
+
+    We're doing this the lazy way and using Helm 3
+    #+begin_src bash
+      helm repo add rancher-stable https://releases.rancher.com/server-charts/latest
+      helm repo update
+      helm install rancher rancher-stable/rancher \
+           --namespace cattle-system \
+           --version 2.3.6 \
+           --set hostname=rancher.35.226.175.82.xip.io \
+           --create-namespace
+
+           # --set hostname=rancher.192.168.1.210.dnsify.me \
+           # --set privateCA=true \
+           # --set tls=external
+    #+end_src
+
 
 * Harvester play on GCP
   + Mikhail's starting document: [[https://docs.google.com/document/d/1CRoRyjBCsod6qsdTWi7OY8ez0R0fzElKhaYZmGhGgIE/edit#heading=h.fj0o1ccjvsmb][An Integrated HCI Solution for the Edge - Google Docs]]
