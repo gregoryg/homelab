@@ -553,11 +553,42 @@
      helm repo update
      helm install my-release bitnami/rabbitmq
    #+end_src
-* HA k3s
-  Make it simple from the get-go with token on first server cmd line
-  #+begin_src bash
-    INSTALL_K3S_CHANNEL=v.1.19 INSTALL_K3S-EXEC="server" K3S_TOKEN=mysecret K3S_CLUSTER_INIT=1
-  #+end_src
+** HA k3s
+   Make it simple from the get-go with token on first server cmd line
+   #+begin_src bash
+     INSTALL_K3S_CHANNEL=v.1.19 INSTALL_K3S-EXEC="server" K3S_TOKEN=mysecret K3S_CLUSTER_INIT=1
+   #+end_src
+** With k3sup
+   https://github.com/alexellis/k3sup#advanced-kubeconfig-options
+
+   Nab the =k3sup= CLI
+
+   #+begin_src bash
+     curl -sLS https://get.k3sup.dev | sh
+     sudo install k3sup /usr/local/bin/
+
+     k3sup --help
+   #+end_src
+
+   Skipping to the chase, set up HA with MariaDB/MySQL
+   #+begin_src bash
+     LOCAL_DOMAIN=local
+     export SERVER1_HOST=chewbacca.${LOCAL_DOMAIN}
+     export SERVER2_HOST=todd.${LOCAL_DOMAIN}
+     export AGENT1_HOST=birdperson.${LOCAL_DOMAIN}
+     export AGENT2_HOST=marvin.${LOCAL_DOMAIN}
+       export DATASTORE="mysql://${dbuser}:${dbpass}@tcp(smeagol.${LOCAL_DOMAIN})/k3sup"
+
+     # install the first server
+     k3sup install --host ${SERVER1_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --datastore=${DATASTORE} --context k3s-lab
+
+     # install the second server
+     k3sup install --host ${SERVER2_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --datastore=${DATASTORE} --context k3s-lab
+
+     # Join the agents - to either server
+     k3sup join --host ${AGENT1_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --server-host ${SERVER2_HOST}
+     k3sup join --host ${AGENT2_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --server-host ${SERVER2_HOST}
+   #+end_src
 * Build Rancher 2.3.6
   Put together for customer testing
   + [X] provision nodes on GCP
