@@ -91,15 +91,15 @@
 *** Apt for Ubuntu and Debian
     in =/etc/apt/apt.conf.d/proxy.conf=
     #+begin_src conf
-      Acquire::http::Proxy "http://172.16.17.4:3128/";
-      Acquire::https::Proxy "http://172.16.17.4:3128/";
+      Acquire::http::Proxy "http://172.16.17.5:3128/";
+      Acquire::https::Proxy "http://172.16.17.5:3128/";
     #+end_src
 *** Everything on openSUSE
     Change the following in =/etc/sysconfig/proxy=
     #+begin_src conf
       PROXY_ENABLED="yes"
-      HTTP_PROXY="http://172.16.17.4:3128/"
-      HTTPS_PROXY="http://172.16.17.4:3128/"
+      HTTP_PROXY="http://172.16.17.5:3128/"
+      HTTPS_PROXY="http://172.16.17.5:3128/"
       NO_PROXY="localhost,127.0.0.1,172.16.17.0/24,.magichome"
     #+end_src
 * Docker registry for caching images
@@ -143,8 +143,8 @@
 
     #+begin_src conf :tangle /sudo::/etc/systemd/system/docker.service.d/http-proxy.conf
       [Service]
-      Environment="HTTP_PROXY=http://172.16.17.4:6128/"
-      Environment="HTTPS_PROXY=http://172.16.17.4:6128/"
+      Environment="HTTP_PROXY=http://172.16.17.5:6128/"
+      Environment="HTTPS_PROXY=http://172.16.17.5:6128/"
       Environment="NO_PROXY=localhost,127.0.0.1,docker-registry.example.com,.corp,quay.io"
     #+end_src
 
@@ -156,7 +156,7 @@
       else
           certdir=/usr/share/ca-certificates
       fi
-      curl http://172.16.17.4:6128/ca.crt | sudo tee ${certdir}/docker_registry_proxy.crt
+      curl http://172.16.17.5:6128/ca.crt | sudo tee ${certdir}/docker_registry_proxy.crt
       echo "docker_registry_proxy.crt" | sudo tee -a /etc/ca-certificates.conf
       sudo update-ca-certificates --fresh
     #+end_src
