@@ -577,7 +577,7 @@
      export SERVER2_HOST=todd.${LOCAL_DOMAIN}
      export AGENT1_HOST=birdperson.${LOCAL_DOMAIN}
      export AGENT2_HOST=marvin.${LOCAL_DOMAIN}
-       export DATASTORE="mysql://${dbuser}:${dbpass}@tcp(smeagol.${LOCAL_DOMAIN})/k3sup"
+       export DATASTORE="mysql://${dbuser}:${dbpass}@tcp(erebor.${LOCAL_DOMAIN})/k3sup"
 
      # install the first server
      k3sup install --host ${SERVER1_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --datastore=${DATASTORE} --context k3s-lab
