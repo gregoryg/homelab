@@ -2,12 +2,9 @@
 #+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
 * Provision HA VMs in GCP
 
-** Select OS for cluster nodes
+** OS options for cluster nodes
    The =cluster-os= will be referred to in subsequent install scripts.  Select a value
    from the first column in =os-sets= table
-   #+name: cluster-os
-   | centos |
-
    #+name: os-sets
    | OS     | image-family    | image-project  |
    |--------+-----------------+----------------|
@@ -16,18 +13,27 @@
    | leap   | opensuse-leap   | opensuse-cloud |
    | centos | centos-7        | centos-cloud   |
 
+** Select OS for cluster nodes
+
+   #+name: cluster-os
+   #+begin_src emacs-lisp :var os=os-sets[,0] :results table replace
+     (completing-read "Ohai: " os)
+   #+end_src
+
    #+name: cluster-image-family
     #+begin_src bash :var ostable=os-sets :var clusteros=cluster-os :results table replace
      echo ${ostable[$clusteros]}|cut -d' ' -f1
    #+end_src
+
    #+name: cluster-image-project
     #+begin_src bash :var ostable=os-sets :var clusteros=cluster-os :results table replace
      echo ${ostable[$clusteros]}|cut -d' ' -f2
     #+end_src
+
 ** Network resource setup and cleanup scripts
    Provision network, subnetwork and NAT gateways for use with all nodes in this file
 
-   #+begin_src bash :tangle ~/bin/provision-gg-kubernetes-net.sh
+   #+begin_src bash :tangle ~/bin/provision-gg-kubernetes-net.sh :async true
      gcloud compute networks create gg-rancher-ha --subnet-mode custom
 
      # Create the =gg-kubernetes= subnet in the =gg-rancher-ha= VPC network:
@@ -70,6 +76,7 @@
 
 
    #+end_src
+
    #+begin_src bash :tangle ~/bin/cleanup-gg-kubernetes-net.sh
      # Delete Cloud NAT and Cloud Router
 
@@ -225,9 +232,6 @@
     # Get public IP
     gcloud compute instances describe gg-bastion --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
    #+end_src
-
-   #+RESULTS: bastion_ip
-   : 35.238.76.204
 
 
    #+begin_src emacs-lisp :var ip=bastion_ip :results none
@@ -487,6 +491,13 @@
              --reservation-affinity=any
     #+end_src
 * Provision k3s for single-node use
+  + If you're having pod networking problems, try
+    + ref https://github.com/k3s-io/k3s/issues/24#issuecomment-489130581
+    #+begin_src bash
+      firewall-cmd --permanent --direct --add-rule ipv4 filter INPUT 1 -i cni0 -s 10.42.0.0/16 -j ACCEPT
+      firewall-cmd --permanent --direct --add-rule ipv4 filter FORWARD 1 -s 10.42.0.0/15 -j ACCEPT
+      sudo firewall-cmd --reload
+    #+end_src
   Like vehicle install - k3s, local path provisioner
 
    Put up a simple Centos instance
@@ -604,9 +615,6 @@
              # /usr/local/bin/tiller-2.16.12 \
 
     #+end_src
-
-    #+RESULTS:
-    : b9b87d4c412d1b24572f0228bb3b808c
   + [X] Bring up the RKE cluster as of RKE 1.0.6
 
        Tangle directly  to the bastion host
