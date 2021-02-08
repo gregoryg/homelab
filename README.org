@@ -12,7 +12,7 @@
 #+creator: Emacs 27.0.91 (Org mode 9.3.6)
 #+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
 # #+setupfile: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
-#+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :tangle deploy-all.sh :eval never-export
+#+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :eval never-export
 
 * Literate document setup
   This README is a literate programming document.  When this document is loaded in Emacs
