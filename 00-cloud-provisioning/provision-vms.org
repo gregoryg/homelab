@@ -270,7 +270,7 @@
 *** Download the =rke= CLI to bastion host
     Current [2020-11-06 Fri] version: 1.2.1
     #+begin_src bash :session gg-bastion-sh :async :results value
-      wget 'https://github.com/rancher/rke/releases/download/v1.2.1/rke_linux-amd64'
+      wget 'https://github.com/rancher/rke/releases/download/v1.2.4/rke_linux-amd64'
       chmod a+rx rke_linux-amd64
       sudo mv -iv ./rke_linux-amd64 /usr/local/bin/rke
       rke
