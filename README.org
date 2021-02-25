@@ -66,6 +66,13 @@
          echo
      fi
    #+end_src
+* For every Chroot there is a season
+  #+begin_src bash
+    cd /mnt/arch # or where you are preparing the chroot dir
+    mount -t proc /proc proc/
+    mount --rbind /sys sys/
+    mount --rbind /dev dev/
+  #+end_src
 * Squid caching proxy
 ** Server
   Instructions for setting up on Debian
@@ -1092,47 +1099,3 @@
        --set metrics.enabled=true \
        --set metrics.serviceMonitor.enabled=true
 #+end_src
-* Harvester notes
-** Getting details about vms
-   + Jsonpath for getting the CD image IDs
-     #+begin_src bash
-       kubectl -n default get vm \
-               -o jsonpath='{.items[*].spec.dataVolumeTemplates[0].metadata.annotations.harvester\.cattle\.io/imageId}' ; echo
-     #+end_src
-
-     #+RESULTS:
-     : default/image-vjdcz default/image-z782v default/image-vjdcz default/image-vjdcz default/image-485s5
-
-
-   + Then use that to find the image used to create the VM
-     #+begin_src bash
-       kubectl -n default get vmimage image-vjdcz \
-         -o custom-columns=NAME:.metadata.name,DISPLAY_NAME:.spec.displayName
-     #+end_src
-
-     #+RESULTS:
-     | NAME        | DISPLAY_NAME                      |
-     | image-vjdcz | opensuse-leap-15.2-net-x86_64.iso |
-** Setting root password on a =.qcow2= image
-
-   + Install the basics - we're looking for =virsh= and =virt-customize=
-     #+begin_src bash
-       sudo zypper install guestfs-tools libvirt libvirt-client qemu-tools
-     #+end_src
-   + Set root password - make it random, since setting it explicitly is apparently harder
-     to specify than it appears.  Note down what the generated random password is!
-     #+begin_src bash
-       sudo virt-customize \
-            -a root-openSUSE-Leap-42.1-OpenStack.x86_64-0.0.4-Build2.225.qcow2 \
-            --root-password random
-     #+end_src
-   + Once the new image is booted, login as root in order to:
-     1. Change the root password to something sane
-     2. Create a new user
-        #+begin_src bash
-          # (as root user)
-          passwd
-          useradd -m -s /bin/bash -g users -G docker,wheel gregj
-          passwd gregj
-        #+end_src
-   +
