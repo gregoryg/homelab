@@ -256,8 +256,7 @@
          WCOLL=all-nodes.txt pdsh -R ssh 'sudo zypper ref && sudo zypper in -y docker'
      elif [ ${clusteros} == "centos" ] ; then
          WCOLL=all-nodes.txt pdsh -R ssh 'sudo yum -y makecache && sudo yum -y install docker'
-         WCOLL=all-nodes.txt pdsh -R ssh 'echo "LANG=en_US.utf-8
-     LC_ALL=en_US.utf-8" | sudo tee -a /etc/environment'
+         WCOLL=all-nodes.txt pdsh -R ssh 'echo "LANG=en_US.utf-8 LC_ALL=en_US.utf-8" | sudo tee -a /etc/environment'
      else
          WCOLL=all-nodes.txt pdsh -R ssh 'sudo apt update && sudo apt -y install docker.io '
      fi
