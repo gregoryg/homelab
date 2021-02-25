@@ -530,6 +530,10 @@
    #+end_src
 
    #+begin_src bash
+     INSTALL_K3S_VERSION=1.19
+   #+end_src
+
+   #+begin_src bash
      echo 'export KUBECONFIG=~/.kube/config
      source <(kubectl completion bash)
      alias k=kubectl
@@ -563,7 +567,7 @@
      helm repo update
      helm install my-release bitnami/rabbitmq
    #+end_src
-** HA k3s
+* HA k3s
    Make it simple from the get-go with token on first server cmd line
    #+begin_src bash
      INSTALL_K3S_CHANNEL=v.1.19 INSTALL_K3S-EXEC="server" K3S_TOKEN=mysecret K3S_CLUSTER_INIT=1
@@ -582,6 +586,7 @@
 
    Skipping to the chase, set up HA with MariaDB/MySQL
    #+begin_src bash
+     CONTEXT_NAME=k3s-lab
      LOCAL_DOMAIN=local
      export SERVER1_HOST=chewbacca.${LOCAL_DOMAIN}
      export SERVER2_HOST=todd.${LOCAL_DOMAIN}
@@ -590,10 +595,10 @@
        export DATASTORE="mysql://${dbuser}:${dbpass}@tcp(erebor.${LOCAL_DOMAIN})/k3sup"
 
      # install the first server
-     k3sup install --host ${SERVER1_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --datastore=${DATASTORE} --context k3s-lab
+     k3sup install --host ${SERVER1_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --datastore ${DATASTORE} --context ${CONTEXT_NAME} --k3s-channel v1.19 --no-extras
 
      # install the second server
-     k3sup install --host ${SERVER2_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --datastore=${DATASTORE} --context k3s-lab
+     k3sup install --host ${SERVER2_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --datastore ${DATASTORE} --context ${CONTEXT_NAME} --k3s-channel v1.19 --no-extras
 
      # Join the agents - to either server
      k3sup join --host ${AGENT1_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --server-host ${SERVER2_HOST}
