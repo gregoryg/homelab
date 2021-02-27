@@ -1,0 +1,784 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:t
+#+options: todo:t |:t
+#+title: harvester-readme
+#+date: <2021-02-08 Mon>
+#+author: Gregory Grubbs
+#+email: gregory@dynapse.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 28.0.50 (Org mode 9.4.4)
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
+* Harvester notes
+** Installation considerations
+   + Size of Minio buckets
+     The default is 20Gi which iw way too small
+     Consider setting =--set helm.persistence.size=200Gi=
+** Getting details about vms
+   + Jsonpath for getting the CD image IDs
+     #+begin_src bash
+       kubectl -n default get vm \
+               -o jsonpath='{.items[*].spec.dataVolumeTemplates[0].metadata.annotations.harvester\.cattle\.io/imageId}' ; echo
+     #+end_src
+
+     #+RESULTS:
+     : default/image-q8l5g default/image-q8l5g default/image-pj8k8
+
+
+   + Then use that to find the image used to create the VM
+     #+begin_src bash
+       kubectl -n default get vmimage image-q8l5g \
+         -o custom-columns=NAME:.metadata.name,DISPLAY_NAME:.spec.displayName
+     #+end_src
+
+     #+RESULTS:
+     | NAME        | DISPLAY_NAME                            |
+     | image-q8l5g | opensuse-leap-15.2.x86_64-nocloud.qcow2 |
+   + Info for the running VM instances
+     #+begin_src bash
+       kubectl -n default get virtualmachineinstances \
+               -o custom-columns=NAME:.metadata.name,CPU:.spec.domain.cpu.cores,MAC:.spec.domain.devices.interfaces[].macAddress,IP:.status.interfaces[].ipAddress,HOSTNAME:.spec.hostname,NETWORK:.spec.networks[].name,DISK1:.spec.volumes[0].dataVolume.name
+     #+end_src
+
+     #+RESULTS:
+     | NAME        | CPU | MAC               |         IP | HOSTNAME    | NETWORK | DISK1                      |
+     | gg-party-3  |   2 | <none>            | 10.42.0.68 | gg-party-3  | default | gg-party-3-rootdisk-urvnp  |
+     | gg-party-2  |   2 | <none>            | 10.42.0.69 | gg-party-2  | default | gg-party-2-rootdisk-0qens  |
+     | gg-rescueme |   2 | 02:00:00:db:57:cc | 10.42.0.81 | gg-rescueme | default | gg-rescueme-rootdisk-alkif |
+     | gg-party1   |   4 | <none>            | 10.42.0.85 | gg-party1   | default | gg-party1-disk-0-qz4fd     |
+   + Simpler list of hostnames and IPs, just running =k get pod=
+     #+begin_src bash :results table
+       kubectl get pods -l kubevirt.io=virt-launcher \
+         -o custom-columns=LAUNCHER_NAME:.metadata.name,HOSTNAME:.spec.hostname,IP:.status.podIP,STATUS:.status.phase \
+         --sort-by=.spec.hostname
+     #+end_src
+
+     #+RESULTS:
+     | LAUNCHER_NAME                      | HOSTNAME       |          IP | STATUS  |
+     | virt-launcher-gg-harvestme-1-9ljzb | gg-harvestme-1 | 10.42.0.104 | Running |
+     | virt-launcher-gg-harvestme-2-7ddpf | gg-harvestme-2 | 10.42.0.108 | Running |
+     | virt-launcher-gg-harvestme-3-nbxlx | gg-harvestme-3 | 10.42.0.109 | Running |
+     | virt-launcher-gg-rescueme-4ls6z    | gg-rescueme    |  10.42.0.81 | Running |
+
+** Setting root password on a =.qcow2= image
+
+   + Install the basics - we're looking for =virsh= and =virt-customize=
+     #+begin_src bash
+       sudo zypper install guestfs-tools libvirt libvirt-client qemu-tools
+     #+end_src
+   + Set root password - make it random, since setting it explicitly is apparently harder
+     to specify than it appears.  Note down what the generated random password is!
+     #+begin_src bash
+       sudo virt-customize \
+            -a root-openSUSE-Leap-42.1-OpenStack.x86_64-0.0.4-Build2.225.qcow2 \
+            --root-password random
+     #+end_src
+   + Once the new image is booted, login as root in order to:
+     1. Change the root password to something sane
+     2. Create a new user
+        #+begin_src bash
+          # (as root user)
+          passwd
+          useradd -m -s /bin/bash -g users -G docker,wheel gregj
+          passwd gregj
+        #+end_src
+   +
+
+** Getting access to Minio
+   + Grab the minio client =mc= from [[https://dl.min.io/client/mc/release/linux-amd64/mc][here]]
+   + Get the Access+Secret keys from =harvester-system= secret =minio=
+     + If unmodified, they're YOURACCESSKEY/ YOURSECRETKEY
+   + Configure and test the client, possibly in a container shell on the cluster
+     #+begin_src bash
+       mc alias set harvester http://minio.harvester-system:9000 YOURACCESSKEY YOURSECRETKEY
+       mc ls harvester
+     #+end_src
+
+** Grabbing volumes from Longhorn
+   + Get Longhorn volumes with info of disk size, actual used size and PVC name
+     #+begin_src bash
+       k -n longhorn-system get volumes.longhorn.io \
+         -o custom-columns=NAME:.metadata.name,STATE:.status.state,SIZE:.spec.size,USED:.status.actualSize,PVCNAME:.status.kubernetesStatus.pvcName
+     #+end_src
+   + Get Minio URL for Harvester
+     #+begin_src bash
+       k get pvc \
+         -o custom-columns=NAME:.metadata.name,ENDPOINT:.metadata.annotations.cdi\\.kubevirt\\.io/storage\\.import\\.endpoint
+     #+end_src
+   + Copy disk image
+     #+begin_src bash
+       mc cp  harvester/vm-images/image-pj8k8 .
+     #+end_src
+   + Convert to =.qcow2= format
+     #+begin_src bash
+       qemu-img convert -f raw -O qcow2 image-pj8k8 image-pj8k8.qcow2
+     #+end_src
+
+** Prepare machine image for QEMU/KVM
+   ref: [[https://octetz.com/docs/2020/2020-10-19-machine-images/][Preparing Machine Images for qemu/KVM | octetz]]
+   For use with Kubernetes - installing and configuring Docker set us up for use with RKE
+   + install Docker
+   + configure Docker
+     #+begin_src bash
+       cat <<EOF | sudo tee /etc/docker/daemon.json
+       {
+         "exec-opts": ["native.cgroupdriver=systemd"],
+         "log-driver": "json-file",
+         "log-opts": {
+           "max-size": "100m"
+         },
+         "storage-driver": "overlay2"
+       }
+       EOF
+       sudo mkdir -p /etc/systemd/system/docker.service.d
+       sudo usermod -G docker -a gregj
+       sudo systemctl daemon-reload
+       sudo systemctl restart docker
+       sudo systemctl enable docker
+     #+end_src
+   + Disable sw2ap if enabled
+** Prepare image for cloning
+   + Get rid of machine ID so that it will be generated anew for each clone
+     #+begin_src bash
+       echo -n | sudo tee /etc/machine-id
+     #+end_src
+   + Host name - give a random one if none set
+     Place in /usr/local/bin
+     #+begin_src bash
+       #!/bin/sh
+       SN="hostname-init"
+
+       # do nothing if /etc/hostname exists
+       if [ -f "/etc/hostname" ]; then
+         echo "${SN}: /etc/hostname exists; noop"
+         exit
+       fi
+
+       echo "${SN}: creating hostname"
+
+       # set hostname
+       HN=$(head -60 /dev/urandom | tr -dc 'a-z' | fold -w 3 | head -n 1)
+       echo ${HN} > /etc/hostname
+       echo "${SN}: hostname (${HN}) created"
+
+       # sort of dangerous, but works.
+       if [ -f "/etc/hostname" ]; then
+         /sbin/reboot
+       fi
+     #+end_src
+   + Make executable
+     #+begin_src bash
+       sudo chmod a+rx /usr/local/bin/hostname-init.sh
+     #+end_src
+   + Add to =/etc/systemd/system/hostname-init.service=
+     #+begin_src conf
+       [Unit]
+       Description=Set a random hostname.
+       ConditionPathExists=!/etc/hostname
+
+       [Service]
+       ExecStart=/usr/local/bin/hostname-init.sh
+
+       [Install]
+       WantedBy=multi-user.target
+     #+end_src
+     #+begin_src bash
+       sudo chmod 644 /etc/systemd/system/hostname-init.service
+       sudo systemctl enable hostname-init
+     #+end_src
+     #+begin_src bash
+       sudo rm -v /etc/hostname
+     #+end_src
+   + Clean up things like =.bash_history=
+     #+begin_src bash
+       cat /dev/null > ~/.bash_history && history -c && exit
+     #+end_src
+* Create multi-VM bootable image in Harvester from start to finish
+** Install from =.iso= using Ubuntu
+   Image: [[http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/mini.iso][ubuntu-mini 20.04]]
+   + Do the needful to install the basic server in Harvester (just SSH server)
+   + Virtual Machines -> Create
+     + Name: gg-ubuntu-4-k8s
+     + Description: Minimal boot disk ready for RKE usage
+     + Use VM Template: iso-image-base-template
+     + 1 CPU / 2GB RAM (just for building)
+     + Image: ubuntu-20-04-mini.iso
+     + SSHKey: k8s-local
+     + Volumes:
+       + cdrom-disk - boot order 1
+       + Root disk: Size 42GB, boot order 2
+     + defaults for the rest
+   + Watch events from UI or CLI
+     #+begin_src bash
+       k get ev -w
+     #+end_src
+   + When running, connect to console and complete the OS install
+     + =gregj= user
+     + no auto updates
+     + install OpenSSH server
+   + After install, if the VM boots back into the CDROM menu - eject CD-ROM from Harvester
+** Prepare the installed OS
+   + Log in to the VM
+   + You may have to hit =Alt-F1= to get to a TTY
+   + Run through all the steps for prep in [[https://octetz.com/docs/2020/2020-10-19-machine-images/][Preparing Machine Images for qemu/KVM | octetz]]
+     + I SSHed into the VM by multi-hop from the master node
+     #+begin_src bash
+       sudo apt update
+       sudo apt -y install docker.io
+       cat <<EOF | sudo tee /etc/docker/daemon.json
+       {
+         "exec-opts": ["native.cgroupdriver=systemd"],
+         "log-driver": "json-file",
+         "log-opts": {
+           "max-size": "100m"
+         },
+         "storage-driver": "overlay2"
+       }
+       EOF
+       sudo mkdir -p /etc/systemd/system/docker.service.d
+       sudo usermod -G docker -a gregj
+       sudo systemctl daemon-reload
+       sudo systemctl restart docker
+       sudo systemctl enable docker
+     #+end_src
+   + Disable swap in =/etc/fstab= after =sudo swapoff /swapfile=
+** Prepare the image for cloning
+   Again following steps in [[https://octetz.com/docs/2020/2020-10-19-machine-images/][Preparing Machine Images for qemu/KVM | octetz]]
+
+   + Flush the contents of =/etc/machine-id=
+     #+begin_src bash
+       echo -n | sudo tee /etc/machine-id
+     #+end_src
+   + Deal with hostname
+     [ ] Actually, don't - I think Harvester populates hostname - let's find out
+     - but *do* remove =/etc/hostname=
+       #+begin_src bash
+         sudo rm -v /etc/hostname
+       #+end_src
+   + Clean up =.bash_history=
+     #+begin_src bash
+       cat /dev/null > ~/.bash_history && history -c && exit
+     #+end_src
+   + Power off the host from Harvester (since we exited our shell!)
+
+** Save the root disk image to a path on your workstation
+   + Find the Volume in Harvester: gg-ubuntu-4-k8s-rootdisk-3xt9y
+     From CLI:
+     #+begin_src bash
+       k -n longhorn-system get volumes.longhorn.io \
+         -o custom-columns=NAME:.metadata.name,STATE:.status.state,SIZE:.spec.size,USED:.status.actualSize,PVCNAME:.status.kubernetesStatus.pvcName
+     #+end_src
+   + Get the Minio URL storing the PVC
+     #+begin_src bash
+       k get pvc gg-ubuntu-4-k8s-rootdisk-3xt9y \
+         -o custom-columns=NAME:.metadata.name,ENDPOINT:.metadata.annotations.cdi\\.kubevirt\\.io/storage\\.import\\.endpoint
+     #+end_src
+
+** Save a Longhorn backup!
+   Ref: [[https://longhorn.io/docs/1.0.0/advanced-resources/data-recovery/recover-without-system/][Recovering from a Longhorn Backup without System Installed | Documentation]]
+   In =longhorn-system= deploy the Pod to do the save
+   #+begin_src yaml
+     apiVersion: v1
+     kind: Pod
+     metadata:
+       name: restore-to-file
+       namespace: longhorn-system
+     spec:
+       # nodeName: <NODE_NAME>
+       containers:
+       - name: restore-to-file
+         command:
+         # set restore-to-file arguments here
+         - /bin/sh
+         - -c
+         - longhorn backup restore-to-file
+           's3://backups@us-east-1/?backup=backup-93af5ede3f8b4ca6&volume=pvc-3d37f78c-2c4b-4c3a-ac2e-69732291dae2'
+           --output-file '/tmp/restore/gg-ubuntu-4-k8s-rootdisk.qcow2'
+           --output-format qcow2
+         # the version of longhorn engine should be v0.4.1 or higher
+         image: rancher/longhorn-engine:v0.4.1
+         imagePullPolicy: IfNotPresent
+         securityContext:
+           privileged: true
+         volumeMounts:
+         - name: disk-directory
+           mountPath: /tmp/restore  # the argument <output-file> should be in this directory
+         env:
+         # set Backup Target Credential Secret here.
+         - name: AWS_ACCESS_KEY_ID
+           valueFrom:
+             secretKeyRef:
+               name: harvester-minio
+               key: AWS_ACCESS_KEY_ID
+         - name: AWS_SECRET_ACCESS_KEY
+           valueFrom:
+             secretKeyRef:
+               name: harvester-minio
+               key: AWS_SECRET_ACCESS_KEY
+         - name: AWS_ENDPOINTS
+           valueFrom:
+             secretKeyRef:
+               name: harvester-minio
+               key: AWS_ENDPOINTS
+       volumes:
+         # the output file can be found on this host path
+         - name: disk-directory
+           hostPath:
+             path: /tmp/restore
+       restartPolicy: Never
+   #+end_src
+* Virtualization - prepare bootable image using QEMU
+  Ref: [[https://docs.openstack.org/image-guide/centos-image.html][OpenStack Docs: Example: CentOS image]]
+
+  #+begin_src bash
+    qemu-img create -f qcow2 ./centos.qcow2 10g
+
+    sudo virsh net-start default
+    sudo virt-install --virt-type kvm --name centos --ram 1024 \
+                --disk ./centos.qcow2,format=qcow2 \
+                --network network=default \
+                --graphics vnc,listen=0.0.0.0 --noautoconsole \
+                --os-type=linux --os-variant=centos7.0 \
+                --location=/data/data-files/isos/CentOS-7-x86_64-Minimal-1611.iso
+  #+end_src
+  + Install OS
+  #+begin_src bash
+    sudo virsh dumpxml centos |grep cdrom -A 5
+    sudo virsh attach-disk --type cdrom --mode readonly centos "" sda
+    sudo virsh reboot centos
+  #+end_src
+
+* Mikhail's app mode tutorial
+** Blog: AN HCI Solution for the Edge
+   About 6 months ago I first learned about a new project we had been working on called
+   Harvester. At first, the idea of managing VMs via kubernetes did not seem very
+   exciting. “Why would I not just containerize the workloads or orchestrate the VM
+   natively via kvm or xen or whatever my hypervisor of choice.” This still makes a lot of
+   sense for many use cases except one: the edge. At the edge, Harvester can provide a
+   solution for a nightmarish technical challenge. Specifically, when one host must run
+   the dreaded windows legacy applications and modern containerized microservers. In this
+   series of blogs I’ll go through and map out an edge stack, going over the setup and
+   installation of harvester, and later the fleet orchestration of the entire host with os
+   and Kubernetes updates.
+
+   At the edge we often lack the necessities such as a cloud or even spare hardware. Here
+   the ability to run Windows VMs along-side your linux containers provides much needed
+   flexibility while the ability to utilize the Kubernetes api to manage the entire
+   deployment brings welcome simplicity and control. Utilizing k3s and Harvester (in app
+   mode) you can maximise the utility of your edge node by allowing it to run linux
+   containers and windows vms, down to the host OS orchestrated via Rancher’s Fleet gitops
+   pull deployment tool.
+
+   At the host, we start with k3os or Ubuntu. Our purpose built minified linux os who’s
+   entire purpose is to host k3s is great but Ubuntu will work as well. The advantage of
+   k3os here is not only its size and footprint but the out of the box ability to be
+   updated via k3s’ system-update-operator. Though, this can be customized though for most
+   linux operating systems.
+
+   We’ll utilize k3s as our Kubernetes distribution. K3s’ advantage here is indisputable,
+   small footprint, less chattie datastore (sqlite when used in single master mode), and
+   removal of cloud based bloat present in most Kubernetes distributions, including our
+   RKE.
+
+   Harvester itself has two modes of operation. HCI, where it can attach to another
+   cluster as a VM hosting node, or as an application. The application can be installed
+   and operated via a helm chart and CRDs, and this provides our node with the greatest
+   flexibility. Later we’ll orchestrate it via a Rancher 2.5 cluster and our Fleet
+   continuous delivery tool. Underneath, Harvester utilized libvirt, kubevirt, multus, and
+   mineo which are installed by default with the helm chart. We’ll add a windows image and
+   deploy a VM via a CRD once Harvester is fully installed.
+
+   At the end, I’ll provide scripts to get the MVP deployed in GCP so anyone can replicate
+   it at home. I will also note, since multi-layered VMs require special setup, the only
+   cloud in which this can currently be tested is GCP.
+** Setting up the host image
+   [[https://docs.google.com/document/u/4/d/1KjNhHzcOb6HXvp2FcwHjK9IUHWRhxb14yvDrVRtLEtc/edit][original link]]
+
+When choosing the host for Harvester, k3os requires the least amount of
+customization but for GCP we'll need to do some extra configuration.
+I'll show the steps with Ubuntu 20.04 LTS and k3os since the latter uses
+the former and both images need to have a special license key passed in
+so google places them on hosts that support nested virtualization. You
+can find more info on it here in google's doc:
+[[https://cloud.google.com/compute/docs/instances/enable-nested-virtualization-vm-instances][https://cloud.google.com/compute/docs/instances/enable-nested-virtualization-vm-instances]]
+
+The rest of this document assumes you are on a clean Ubuntu 20.04
+installation with internet access. I used a new multipass instance with
+standard specs and it worked great, you can get it at:
+https://multipass.run/
+
+#+begin_src bash
+  multipass launch --name gcp-builder
+#+end_src
+
+*** Setup The Tools Inside Local Builder VM
+    :PROPERTIES:
+    :CUSTOM_ID: setup-the-tools-inside-local-builder-vm
+    :END:
+
+ This assumes you already have a gcp account and an active project. We'll
+ need to install the gcp cli and for k3os, we'll need packer that we can
+ install later.
+
+ Add google to your ubuntu source list.
+
+ #+begin_src bash
+   echo "deb https://packages.cloud.google.com/apt cloud-sdk main" \
+       | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+ #+end_src
+
+ Then we'll need to add their key.
+
+ #+begin_src bash
+   curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+ #+end_src
+
+ Update sources and install the cloud sdk.
+
+ #+begin_src bash
+   sudo apt-get update && sudo apt-get install google-cloud-sdk
+ #+end_src
+
+ Lastly we'll initialize the sdk by logging in and selecting our project.
+ Go-ahead and select your zone, I used us-central1-b for all the
+ instructions.
+
+ #+begin_src bash
+   gcloud init
+ #+end_src
+
+*** Build a Customized Ubuntu Image
+    :PROPERTIES:
+    :CUSTOM_ID: build-a-customized-ubuntu-image
+    :END:
+
+ To enable nested virtualization, we'll need to build special images in
+ our project that pass a special license key to gcp to select the proper
+ hosting hardware. More info from google can be found here:
+ [[https://cloud.google.com/compute/docs/instances/enable-nested-virtualization-vm-instances][https://cloud.google.com/compute/docs/instances/enable-nested-virtualization-vm-instances]]
+
+ First we'll create a new disk in our project and load the public ubuntu
+ 20.04 image.
+
+ #+begin_src bash
+   gcloud compute disks create ubuntu-2004-lts \
+          --image-project ubuntu-os-cloud \
+          --image-family ubuntu-2004-lts \
+          --zone us-central1-b
+ #+end_src
+
+ Next, let's open up 22 so we can ssh into our host.
+
+ #+begin_src bash
+   gcloud compute firewall-rules create allow-tcpssh --allow tcp:22
+ #+end_src
+
+ Then we'll build a new image locally in our project passing the special
+ key.
+
+ #+begin_src bash
+   gcloud compute images create ubuntu-2004-lts \
+          --source-disk ubuntu-2004-lts \
+          --family ubuntu-2004-lts \
+          --source-disk-zone us-central1-b \
+          --licenses "https://www.googleapis.com/compute/v1/projects/vm-options/global/licenses/enable-vmx"
+ #+end_src
+
+*** Create k3os Image (k3os)
+    :PROPERTIES:
+    :CUSTOM_ID: create-k3os-image-k3os
+    :END:
+
+ We'll need another tool called packer to build the k3os image.
+
+ #+begin_src bash
+   sudo apt-get install packer
+ #+end_src
+
+ We'll need the k3os github repo that comes with a handy gcp builder.
+ Skip this part to use the Ubuntu image directly.
+
+ #+begin_src bash
+   git clone https://github.com/rancher/k3os.git
+ #+end_src
+
+ And checkout the latest no-rc build.
+
+ #+begin_src bash
+   git checkout v0.11.1
+ #+end_src
+
+ For the rest, we'll cd into the k3os/package/packer/gcp directory.
+
+ #+begin_src bash
+   cd k3os/package/packer/gcp
+ #+end_src
+
+ Here I manually edited the =template.json= file and simplified the image
+ name and region to match my default (us-central1-b).
+
+ #+begin_src bash
+   vi template.json
+ #+end_src
+
+ Update =builders[0].image_name= to ‘rancher-k3os' and =variables.region=
+ value to ‘us-central1-b'.
+
+ Then, we need to pass the GCP license needed
+ for nested virtualization =builders[0].image_licenses= to
+ ["projects/vm-options/global/licenses/enable-vmx"].
+
+ Add your project's id to the environment as GCP_PROJECT_ID.
+
+ #+begin_src bash
+     export GCP_PROJECT_ID=<<YOUR GCP PROJECT ID>>
+ #+end_src
+
+***** Add SSH Pub Key to Image
+      :PROPERTIES:
+      :CUSTOM_ID: add-ssh-pub-key-to-image
+      :END:
+
+ Not sure why this was required but the standard packer does not provide
+ ssh access so I added the local google_cloud_engine key in ~/.ssh to the
+ authorized_ssh_keys in the config.yml.
+
+ More configuration options can be found in the configuration section of
+ the installation docs: https://github.com/rancher/k3os#configuration
+
+***** Gcloud Service Account
+      :PROPERTIES:
+      :CUSTOM_ID: gcloud-service-account
+      :END:
+
+ Create a new service account with Cloud Build Service Account
+ permissions. You can do this via the ui or cli.
+
+   [[https://console.cloud.google.com/iam-admin/serviceaccounts][Google Console IAM Service Accounts]]
+
+ Packer also provides gcp service account creation instructions for the cli:
+ [[https://www.packer.io/docs/builders/googlecompute][https://www.packer.io/docs/builders/googlecompute]]
+
+ Either way, save the resulting configuration file as account.json in the gcp directory.
+
+ Finally, let's run the image builder.
+
+ #+begin_src bash
+   packer build template.json
+ #+end_src
+
+** Create test cluster with k3s
+   [[https://docs.google.com/document/u/4/d/13QS2932K1fp9W_R4kfOLmTnBYOVrM00_UuMZLuwnVvc/edit][original link]]
+** Deploying Harvester with Helm
+   [[https://docs.google.com/document/u/4/d/1z3uwOOCO8NT3kyCHL9FD-ovfG6Ew5hTB0oG2mtgTPNg/edit][original link]]
+** Setting and Starting a Linux VM
+   [[https://docs.google.com/document/u/4/d/1Echgw774-scd1a9IHE5H19QM1aQIV9_elIOng-mKFz0/edit][original link]]
+** Setting and Starting a Windows VM
+   [[https://docs.google.com/document/u/4/d/10Z5H1WjrCYuTL0RUWrATRjXJtozaYvhxl1xNP_i9STk/edit][original link]]
+The process for setting up a Windows VM is a bit more painful. We'll
+need to pass options into the underlying yaml, so we'll use these sample
+windows CRDs and insert them to create our VM after image download.
+
+Upload CRD for Image. We can use this CRD to grab a windows CD image
+that I have stored over on a web accessible location.
+
+#+begin_src yaml
+  apiVersion: harvester.cattle.io/v1alpha1
+  kind: VirtualMachineImage
+  metadata:
+    name: image-windows10
+    annotations:
+      field.cattle.io/description: windowsimage
+    generateName: image-windows10
+    labels: {}
+    namespace: default
+  spec:
+    displayName: windows
+    url: 'http://gorto/Windows/Win10_2004_English_x64.iso'
+#+end_src
+
+Upload CRD for VM
+#+begin_src yaml
+  apiVersion: kubevirt.io/v1alpha3
+  kind: VirtualMachine
+  metadata:
+    annotations:
+      kubevirt.io/latest-observed-api-version: v1alpha3
+      kubevirt.io/storage-observed-api-version: v1alpha3
+    finalizers:
+      - wrangler.cattle.io/VMController.UnsetOwnerOfDataVolumes
+    labels: {}
+    name: 'windows10'
+    namespace: default
+  spec:
+    dataVolumeTemplates:
+      - apiVersion: cdi.kubevirt.io/v1alpha1
+        kind: DataVolume
+        metadata:
+          annotations:
+            cdi.kubevirt.io/storage.import.requiresScratch: 'true'
+            harvester.cattle.io/imageId: default/image-windows10
+          creationTimestamp: null
+          name: windows-cdrom-disk-win
+        spec:
+          pvc:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 20Gi
+            storageClassName: longhorn
+            volumeMode: Filesystem
+          source:
+            http:
+              certConfigMap: importer-ca-none
+              url: 'http://minio.harvester-system:9000/vm-images/image-windows10'
+      - apiVersion: cdi.kubevirt.io/v1alpha1
+        kind: DataVolume
+        metadata:
+          creationTimestamp: null
+          name: windows-rootdisk-win
+        spec:
+          pvc:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 32Gi
+            storageClassName: longhorn
+            volumeMode: Filesystem
+          source:
+            blank: {}
+    running: true
+    template:
+      metadata:
+        annotations:
+          harvester.cattle.io/diskNames: >-
+            ["windows-cdrom-disk-win","windows-rootdisk-win","windows-virtio-container-disk-win"]
+          harvester.cattle.io/sshNames: '[]'
+        creationTimestamp: null
+        labels:
+          harvester.cattle.io/creator: harvester
+          harvester.cattle.io/vmName: windows
+      spec:
+        domain:
+          cpu:
+            cores: 4
+          devices:
+            disks:
+              - bootOrder: 1
+                cdrom:
+                  bus: sata
+                name: cdrom-disk
+              - disk:
+                  bus: virtio
+                name: rootdisk
+              - cdrom:
+                  bus: sata
+                name: virtio-container-disk
+              - disk:
+                  bus: virtio
+                name: cloudinitdisk
+            inputs:
+              - bus: usb
+                name: tablet
+                type: tablet
+            interfaces:
+              - masquerade: {}
+                model: e1000
+                name: default
+          machine:
+            type: q35
+          resources:
+            requests:
+              memory: 4Gi
+        hostname: windows
+        networks:
+          - name: default
+            pod: {}
+        volumes:
+          - dataVolume:
+              name: windows-cdrom-disk-win
+            name: cdrom-disk
+          - dataVolume:
+              name: windows-rootdisk-win
+            name: rootdisk
+          - containerDisk:
+              image: kubevirt/virtio-container-disk
+            name: virtio-container-disk
+          - cloudInitNoCloud:
+              userData: |
+                #cloud-config
+                ssh_authorized_keys: []
+            name: cloudinitdisk
+#+end_src
+
+Once both CRDs finish processing the VM should start booting and you
+will be able to run the normal windows install process via the console
+or VNC.
+
+[[file:media/image2.png]]
+
+When it is time to select which drive to load windows on, you'll need to
+load the special virtio driver from the cd already included in the vm
+above.
+
+Select “Install Now”
+
+Then “I do not have a product key”
+
+Select “Windows 10 Pro”
+
+“Accept the license”
+
+Install the Virtio Storage Driver
+
+You will then have to select the disk. Instead select “Load Driver”
+
+[[file:media/image3.png]]
+
+Select the AMD64 driver (depending on your vm) and load it.
+
+[[file:media/image1.png]]
+
+You should then be able to select your (non-empty) hard disk and
+continue installing windows.
+
+** Automating Harvester via Terraform
+   [[https://docs.google.com/document/u/4/d/1w9QzHhH-a4-GcyrmkxzfrDOFRnLM8hBHzqqXNiPrT-Q/edit][original link]]
+
+All these components can be automated. The VM creation can be scripted via bash or
+terraform. Fleet can then be used to push out individual vm and image crds and updates. To
+the entire edge device, from the OS to the applications.
+
+We start out with an integrated terraform script that is responsible for deploying Rancher
+and Harvester on a single node k3s cluster in GCP. The previous steps must be completed
+for this to work.
+
+
+#+begin_src bash
+git clone https://github.com/thecrazyrussian/terraform-harvester.git
+cd terraform-harvester
+#+end_src
+
+
+Here we must edit the infra/terraform.tfvars.example file, we can copy it from the infra/terraform.tfvars.example.
+
+#+begin_src bash
+cp terraform.tfvars.example terraform.tfvars
+#+end_src
+
+And edit it in our favorite editor.
+
+#+begin_src bash
+emacsclient terraform.tfvars
+#+end_src
+
+Once all the variables are set for your route53 zone, gcp account, and you’ve added
+credentials.json for gcp into the infra/ directory. This should stand up a single node
+Rancher/Harvester cluster and deploy a windows vm on to it for customization.
+
+Browse to the nodeport at which harvester made itself available, login with admin/password
+and start a console to the vm to configure it as you would normally.
