@@ -4,11 +4,14 @@ nodes:
       role:
         - controlplane
         - etcd
-    # - address: cuphead.magichome
-    #   user: gregj
-    #   role:
-    #     - worker
     - address: birdperson.magichome
+      user: gregj
+      role:
+        - worker
+      labels:
+        pvstorage: false
+        node.longhorn.io/create-default-disk: false
+    - address: cuphead.magichome
       user: gregj
       role:
         - worker
@@ -16,13 +19,19 @@ nodes:
       user: gregj
       role:
         - worker
-    # - address: marvin.magichome
-    #   user: gregj
-    #   role:
-    #     - worker
+      labels:
+        pvstorage: true
+        node.longhorn.io/create-default-disk: true
+    - address: marvin.magichome
+      user: gregj
+      role:
+        - worker
+      labels:
+        pvstorage: true
+        node.longhorn.io/create-default-disk: true
 # If set to true, RKE will not fail when unsupported Docker versions
 # are found
-ignore_docker_version: false
+ignore_docker_version: true
 
 # Cluster level SSH private key
 # Used if no ssh information is set for the node
@@ -37,15 +46,15 @@ ssh_agent_auth: true
 cluster_name: cowzilla
 
 
-services:
-  kube-api:
-    extra_args:
-      feature-gates: EphemeralContainers=true
-    pod_security_policy: false
-    service_node_port_range: 30000-32767
-  kube-scheduler:
-    extra_args:
-      feature-gates: EphemeralContainers=true
+# services:
+#   kube-api:
+#     extra_args:
+#       feature-gates: EphemeralContainers=true
+#     pod_security_policy: false
+#     service_node_port_range: 30000-32767
+#   kube-scheduler:
+#     extra_args:
+#       feature-gates: EphemeralContainers=true
 
 authorization:
     mode: rbac
@@ -57,13 +66,17 @@ addon_job_timeout: 30
 # Specify network plugin-in (canal, calico, flannel, weave, or none)
 # GJG remember that Canal is really Flannel+Calico https://rancher.com/blog/2019/2019-03-21-comparing-kubernetes-cni-providers-flannel-calico-canal-and-weave/
 network:
-    plugin: canal
+    plugin: none
+    # plugin: canal
 
 # Specify DNS provider (coredns or kube-dns)
 dns:
     provider: coredns
 
 addons_include:
-  - https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.1/aio/deploy/recommended.yaml
-  - https://gist.githubusercontent.com/superseb/499f2caa2637c404af41cfb7e5f4a938/raw/930841ac00653fdff8beca61dab9a20bb8983782/k8s-dashboard-user.yml
-  - https://github.com/jetstack/cert-manager/releases/download/v0.15.1/cert-manager.yaml
+  # - https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.1/aio/deploy/recommended.yaml
+  # - https://gist.githubusercontent.com/superseb/499f2caa2637c404af41cfb7e5f4a938/raw/930841ac00653fdff8beca61dab9a20bb8983782/k8s-dashboard-user.yml
+  # - https://github.com/jetstack/cert-manager/releases/download/v0.15.1/cert-manager.yaml
+  # - https://github.com/jetstack/cert-manager/releases/download/v1.1.1/cert-manager.yaml
+  - https://raw.githubusercontent.com/cilium/cilium/v1.9/install/kubernetes/quick-install.yaml
+  - https://raw.githubusercontent.com/cilium/cilium/v1.9/install/kubernetes/quick-hubble-install.yaml
