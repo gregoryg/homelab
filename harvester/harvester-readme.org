@@ -195,6 +195,45 @@
      #+begin_src bash
        cat /dev/null > ~/.bash_history && history -c && exit
      #+end_src
+** Getting a cluster running in the cluster
+   One key thing is to assure there are not overlapping Pod network CIDR ranges
+*** k3s
+    #+begin_src bash
+      #!/usr/bin/env bash
+
+      CONTEXT_NAME=inception
+      LOCAL_DOMAIN=magichome
+      dbuser=<FILLIN>
+      dbpass=<FILLIN>
+      export SERVER1_HOST=10.42.0.132
+      export AGENT1_HOST=10.42.0.130
+      export AGENT2_HOST=10.42.0.131
+      export DATASTORE="mysql://${dbuser}:${dbpass}@tcp(<FILLIN>.${LOCAL_DOMAIN})/k3sup"
+
+      # install the first server
+      k3sup install --ip ${SERVER1_HOST} \
+            --user gregj \
+            --ssh-key ~/.ssh/k8s-local \
+            --datastore ${DATASTORE} \
+            --context ${CONTEXT_NAME} \
+            --no-extras \
+            --k3s-extra-args '--cluster-cidr 10.52.0.0/16 --service-cidr 10.53.0.0/16 --cluster-dns 10.53.0.10' \
+            --print-command
+
+      # Join the agents - to either server
+      k3sup join --ip ${AGENT1_HOST} \
+            --user gregj \
+            --ssh-key ~/.ssh/k8s-local \
+            --server-ip ${SERVER1_HOST} \
+            --print-command
+
+
+      k3sup join --ip ${AGENT2_HOST} \
+            --user gregj \
+            --ssh-key ~/.ssh/k8s-local \
+            --server-ip ${SERVER1_HOST} \
+            --print-command
+    #+end_src
 * Create multi-VM bootable image in Harvester from start to finish
 ** Install from =.iso= using Ubuntu
    Image: [[http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/mini.iso][ubuntu-mini 20.04]]
