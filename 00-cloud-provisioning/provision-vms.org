@@ -604,6 +604,101 @@
      k3sup join --host ${AGENT1_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --server-host ${SERVER2_HOST}
      k3sup join --host ${AGENT2_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --server-host ${SERVER2_HOST}
    #+end_src
+** From Adrian's video: k3s+kube-vip+metallb
+   + Source video: [[https://www.youtube.com/watch?v=9PLw1xalcYA&t=471s][HA K3s with etcd, kube-vip, MetalLB, and Rancher! - YouTube]]
+   + Initial =k3sup= command
+    =--tls-san= says our certs should also accept this IP - this will be our VIP
+     #+begin_src bash
+       k3sup install \
+             --host=k3slab-a \
+             --user=root \
+             --k3s-version=v1.19.4+k3s1 \
+             --local-path=config.k3slab.yaml \
+
+            --context k3slab \
+             --cluster \
+             --tls-san=10.68.0.240 \
+             --k3s-extra-args="--disable servicelb --node-taint node-role.kubernetes.io/master=true:NoSchedule"
+     #+end_src
+   + SSH to our new server node to install =kube-vip=
+     + Download RBAC config
+       #+begin_src bash
+         curl -s https://kube-vip.io/manifests/rbac.yaml > \
+              /var/lib/rancher/k3s/server/manifests/kube-vip-rbac.yam
+       #+end_src
+     + Edit the above to add api group
+       #+begin_src yaml
+         rules:
+           - apiGroups: ["coordination.k8s.io"]
+             resources: ["leases"]
+             verbs: ["list", "get", "watch", "update", "create"]
+       #+end_src
+     + Set env vars for VIP and LAN interface of the host
+       #+begin_src bash
+         export VIP=10.68.0.240
+         export INTERFACE=ens18
+       #+end_src
+     + Pull =kube-vip= image
+       =kube-vip= will generate its manifest from options provided to the container.
+       Therefore, =kube-vip= docs recommend pulling the container then creating an alias
+       for that command
+       #+begin_src bash
+         crictl pull docker.io/plndr/kube-vip:0.3.2
+         alias kube-vip="ctr run --r m--net-host docker.io/plndr/kube-vip:0.3.2 vip /kube-vip"
+       #+end_src
+     + Create the manifest
+       We'll run =kube-vip= as a DaemonSet on the control plane nodes.  Announce on Layer
+       2 (ARP) using the interface and VIP set earlier. Load balance the control plane and
+       utilize Kubernetes leader election to decide which pod makes the
+       announcement. Tolerate the taint we put in place for our control planes.  Use the
+       service account we had defined in the RBAC step
+       #+begin_src bash
+         kube-vip manifest daemonset \
+                  --arp \
+                  --interface ${INTERFACE} \
+                  --address ${VIP} \
+                  --controlplane \
+                  --leaderElection \
+                  --taint \
+                  --inCluster | tee /var/lib/rancher/k3s/server/manifests/kube-vip.yaml
+       #+end_src
+     + Fix the generated =kube-vip= manifest so that it will actually get scheduled
+       #+begin_src yaml
+         tolerations:
+           - effect: NoSchedule
+             key: node-role.kubernete.io/master
+             operator: Exists
+       #+end_src
+     + Update our =kubeconfig= to use the VIP once we can ping the VIP
+     + now we can bring up 2 more servers and an agent, pointing them to the VIP
+       #+begin_src bash
+         k3sup join --host=demo-b \
+               --server-user=root \
+               --server-host=${VIP} \
+               --user=root \
+               --k3s-version=v1.19.4+k3s1 \
+               --server \
+               --k3s-extra-args="--disable servicelb --node-taint=node.role.kubernetes.io/master=true:NoSchedule"
+         k3sup join --host=demo-c \
+               --server-user=root \
+               --server-host=${VIP} \
+               --user=root \
+               --k3s-version=v1.19.4+k3s1 \
+               --server \
+               --k3s-extra-args="--disable servicelb --node-taint=node.role.kubernetes.io/master=true:NoSchedule"
+       #+end_src
+     + Failover of the VIP is fast
+       If we shutdown k3s on =demo-a= the VIP moves
+     + Let's bring up a worker node - that lets =traefik= start!
+       #+begin_src bash
+         k3sup join --host=demo-b \
+               --server-user=root \
+               --server-host=${VIP} \
+               --user=root \
+               --k3s-version=v1.19.4+k3s1 \
+               --server \
+               --k3s-extra-args="--disable servicelb --node-taint=node-role.kubernetes.io/master=true:NoSchedule"
+       #+end_src
 * Build Rancher 2.3.6
   Put together for customer testing
   + [X] provision nodes on GCP
