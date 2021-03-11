@@ -11,6 +11,9 @@
 #+exclude_tags: noexport
 #+creator: Emacs 28.0.50 (Org mode 9.4.4)
 #+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
+
+   Official site: [[https://harvesterhci.io/][Harvester - Open-source hyperconverged infrastructure]]
+
 * Harvester notes
 ** Installation considerations
    + Size of Minio buckets
@@ -234,6 +237,28 @@
             --server-ip ${SERVER1_HOST} \
             --print-command
     #+end_src
+** Testing Mohamed's Harvester node driver
+
+   #+begin_src bash
+     go build
+     docker-machine create -d harvester --help
+   #+end_src
+   #+begin_src bash
+     docker-machine create -d harvester \
+                    --ca-cert "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdGMyVnkKZG1WeUxXTmhRREUyTVRRNE1UTTNOalF3SGhjTk1qRXdNekF6TWpNeU1qUTBXaGNOTXpFd016QXhNak15TWpRMApXakFqTVNFd0h3WURWUVFEREJock0zTXRjMlZ5ZG1WeUxXTmhRREUyTVRRNE1UTTNOalF3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFSZ3ZEOUVjSjdSMUZqWjRIeXcwY0pkTnp2aml3Mzlwc2NzNXEvbHNvSjUKSHRXWFJrOTZCR2hnbkUrVFRsdjdpb2JmNUhuMXgxRnNmcUxkcU1KWk5OTFNvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVWl3Rk0xZXY1aEpWWU5rditXSmkwCklCQ0R4YkV3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQU44N2ZSRjUySTIwVVo0UUhxVXJTWlVYTGJZQ3VDNk8KSURYL2VMaGt3emdtQWlBK2VEQXMxa2h3L2RLTC9uVHlvTjdMbmxUMEthV2xndkJnWjRDbVpLWDNlZz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K" \
+                    --cert "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrRENDQVRlZ0F3SUJBZ0lJRnhydW9NYXQ4VzB3Q2dZSUtvWkl6ajBFQXdJd0l6RWhNQjhHQTFVRUF3d1kKYXpOekxXTnNhV1Z1ZEMxallVQXhOakUwT0RFek56WTBNQjRYRFRJeE1ETXdNekl6TWpJME5Gb1hEVEl5TURNdwpNekl6TWpJME5Gb3dNREVYTUJVR0ExVUVDaE1PYzNsemRHVnRPbTFoYzNSbGNuTXhGVEFUQmdOVkJBTVRESE41CmMzUmxiVHBoWkcxcGJqQlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJNQWY2Rldvbm1OLzlRM3EKZE93ZGRCeXpDS0tGZi9yeFVTUDVLRFRqcjdkRE1pUStDM0Q2QWw5RGxsR2RBYkdMOFZveDB3TisrMnRWTWlRRQpvMmZ1YjkralNEQkdNQTRHQTFVZER3RUIvd1FFQXdJRm9EQVRCZ05WSFNVRUREQUtCZ2dyQmdFRkJRY0RBakFmCkJnTlZIU01FR0RBV2dCVEJuUmFvOVFiWVJUTG5QYk9kNjZsdWNYUFhuREFLQmdncWhrak9QUVFEQWdOSEFEQkUKQWlBdi9OaURpMlJGbGRrMzMrQlZRZHhyYmdrdGJRRUUxeXJSMHVnSE5hWmRkUUlnUm0rVTAzVUZrelhLdFVGYgpmQUtQYyt6cmFYRm8zY1FmbEpaQUNQR0RSUW89Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdFkyeHAKWlc1MExXTmhRREUyTVRRNE1UTTNOalF3SGhjTk1qRXdNekF6TWpNeU1qUTBXaGNOTXpFd016QXhNak15TWpRMApXakFqTVNFd0h3WURWUVFEREJock0zTXRZMnhwWlc1MExXTmhRREUyTVRRNE1UTTNOalF3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFTdUl5QzdCMFJ5Q2Ixejd1UlJZdzV5QXJ6ci9uYjA1ZTNPLzBzWUhDYnUKOEh6aUlIenZnUkZqTG4xV0ZEd0FnVVEzU2xjUWZpRUN5SmY3UkU0ME9EL1lvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVXdaMFdxUFVHMkVVeTV6MnpuZXVwCmJuRnoxNXd3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUlnVjNrQlEwc0lpY2dQclFaTXRUVllBZW9OYnU0VGRiYXMKVUR2b3lCZHdpWWtDSVFDSkROUDlqWDZqWnpPbXRKdDlIaUVoS1YrLzdzOVNGeTBsc0xxdGVlWWdrQT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K" \
+                    --key "LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSURjelVCU3huY1BhVFA5VUVXcjZaMy9BUk1WUUdQUGl2NE80ZHNKejZSbWpvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFd0Ivb1ZhaWVZMy8xRGVwMDdCMTBITE1Jb29WLyt2RlJJL2tvTk9PdnQwTXlKRDRMY1BvQwpYME9XVVowQnNZdnhXakhUQTM3N2ExVXlKQVNqWis1djN3PT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=" \
+                    --harvester-url "https://172.16.17.16:6443" \
+                    --cpus 3 \
+                    --disk-size "42Gi" \
+                    --keypair "k8s-local" \
+                    --ssh-key-path "~/.ssh/id_rsa.pub" \
+                    --ssh-user "gregj" \
+                    --mem-size "4Gi" \
+                    --vm-description "This is a hoooooot" \
+                    --vm-name "gg-whatahoot" \
+                    --image-id "image-mfz99"
+   #+end_src
 * Create multi-VM bootable image in Harvester from start to finish
 ** Install from =.iso= using Ubuntu
    Image: [[http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/mini.iso][ubuntu-mini 20.04]]
