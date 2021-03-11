@@ -616,7 +616,7 @@
      WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'docker stop `docker ps -aq`'
      WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'docker rm `docker ps -aq`'
      WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh '# remove CNI and Longhorn remnants'
-     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo rm -rfv /var/lib/longhorn/* /data/longhorn/* /etc/cni/* /var/lib/kubelet/cpu_manager_state'
+     WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo rm -rfv /var/lib/longhorn/* /data/longhorn/* /etc/cni/* /var/lib/kubelet /etc/rancher /var/lib/rancher /etc/kubernetes'
      WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh '# iptables'
      WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo iptables -F -t nat'
      WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo iptables -X -t nat'
