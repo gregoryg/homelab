@@ -850,3 +850,11 @@
      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
      sudo apt-get update && sudo apt-get install google-cloud-sdk
    #+end_src
+
+* Proxmox
+  + open up SSH port in VM
+    #+begin_src bash
+      sudo firewall-cmd --zone=public --add-port=22/tcp --permanent
+      sudo firewall-cmd --reload
+      sudo iptables-save | grep 22
+    #+end_src
