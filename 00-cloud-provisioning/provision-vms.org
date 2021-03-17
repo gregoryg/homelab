@@ -1,5 +1,27 @@
 #+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :tangle no :eval never-export
 #+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
+* Single-node Rancher
+  #+begin_src bash
+    IP=nn.nn.nn.nn # reserved IP
+    gcloud beta compute --project=rancher-dev instances create gg-rancher-25-leap \
+           --zone=us-west3-a \
+           --machine-type=e2-medium \
+           --network=default \
+           --address=${IP} \
+           --network-tier=STANDARD \
+           --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append \
+           --tags=https-server \
+           --image-project=opensuse-cloud \
+           --image-family=opensuse-leap \
+           --boot-disk-size=100GB \
+           --boot-disk-type=pd-standard \
+           --boot-disk-device-name=gg-rancher-25-leap \
+           --no-shielded-secure-boot \
+           --shielded-vtpm \
+           --shielded-integrity-monitoring \
+           --labels=owner=greg_grubbs,donotdelete=true \
+           --reservation-affinity=any
+  #+end_src
 * Provision HA VMs in GCP
 
 ** OS options for cluster nodes
