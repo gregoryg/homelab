@@ -1099,3 +1099,17 @@
        --set metrics.enabled=true \
        --set metrics.serviceMonitor.enabled=true
 #+end_src
+
+* Home automation
+** Home Assistant
+   + Ref: [[https://www.home-assistant.io/installation/linux][Linux - Home Assistant]]
+   + Docker install
+     #+begin_src bash
+       docker run --init -d \
+         --name homeassistant \
+         --restart=unless-stopped \
+         -v /etc/localtime:/etc/localtime:ro \
+         -v /var/services/homes/gregj/homeassistant/gregj-starter:/config \
+         --network=host \
+         homeassistant/home-assistant:stable
+     #+end_src
