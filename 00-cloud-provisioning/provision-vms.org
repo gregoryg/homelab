@@ -632,23 +632,25 @@
     =--tls-san= says our certs should also accept this IP - this will be our VIP
      #+begin_src bash
        k3sup install \
-             --host=k3slab-a \
-             --user=root \
+             --host=todd.magichome \
+             --user=gregj \
+             --ssh-key ~/.ssh/k8s-local \
              --k3s-version=v1.19.4+k3s1 \
              --local-path=config.k3slab.yaml \
-
-            --context k3slab \
+             --context gg-k3slab \
              --cluster \
-             --tls-san=10.68.0.240 \
+             --tls-san=172.16.17.13 \
              --k3s-extra-args="--disable servicelb --node-taint node-role.kubernetes.io/master=true:NoSchedule"
+       # --tls-san=10.68.0.240 \
      #+end_src
    + SSH to our new server node to install =kube-vip=
      + Download RBAC config
        #+begin_src bash
-         curl -s https://kube-vip.io/manifests/rbac.yaml > \
-              /var/lib/rancher/k3s/server/manifests/kube-vip-rbac.yam
+         curl -s https://kube-vip.io/manifests/rbac.yaml | \
+              sudo tee /var/lib/rancher/k3s/server/manifests/kube-vip-rbac.yaml
        #+end_src
      + Edit the above to add api group
+       NOTE: this is no longer necessary - but check for the below config
        #+begin_src yaml
          rules:
            - apiGroups: ["coordination.k8s.io"]
@@ -657,8 +659,8 @@
        #+end_src
      + Set env vars for VIP and LAN interface of the host
        #+begin_src bash
-         export VIP=10.68.0.240
-         export INTERFACE=ens18
+         export VIP=172.16.17.13
+         export INTERFACE=enx00e04c6815d9
        #+end_src
      + Pull =kube-vip= image
        =kube-vip= will generate its manifest from options provided to the container.
@@ -666,7 +668,7 @@
        for that command
        #+begin_src bash
          crictl pull docker.io/plndr/kube-vip:0.3.2
-         alias kube-vip="ctr run --r m--net-host docker.io/plndr/kube-vip:0.3.2 vip /kube-vip"
+         alias kube-vip="k3s ctr run --rm --net-host docker.io/plndr/kube-vip:0.3.2 vip /kube-vip"
        #+end_src
      + Create the manifest
        We'll run =kube-vip= as a DaemonSet on the control plane nodes.  Announce on Layer
@@ -694,20 +696,34 @@
      + Update our =kubeconfig= to use the VIP once we can ping the VIP
      + now we can bring up 2 more servers and an agent, pointing them to the VIP
        #+begin_src bash
-         k3sup join --host=demo-b \
-               --server-user=root \
+         k3sup join --host=birdperson.magichome \
+               --server-user=gregj \
+               --ssh-key ~/.ssh/k8s-local \
                --server-host=${VIP} \
-               --user=root \
+               --user=gregj \
                --k3s-version=v1.19.4+k3s1 \
                --server \
                --k3s-extra-args="--disable servicelb --node-taint=node.role.kubernetes.io/master=true:NoSchedule"
-         k3sup join --host=demo-c \
-               --server-user=root \
+         k3sup join --host=cuphead.magichome \
+               --server-user=gregj \
+               --ssh-key ~/.ssh/k8s-local \
                --server-host=${VIP} \
-               --user=root \
+               --user=gregj \
                --k3s-version=v1.19.4+k3s1 \
                --server \
                --k3s-extra-args="--disable servicelb --node-taint=node.role.kubernetes.io/master=true:NoSchedule"
+
+         k3sup join --host=chewbacca.magichome \
+               --ssh-key ~/.ssh/k8s-local \
+               --server-host=${VIP} \
+               --user=gregj \
+               --k3s-version=v1.19.4+k3s1
+
+         k3sup join --host=marvin.magichome \
+               --ssh-key ~/.ssh/k8s-local \
+               --server-host=${VIP} \
+               --user=gregj \
+               --k3s-version=v1.19.4+k3s1
        #+end_src
      + Failover of the VIP is fast
        If we shutdown k3s on =demo-a= the VIP moves
