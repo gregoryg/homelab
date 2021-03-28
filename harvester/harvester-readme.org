@@ -15,6 +15,8 @@
    Official site: [[https://harvesterhci.io/][Harvester - Open-source hyperconverged infrastructure]]
 
 * Harvester notes
+** Latest dev =.iso=
+   + https://releases.rancher.com/harvester/master/harvester-amd64.iso
 ** Installation considerations
    + Size of Minio buckets
      The default is 20Gi which iw way too small
@@ -98,6 +100,25 @@
        mc alias set harvester http://minio.harvester-system:9000 YOURACCESSKEY YOURSECRETKEY
        mc ls harvester
      #+end_src
+
+** Show/Change number of replicas on Longhorn volumes
+   #+begin_src bash
+     kubectl get volumes.longhorn.io -o custom-columns="NAME:metadata.name,STATE:status.state,NUMREPLICAS:spec.numberOfReplicas,ROBUSTNESS:status.robustness,SIZE:spec.size,ACTUAL:status.actualSize,NODE:status.currentNodeID"
+   #+end_src
+
+   #+RESULTS:
+   | NAME                                     | STATE    | NUMREPLICAS | ROBUSTNESS |        SIZE |    ACTUAL | NODE                |
+   | pvc-057fd8cd-6e7a-43e0-b9d3-0ebb8a34b838 | attached |           4 | degraded   | 21474836480 | 480030720 | chewbacca.magichome |
+   | pvc-5868f344-11d7-4d5c-983f-673c6eff86b0 | attached |           2 | healthy    | 21474836480 | 480407552 | chewbacca.magichome |
+   | pvc-7320258a-4bd3-4858-aae7-73aba22373ea | attached |           2 | healthy    | 21474836480 | 480378880 | chewbacca.magichome |
+   | pvc-ff1c04f6-083b-4727-9aef-3e554ede73a9 | attached |           2 | healthy    | 21474836480 | 479825920 | chewbacca.magichome |
+
+   #+begin_src bash
+     kubectl -n longhorn-system patch  volume pvc-057fd8cd-6e7a-43e0-b9d3-0ebb8a34b838 --type merge -p '{"spec":{"numberOfReplicas": 2}}'
+   #+end_src
+
+   #+RESULTS:
+   : volume.longhorn.io/pvc-057fd8cd-6e7a-43e0-b9d3-0ebb8a34b838 patched
 
 ** Grabbing volumes from Longhorn
    + Get Longhorn volumes with info of disk size, actual used size and PVC name
