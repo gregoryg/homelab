@@ -154,9 +154,9 @@
 
 
   #+begin_src bash :tangle ~/bin/provision-rancher-ha-gcp.sh :var IMAGE_FAMILY=cluster-image-family :var IMAGE_PROJECT=cluster-image-project
-    NUM_CONTROL=1
+    NUM_CONTROL=3
     NUM_ETCD=0   # 0 for co-location with controlplane
-    NUM_WORKERS=3
+    NUM_WORKERS=4
     # family / project pairs such as
     ## ubuntu-1604-lts / ubuntu-os-cloud
     ## opensuse-leap / opensuse-cloud
@@ -264,6 +264,7 @@
    #+begin_src bash :session gg-bastion-sh :results none
      sudo apt update ; sudo apt -y install pdsh wget
      for i in in `cat all-nodes.txt` ; do
+         ssh-keygen -R $i
          ssh -o StrictHostKeyChecking=no $i pwd
      done
      WCOLL=all-nodes.txt pdsh -R ssh pwd
@@ -292,7 +293,7 @@
 *** Download the =rke= CLI to bastion host
     Current [2020-11-06 Fri] version: 1.2.1
     #+begin_src bash :session gg-bastion-sh :async :results value
-      wget 'https://github.com/rancher/rke/releases/download/v1.2.4/rke_linux-amd64'
+      wget 'https://github.com/rancher/rke/releases/download/v1.2.6/rke_linux-amd64'
       chmod a+rx rke_linux-amd64
       sudo mv -iv ./rke_linux-amd64 /usr/local/bin/rke
       rke
@@ -346,7 +347,7 @@
      ssh_agent_auth: true
 
      # Set the name of the Kubernetes cluster
-     cluster_name: uncowlanut
+     cluster_name: gg-rke-gcp-canal
 
 
      services:
@@ -367,10 +368,10 @@
      dns:
          provider: coredns
 
-     addons_include:
-       - https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.1/aio/deploy/recommended.yaml
-       - https://gist.githubusercontent.com/superseb/499f2caa2637c404af41cfb7e5f4a938/raw/930841ac00653fdff8beca61dab9a20bb8983782/k8s-dashboard-user.yml
-       - https://github.com/jetstack/cert-manager/releases/download/v0.15.1/cert-manager.yaml
+     # addons_include:
+       # - https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.1/aio/deploy/recommended.yaml
+       # - https://gist.githubusercontent.com/superseb/499f2caa2637c404af41cfb7e5f4a938/raw/930841ac00653fdff8beca61dab9a20bb8983782/k8s-dashboard-user.yml
+       # - https://github.com/jetstack/cert-manager/releases/download/v0.15.1/cert-manager.yaml
    #+end_src
 *** Run =rke up=
     #+begin_src bash :session gg-bastion-sh :async :results value
