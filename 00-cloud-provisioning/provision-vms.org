@@ -859,3 +859,19 @@
       sudo firewall-cmd --reload
       sudo iptables-save | grep 22
     #+end_src
+
+** Using Cloud-Init and Terraform
+   Refs:
+   + [[https://norocketscience.at/deploy-proxmox-virtual-machines-using-cloud-init/][Deploy Proxmox virtual machines using Cloud-init]]
+   + [[https://norocketscience.at/provision-proxmox-virtual-machines-with-terraform/][Install Proxmox virtual machines with Terraform]]
+     #+begin_src bash
+       sudo qm create 9000 --name "/mnt/pve/gg-images/images/ubuntu-2004-cloudinit-template" --memory 2048 --net0 virtio,bridge=vmbr0
+       sudo qm importdisk 9000 ubuntu-20.04-minimal-cloudimg-amd64.qcow2 local-lvm
+       sudo qm set 9000 --scsihw virtio-scsi-pci --scsi0 local-lvm:vm-9000-disk-0
+       sudo qm set 9000 --ide2 local-lvm:cloudinit
+       sudo qm set 9000 --boot c --bootdisk scsi0
+       sudo qm set 9000 --serial0 socket --vga serial0
+       sudo qm template 9000
+       sudo qm clone 9000 142 --name gg-my-vm
+       ssh 172.16.17.121 -v
+     #+end_src
