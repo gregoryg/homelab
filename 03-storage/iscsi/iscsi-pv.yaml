@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: iscsi-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  iscsi:
+     targetPortal: 172.16.17.5:3260
+     # portals: ['10.16.154.82:3260', '10.16.154.83:3260']
+     iqn: iqn.2000-01.com.synology:erebor.Target-2.af99ce4e7b
+     lun: 2
+     fsType: 'ext4'
+     readOnly: false
+     chapAuthDiscovery: true
+     chapAuthSession: true
+     secretRef:
+       name: chap-secret
+  storageClassName: synology-iscsi-storage

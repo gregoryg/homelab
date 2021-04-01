@@ -1,0 +1,9 @@
+* Install a "normal" cluster and see how it works
+  Ref: [[https://blog.danielcorin.com/posts/2016-03-25-presto-cluster/][Way Enough Code | Creating a Presto Cluster]]
+  Ref: [[https://prestodb.io/docs/current/installation/deployment.html][2.1. Deploying Presto — Presto 0.239.1 Documentation]]
+  #+begin_src bash :session sh1 :results none
+    wget 'https://repo1.maven.org/maven2/com/facebook/presto/presto-server/0.239.1/presto-server-0.239.1.tar.gz' &
+  #+end_src
+
+  #+RESULTS:
+  : [1] 654
