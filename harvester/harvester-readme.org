@@ -21,6 +21,8 @@
    + Size of Minio buckets
      The default is 20Gi which iw way too small
      Consider setting =--set helm.persistence.size=200Gi=
+** My GitHub issues
+   + [[https://github.com/rancher/harvester/issues/646][rancher/harvester#646 {BUG} Specifying an internet proxy during installtion o...]]
 ** Getting details about vms
    + Jsonpath for getting the CD image IDs
      #+begin_src bash
