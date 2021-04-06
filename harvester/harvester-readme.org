@@ -552,6 +552,13 @@
     sudo virsh attach-disk --type cdrom --mode readonly centos "" sda
     sudo virsh reboot centos
   #+end_src
+* Issues
+** Submitted / in progress
+*** [[https://github.com/rancher/harvester/issues/646][#646 {BUG} Specifying an internet proxy during installation of agent node makes node unusable]]
+*** [[https://github.com/rancher/harvester/issues/647][#647 {BUG} UI Reports total available on root file systems, not total Longhorn storage]]
+** Cooking
+*** Add grouping label to instance when creating multiple instances of VM
+    + Use =Name/Prefix= as value
 
 * Mikhail's app mode tutorial
 ** Blog: AN HCI Solution for the Edge
