@@ -278,28 +278,126 @@
             --server-ip ${SERVER1_HOST} \
             --print-command
     #+end_src
-** Testing Mohamed's Harvester node driver
+* Mohammed's Harvester Node driver
+   AKA node-driver NodeDriver
 
-   #+begin_src bash
-     go build
-     docker-machine create -d harvester --help
-   #+end_src
-   #+begin_src bash
-     docker-machine create -d harvester \
-                    --ca-cert "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdGMyVnkKZG1WeUxXTmhRREUyTVRRNE1UTTNOalF3SGhjTk1qRXdNekF6TWpNeU1qUTBXaGNOTXpFd016QXhNak15TWpRMApXakFqTVNFd0h3WURWUVFEREJock0zTXRjMlZ5ZG1WeUxXTmhRREUyTVRRNE1UTTNOalF3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFSZ3ZEOUVjSjdSMUZqWjRIeXcwY0pkTnp2aml3Mzlwc2NzNXEvbHNvSjUKSHRXWFJrOTZCR2hnbkUrVFRsdjdpb2JmNUhuMXgxRnNmcUxkcU1KWk5OTFNvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVWl3Rk0xZXY1aEpWWU5rditXSmkwCklCQ0R4YkV3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUloQU44N2ZSRjUySTIwVVo0UUhxVXJTWlVYTGJZQ3VDNk8KSURYL2VMaGt3emdtQWlBK2VEQXMxa2h3L2RLTC9uVHlvTjdMbmxUMEthV2xndkJnWjRDbVpLWDNlZz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K" \
-                    --cert "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrRENDQVRlZ0F3SUJBZ0lJRnhydW9NYXQ4VzB3Q2dZSUtvWkl6ajBFQXdJd0l6RWhNQjhHQTFVRUF3d1kKYXpOekxXTnNhV1Z1ZEMxallVQXhOakUwT0RFek56WTBNQjRYRFRJeE1ETXdNekl6TWpJME5Gb1hEVEl5TURNdwpNekl6TWpJME5Gb3dNREVYTUJVR0ExVUVDaE1PYzNsemRHVnRPbTFoYzNSbGNuTXhGVEFUQmdOVkJBTVRESE41CmMzUmxiVHBoWkcxcGJqQlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJNQWY2Rldvbm1OLzlRM3EKZE93ZGRCeXpDS0tGZi9yeFVTUDVLRFRqcjdkRE1pUStDM0Q2QWw5RGxsR2RBYkdMOFZveDB3TisrMnRWTWlRRQpvMmZ1YjkralNEQkdNQTRHQTFVZER3RUIvd1FFQXdJRm9EQVRCZ05WSFNVRUREQUtCZ2dyQmdFRkJRY0RBakFmCkJnTlZIU01FR0RBV2dCVEJuUmFvOVFiWVJUTG5QYk9kNjZsdWNYUFhuREFLQmdncWhrak9QUVFEQWdOSEFEQkUKQWlBdi9OaURpMlJGbGRrMzMrQlZRZHhyYmdrdGJRRUUxeXJSMHVnSE5hWmRkUUlnUm0rVTAzVUZrelhLdFVGYgpmQUtQYyt6cmFYRm8zY1FmbEpaQUNQR0RSUW89Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdFkyeHAKWlc1MExXTmhRREUyTVRRNE1UTTNOalF3SGhjTk1qRXdNekF6TWpNeU1qUTBXaGNOTXpFd016QXhNak15TWpRMApXakFqTVNFd0h3WURWUVFEREJock0zTXRZMnhwWlc1MExXTmhRREUyTVRRNE1UTTNOalF3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFTdUl5QzdCMFJ5Q2Ixejd1UlJZdzV5QXJ6ci9uYjA1ZTNPLzBzWUhDYnUKOEh6aUlIenZnUkZqTG4xV0ZEd0FnVVEzU2xjUWZpRUN5SmY3UkU0ME9EL1lvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVXdaMFdxUFVHMkVVeTV6MnpuZXVwCmJuRnoxNXd3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUlnVjNrQlEwc0lpY2dQclFaTXRUVllBZW9OYnU0VGRiYXMKVUR2b3lCZHdpWWtDSVFDSkROUDlqWDZqWnpPbXRKdDlIaUVoS1YrLzdzOVNGeTBsc0xxdGVlWWdrQT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K" \
-                    --key "LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSURjelVCU3huY1BhVFA5VUVXcjZaMy9BUk1WUUdQUGl2NE80ZHNKejZSbWpvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFd0Ivb1ZhaWVZMy8xRGVwMDdCMTBITE1Jb29WLyt2RlJJL2tvTk9PdnQwTXlKRDRMY1BvQwpYME9XVVowQnNZdnhXakhUQTM3N2ExVXlKQVNqWis1djN3PT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=" \
-                    --harvester-url "https://172.16.17.16:6443" \
-                    --cpus 3 \
-                    --disk-size "42Gi" \
-                    --keypair "k8s-local" \
-                    --ssh-key-path "~/.ssh/id_rsa.pub" \
-                    --ssh-user "gregj" \
-                    --mem-size "4Gi" \
-                    --vm-description "This is a hoooooot" \
-                    --vm-name "gg-whatahoot" \
-                    --image-id "image-mfz99"
-   #+end_src
+  + [[https://github.com/belgaied2/docker-machine-driver-harvester/releases/][Releases · belgaied2/docker-machine-driver-harvester · GitHub]]
+    All you need to do is to :
+    + [[https://docs.docker.com/machine/install-machine/][Install Docker Machine]]: using brew or downloading the version for linux
+    + download the [[https://github.com/belgaied2/docker-machine-driver-harvester/releases/][harvester driver]]
+    + give the file execution rights and put in your PATH
+    + then, run =docker-machine create -d harvester --help=
+  The Driver will need Kubeconfig information (CA CERT, CLIENT CERT and CLIENT KEY + K3OS
+  Kube proxy URL) and will create the VMs using the Kubernetes objects for
+  KubeVirt/Harvester.
+
+  #+begin_src bash
+    docker-machine create -d harvester \
+                   --ca-cert "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJoekNDQVM2Z0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQTdNUnd3R2dZRFZRUUtFeE5rZVc1aGJXbGoKYkdsemRHVnVaWEl0YjNKbk1Sc3dHUVlEVlFRREV4SmtlVzVoYldsamJHbHpkR1Z1WlhJdFkyRXdIaGNOTWpFdwpNekU0TURFeU9UTTVXaGNOTXpFd016RTJNREV5T1RNNVdqQTdNUnd3R2dZRFZRUUtFeE5rZVc1aGJXbGpiR2x6CmRHVnVaWEl0YjNKbk1Sc3dHUVlEVlFRREV4SmtlVzVoYldsamJHbHpkR1Z1WlhJdFkyRXdXVEFUQmdjcWhrak8KUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVFSdEM1ZXEzWEZSSUY2alE1V1JjOXNhZGliU2NjaWxnVWh5S2x5VSttbgphNEY1WktLS05zQnQxT1dWcmpRbEFtYkRWdUVrejN1WkF2aGN0cnA2Zm5TOW95TXdJVEFPQmdOVkhROEJBZjhFCkJBTUNBcVF3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFLQmdncWhrak9QUVFEQWdOSEFEQkVBaUIyMEhEaTJhVzAKVnc2SVgvV25sT1VIelFvZm51UUsySlZlOEtha09rK2Z2d0lnS0FlOW9aQ2dNZVlnd0JLTERRWFI2VXNNR2V5ZwpUTEFzdlNQTW1DZjNGcEU9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=" \
+                   --cert "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrRENDQVRlZ0F3SUJBZ0lJRnhydW9NYXQ4VzB3Q2dZSUtvWkl6ajBFQXdJd0l6RWhNQjhHQTFVRUF3d1kKYXpOekxXTnNhV1Z1ZEMxallVQXhOakUwT0RFek56WTBNQjRYRFRJeE1ETXdNekl6TWpJME5Gb1hEVEl5TURNdwpNekl6TWpJME5Gb3dNREVYTUJVR0ExVUVDaE1PYzNsemRHVnRPbTFoYzNSbGNuTXhGVEFUQmdOVkJBTVRESE41CmMzUmxiVHBoWkcxcGJqQlpNQk1HQnlxR1NNNDlBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJNQWY2Rldvbm1OLzlRM3EKZE93ZGRCeXpDS0tGZi9yeFVTUDVLRFRqcjdkRE1pUStDM0Q2QWw5RGxsR2RBYkdMOFZveDB3TisrMnRWTWlRRQpvMmZ1YjkralNEQkdNQTRHQTFVZER3RUIvd1FFQXdJRm9EQVRCZ05WSFNVRUREQUtCZ2dyQmdFRkJRY0RBakFmCkJnTlZIU01FR0RBV2dCVEJuUmFvOVFiWVJUTG5QYk9kNjZsdWNYUFhuREFLQmdncWhrak9QUVFEQWdOSEFEQkUKQWlBdi9OaURpMlJGbGRrMzMrQlZRZHhyYmdrdGJRRUUxeXJSMHVnSE5hWmRkUUlnUm0rVTAzVUZrelhLdFVGYgpmQUtQYyt6cmFYRm8zY1FmbEpaQUNQR0RSUW89Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJkekNDQVIyZ0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQWpNU0V3SHdZRFZRUUREQmhyTTNNdFkyeHAKWlc1MExXTmhRREUyTVRRNE1UTTNOalF3SGhjTk1qRXdNekF6TWpNeU1qUTBXaGNOTXpFd016QXhNak15TWpRMApXakFqTVNFd0h3WURWUVFEREJock0zTXRZMnhwWlc1MExXTmhRREUyTVRRNE1UTTNOalF3V1RBVEJnY3Foa2pPClBRSUJCZ2dxaGtqT1BRTUJCd05DQUFTdUl5QzdCMFJ5Q2Ixejd1UlJZdzV5QXJ6ci9uYjA1ZTNPLzBzWUhDYnUKOEh6aUlIenZnUkZqTG4xV0ZEd0FnVVEzU2xjUWZpRUN5SmY3UkU0ME9EL1lvMEl3UURBT0JnTlZIUThCQWY4RQpCQU1DQXFRd0R3WURWUjBUQVFIL0JBVXdBd0VCL3pBZEJnTlZIUTRFRmdRVXdaMFdxUFVHMkVVeTV6MnpuZXVwCmJuRnoxNXd3Q2dZSUtvWkl6ajBFQXdJRFNBQXdSUUlnVjNrQlEwc0lpY2dQclFaTXRUVllBZW9OYnU0VGRiYXMKVUR2b3lCZHdpWWtDSVFDSkROUDlqWDZqWnpPbXRKdDlIaUVoS1YrLzdzOVNGeTBsc0xxdGVlWWdrQT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K" \
+                   --key "LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSURjelVCU3huY1BhVFA5VUVXcjZaMy9BUk1WUUdQUGl2NE80ZHNKejZSbWpvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFd0Ivb1ZhaWVZMy8xRGVwMDdCMTBITE1Jb29WLyt2RlJJL2tvTk9PdnQwTXlKRDRMY1BvQwpYME9XVVowQnNZdnhXakhUQTM3N2ExVXlKQVNqWis1djN3PT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=" \
+                   --harvester-url "https://172.16.17.16:6443" \
+                   --cpus 3 \
+                   --disk-size "42Gi" \
+                   --keypair "k8s-local" \
+                   --ssh-key-path "~/.ssh/id_rsa.pub" \
+                   --ssh-user "gregj" \
+                   --mem-size "4Gi" \
+                   --vm-description "This is a hoooooot" \
+                   --vm-name "gg-whatahoot" \
+                   --image-id "image-mfz99" \
+                   gorto
+  #+end_src
+** Work getting the certs from KUBECONFIG
+   + Get the contexts to present to the user
+      #+begin_src bash
+        k config get-contexts -o name
+      #+end_src
+   + get cluster and user from selected context (e.g. =rancher=)
+     #+begin_src bash :results output raw
+       kubectl config view -o json|jq -r '.contexts[] | select(.name == "rancher") | .context'
+     #+end_src
+
+     #+RESULTS:
+     {
+       "cluster": "rancher",
+       "user": "rancher"
+     }
+   + get cluster CA
+     #+begin_src bash :results output raw
+       kubectl config view --flatten -o json | jq -r '.clusters[] | select(.name == "rancher")' | sed 's,LS0.\+,blah-blah,'
+     #+end_src
+
+     #+RESULTS:
+     {
+       "name": "rancher",
+       "cluster": {
+         "server": "https://rancher.hypecyclist.org/k8s/clusters/local",
+         "certificate-authority-data": "blah-blah
+       }
+     }
+     {
+       "name": "rancher",
+       "cluster": {
+         "server": "https://rancher.hypecyclist.org/k8s/clusters/local",
+         "certificate-authority-data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJoekNDQVM2Z0F3SUJBZ0lCQURBS0JnZ3Foa2pPUFFRREFqQTdNUnd3R2dZRFZRUUtFeE5rZVc1aGJXbGoKYkdsemRHVnVaWEl0YjNKbk1Sc3dHUVlEVlFRREV4SmtlVzVoYldsamJHbHpkR1Z1WlhJdFkyRXdIaGNOTWpFdwpNekU0TURFeU9UTTVXaGNOTXpFd016RTJNREV5T1RNNVdqQTdNUnd3R2dZRFZRUUtFeE5rZVc1aGJXbGpiR2x6CmRHVnVaWEl0YjNKbk1Sc3dHUVlEVlFRREV4SmtlVzVoYldsamJHbHpkR1Z1WlhJdFkyRXdXVEFUQmdjcWhrak8KUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVFSdEM1ZXEzWEZSSUY2alE1V1JjOXNhZGliU2NjaWxnVWh5S2x5VSttbgphNEY1WktLS05zQnQxT1dWcmpRbEFtYkRWdUVrejN1WkF2aGN0cnA2Zm5TOW95TXdJVEFPQmdOVkhROEJBZjhFCkJBTUNBcVF3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFLQmdncWhrak9QUVFEQWdOSEFEQkVBaUIyMEhEaTJhVzAKVnc2SVgvV25sT1VIelFvZm51UUsySlZlOEtha09rK2Z2d0lnS0FlOW9aQ2dNZVlnd0JLTERRWFI2VXNNR2V5ZwpUTEFzdlNQTW1DZjNGcEU9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0="
+       }
+     }
+   + some elisp
+     #+begin_src emacs-lisp
+       (defun gjg/get-cluster-credentials ()
+         "Oh yeah"
+         (interactive)
+         (let ((contexts (shell-command)
+
+                )))
+         (message "Well that was fun")
+         )
+     #+end_src
+   + The contexts using org-babel
+     #+name: gorto
+     #+begin_src bash :results output table
+       kubectl config get-contexts
+     #+end_src
+
+     #+RESULTS: gorto
+     | CURRENT         | NAME             | CLUSTER          | AUTHINFO         | NAMESPACE |
+     | *               | gg-harvester-lab | gg-harvester-lab | gg-harvester-lab |           |
+     | gg-one-and-done | gg-one-and-done  | gg-one-and-done  |                  |           |
+     | gg-rke-gcp      | gg-rke-gcp       | gg-rke-gcp       |                  |           |
+     | rancher         | rancher          | rancher          |                  |           |
+
+   + ohai
+     #+begin_src emacs-lisp :var table=gorto
+       (completing-read "Contexts: "
+                        (mapcar (lambda (x) (nth 1 x)) table)
+                        )
+     #+end_src
+   + A magic intermediate command
+     #+begin_src bash
+       HARVESTER_CONTEXT="gg-harvester-lab"
+       HARVESTER_CLUSTER=`kubectl config view -o json|jq -r ".contexts[]|select(.name == \"${HARVESTER_CONTEXT}\") | .context.cluster"`
+       HARVESTER_USER=`kubectl config view -o json|jq -r ".contexts[]|select(.name == \"${HARVESTER_CONTEXT}\") | .context.user"`
+       HARVESTER_CLUSTER_CA=`kubectl config view --flatten -o json | jq -r ".clusters[] | select(.name == \"${HARVESTER_CLUSTER}\") | .cluster[\"certificate-authority-data\"]"`
+       HARVESTER_URL=`kubectl config view --flatten -o json | jq -r ".clusters[] | select(.name == \"${HARVESTER_CLUSTER}\") | .cluster.server"`
+       HARVESTER_USER_CERT=`kubectl config view --flatten -o json | jq -r ".users[] | select(.name == \"${HARVESTER_USER}\") | .user[\"client-certificate-data\"]"`
+       HARVESTER_USER_KEY=`kubectl config view --flatten -o json | jq -r ".users[] | select(.name == \"${HARVESTER_USER}\") | .user[\"client-key-data\"]"`
+       docker-machine create -d harvester \
+                      --ca-cert ${HARVESTER_CLUSTER_CA} \
+                      --cert ${HARVESTER_USER_CERT} \
+                      --key  ${HARVESTER_USER_KEY} \
+                      --harvester-url ${HARVESTER_URL} \
+                      --cpus 3 \
+                      --disk-size "42Gi" \
+                      --keypair "k8s-local" \
+                      --ssh-key-path "~/.ssh/k8s-local.pub" \
+                      --ssh-user "gregj" \
+                      --mem-size "4Gi" \
+                      --vm-description "This is a hoooooot" \
+                      --vm-name "gg-whatahoot" \
+                      --image-id "image-m2d7r" \
+                      gorto
+     #+end_src
 * Create multi-VM bootable image in Harvester from start to finish
 ** Install from =.iso= using Ubuntu
    Image: [[http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/mini.iso][ubuntu-mini 20.04]]
