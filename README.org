@@ -378,6 +378,33 @@
        sudo rm -rf /etc/cni/net.d/
      #+end_src
 ** Kubernetes notes
+*** Add specific hosts to cluster DNS
+    + ref: [[https://stackoverflow.com/a/40595719/457574][amazon web services - Create specific A record entry to Kubernetes local DNS ...]]
+    #+begin_src yaml
+      # Add config to dnsmasq used by kube-dns
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: kube-dns
+        namespace: kube-system
+      data:
+        myhosts: |
+          172.16.17.5 gorto gorto.magichome
+    #+end_src
+    #+begin_src yaml
+      spec:
+        template:
+          spec:
+            volumes:
+            - name: extra-hosts
+              configMap:
+                name: kube-dns
+            volumeMounts:
+            - name: extra-hosts
+              mountPath: /etc/hosts.d
+            args:
+            - --hostsdir=/etc/hosts.d
+    #+end_src
 *** Create volume that persists between multiple pod restarts
     :LOGBOOK:
     - State "DONE"       from              [2020-02-23 Sun 12:10]
