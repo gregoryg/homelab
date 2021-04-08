@@ -223,9 +223,11 @@
      #+end_src
 ** Using cloud-config
    + Remember to literally start the config with =#cloud-config=
-
      #+begin_src yaml
        #cloud-config
+       groups:
+         - sudo
+         - wheel
        ssh_authorized_keys:
          - >
            ssh-rsa
@@ -234,11 +236,14 @@
        users:
          - default
          - name: gregj
-           groups: users
+           groups: users, sudo, wheel
            password: >-
              ## mkpasswd --method=SHA-512 --rounds=4096
+           ssh_authorized_keys:
+             - >
+               ssh-rsa
+               AAAAB3NzaC1yc2EAAAADAQABAAABgQDIyhdKNeZnl0+nm5ApMVXCjbSvU/dEtFCU2+32GYBzyw6d8OtH7zs219/0ebsGpzPyIPcltWG/hn93A19feT7h/iZ0ZOl+TpdzvK0ExiEaqolZgiLavKcZyG6pVenfg7OF8HhI47XmjzgeVlFCP818TJF/LyA+eJGHumetAi+w7N34JVGz71gZridii1oWeNbzTC6oouBxZIu4+IVANnyTKYwMRzGdd7/iyOyJ1nvO88uedyD/KEZ4ow4tD1OOZE74VepxhbSEDjPu2Z++KQWQ7Ohjy5DZ8WagF/rgTbP0+wGX6AJSZ3S0p1+iXVjgYPx1kw8pPB1Ay7nLGHsgSSreBzxmiyX5rFmj1LtDti+Cy1m2tdnF+bFDT361j0JRgBGqD1R6AE2xCyizHgO6wLmgSzob0y7FzzafrIjFu64QkfAKuzJLXK02j1MdNPTlIuOc9vw6iKkIh3g4N55uPwyCOfhVZDPUgnmq1UPFr3hK5rHyQEpgeVOy5cia303au88=
      #+end_src
-
 ** Getting a cluster running in the cluster
    One key thing is to assure there are not overlapping Pod network CIDR ranges
 *** k3s
