@@ -237,8 +237,9 @@
          - default
          - name: gregj
            groups: users, sudo, wheel
-           password: >-
-             ## mkpasswd --method=SHA-512 --rounds=4096
+           sudo: ['ALL=(ALL) NOPASSWD:ALL']
+           # password: >-
+           #   ## mkpasswd --method=SHA-512 --rounds=4096
            ssh_authorized_keys:
              - >
                ssh-rsa
