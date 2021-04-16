@@ -838,9 +838,50 @@
     sudo virsh reboot centos
   #+end_src
 * Issues
+** How to grab relevant logs
+*** RKE/k3s
+    #+begin_src bash
+      wget -O- https://raw.githubusercontent.com/rancherlabs/support-tools/master/collection/rancher/v2.x/logs-collector/rancher2_logs_collector.sh | sudo bash -s
+    #+end_src
+*** Longhorn
+    + Use UI "Generate Support Bundle" button at bottom
+    + Joshua Moody's gist:
+    [[https://gist.github.com/joshimoo/cdf2995e5c517a74b588bab59dbf3a1f][how to create a longhorn support bundle when the ui is not working · GitHub]]
+    + Simplified instructions:
+      + Create access to =longhorn-backend= service
+        #+begin_src bash
+          # Change type to NodePort
+          kubectl -n longhorn-system edit svc longhorn-backend
+        #+end_src
+
+    #+begin_src bash
+      # specify NodePort to service longhorn-backend
+      HOSTPORT=`hostname`:30487
+      # initiate bundle generation
+      bundleinfo=$(curl -s -X POST \
+                        -H 'Content-Type: application/json' -d '{ "issueURL": "https://github.com/longhorn/longhorn/issues/2118", "description": "2118" }' \
+                        http://${HOSTPORT}/v1/supportbundles)
+      bundleid=$(echo $bundleinfo | jq -r '.id')
+      bundlename=$(echo $bundleinfo | jq -r '.name')
+
+      # check download readiness
+      bundlestate=$(curl -s  -X GET \
+                         http://${HOSTPORT}/v1/supportbundles/${bundleid}/${bundlename} | jq -r '.state')
+      # When ready, download the beast
+      if [ ${bundlestate} == 'ReadyForDownload' ] ; then
+          curl -s -X GET \
+               http://${HOSTPORT}/v1/supportbundles/${bundleid}/${bundlename}/download --output /tmp/support-bundle.zip
+          echo "Wrote Longhorn support bundle to /tmp/support-bundle.zip"
+      fi
+    #+end_src
+
+
 ** Submitted / in progress
 *** [[https://github.com/rancher/harvester/issues/646][#646 {BUG} Specifying an internet proxy during installation of agent node makes node unusable]]
 *** [[https://github.com/rancher/harvester/issues/647][#647 {BUG} UI Reports total available on root file systems, not total Longhorn storage]]
+*** #666 Rebooting a node makes VM unable to start
+   + [[https://github.com/rancher/harvester/issues/666][rancher/harvester#666 {BUG} Rebooting a node makes VMs unable to start]]
+
 ** Cooking
 *** Add grouping label to instance when creating multiple instances of VM
     + Use =Name/Prefix= as value
