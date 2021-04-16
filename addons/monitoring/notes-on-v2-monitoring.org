@@ -1,0 +1,186 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:nil
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:nil
+#+options: todo:nil |:t
+#+title: v2 Monitoring
+#+date: [2020-09-29 Tue]
+#+author: Greg Grubbs
+#+email: greg.grubbs@suse.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 28.0.50 (Org mode 9.3.7)
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
+
+* Notes on the customer presentation                                 :ATTACH:
+  :PROPERTIES:
+  :ID:       8a0c904b-b579-4947-b3ba-8487e675974d
+  :END:
+** Timings from video can be referred back to the attached captions file :noexport:
+** monitoring v1
+  + V1 is a chart that rancher built
+  + We deploy several components *in conjunction with* Rancher controllers
+    the components we deployed were:
+    + An instance of Prometheus
+    + An instance of Grafana
+    + potentially an instance of AlertManager if alerting v1 was enabled
+  + under the hood because we were using Prometheus Operator, Rancher controllers
+    would determine what the user wanted based on what they submitted in the UI
+    + e.g. if you created a workload, it would automatically create the appropriate servicemonitor
+      resource for that workload
+    + if you created a metrics-based alert it would create the appropriate Prometheus
+      rule under the hood
+** V2 is a similar concept with some differences
+   + still using Prometheus Operator, still deploying the same components
+   + the biggest difference is that the Rancher controllers are not expected to exist
+     for Monitoring v2 to work - this imposed a couple constraints
+     + the creation of a new chart called Rancher Pushprox - a set of Prometheus
+       exporters that can export metrics across a network boundary that were built for
+       specific cluster types, and scrape metrics from four different components:
+       etcd, scheduler, kube-proxy and kube controller manager.  Those four components
+       for each cluster type will have their own Pushprox
+     + the underlying metrics have *not* changed
+   + the second major difference is that v1 is a Rancher original chart, but v2 is a
+     fork of an upstream chart from the Prometheus community called Kube Prometheus Stack
+     + kube Prometheus stack deploys Prometheus, Grafana and AlertManager.  Default
+       versions of each are deployed onto the cluster - founded on the CRDs that the
+       Prometheus community define
+     + on top of that, we deploy a set of reporters (?) including Rancher pushprox
+       added to Rancher Monitoring
+   + In addition, we have specific configuration of Prometheus and AlertManager
+   + Prometheus Operator does a very good job leveraging Kubernetes resources to
+     manage your Prometheus configuration.
+** Slides of Prometheus architecture
+       + [[./documents/monitoring-v2/images/monitoring-v2-01.png]]
+       + we create service monitors and pod monitors that are selected by your default Prometheus
+       + your Prometheus can select which alert managers it will send alerts to
+       + PromethusRule is a separate concept (from PodMonitor and ServiceMonitor)
+       + Prometheus can be thought of as a system having 3 separate roles:
+         1. Scraping metrics, done via PodMonitor and ServiceMonitor configurations as
+            shown; scraping looks for services that have the labels in namespaces selected by selectors in the configuration
+            * If you create a new ServiceMonitor, and that ServiceMonitor is selected by
+              your default Prometheus, then Prometheus will automatically start scraping
+              that new target you listed because you created a new ServiceMonitor object
+         2. store metrics - stores scraped metrics in its own format in its PV
+         3. Rules that tell Prometheus when/how to interact with systems such as your
+            time-series database
+       + Prometheus rules allow you to define 2 types of what to evaluate
+         1. Recording rule - lets you pre-compute a complex series from your PodMonitor
+            and ServiceMonitor, and store the result rather than all the detail.  This is
+            certainly a lesser-used feature
+         2. Alerting rule - much more important and widely used feature.  This is how
+            Prometheus knows *what* to send to AlertManager.  AlertManager handles what
+            notification channels (Slack, PagerDuty) to send to, but it only receives what
+            Prometheus sends, based on Prometheus Rules
+       + There is no concept of =notifiers= unlike v1; instead we use upstream Prometheus
+         concept of =receivers=
+       + How Prometheus and AlertManager interact.  The evaluation interval specifies how
+         often Prometheus check to see whether Prometheus Rules need to be satisfied.
+         When Prometheus sees a given rules query is valid it sends an HTTP request to an
+         AlertManager.  AlertManager has its own logic to figure out when it needs to
+         trigger a notification, and who gets the notification based on its annotation system.
+       + A PromethusRule allows you to describe what information is sent:
+         1. the name of the alert
+         2. the expression tied to that alert
+         3. labels and annotations - these are *not* k8s labels/annotations
+            * labels encode information about which receiver to send the data to
+            * annotations are additional pieces of information (e.g. human-readable
+              descriptive messages).  Annotations are passed along untouched
+       + Example: let's say I have a PromethusRule where the label is =team:frontend= and the
+           annotation is "The CPU is excessive on the node".  Label directs the data to a
+           =receiver= configured to accept alerts with that label
+         + labels are used for routing, annotations to pass along information to the end user/target
+       + *Note*: You will lose your custom annotations for the Prometheus Rules that
+         Rancher ships with when upgrading Rancher.  But your custom rules would be
+         unmolested - so you can make a copy of the modified rule
+       + This can all be done in the UI.  We have a custom UI for ServiceMonitor,
+         PodMonitor and Rules
+       + Our expectation *right now* is that you have only one Prometheus and one
+         AlertManager so don't expose UIs to create these
+       + Monitoring/alerting in Kubernetes is really a beast with a lot of moving components
+         + kube-prometheus, kube-prometheus-stack, Prometheus Operator and Prometheus
+           itself - like 4 layers of abstractions
+       + UI in Rancher has items on left for ServiceMonitor and PodMonitor
+         + ServiceMonitor may not exist in Rancher <2.5.  - it was added after initial
+           release of 2.5
+       + your labels inform AlertManager of who to send it to - the *route* basically says
+         "Send any alert with these label to this particular receiver.  The receiver is
+         very similar to the notifiers in Monitoring v1 except it can *also* determine
+         which alerts go to it
+       + Guided creation of alerting rule at 24:37
+       + PromethusRule is terribly named, because a PromethusRule consists of a group of
+         rules that can be either alerting or recording.  But your recommended to put
+         either alerting rules or recording rules into one PromethusRule.  No idea why
+         they chose to use one CRD for it
+       + if you are recording something you are alerting on, make 2 rules.
+       + Monitoring v1->v2 migration
+       + AlertManager is not managed through CRDs - it's managed through an AlertManager
+         Secret
+       + in migrating, you want to disable monitoring v1, alerting v1 and notifiers v1
+         because all 3 of these re related to whether / how Prometheus Operator gets
+         deployed.  then you want to create the secret *prior to* deploying monitoring v2
+         so that it will not create a new secret.  you can always replace the secret in
+         that namespace though with this new secret and monitoring v2 will respect that
+       + [ ] is this what happened with the strange behavior of one of the alert managers
+         at TaxHawk??
+       + one way to get rid of monitoring v1 is to disable all notifiers - if there are
+         not notifiers v1 will be disabled.  the second way is to go into every single
+         alert group and remove every possible mention that could tie it to a notifier
+       + Question: if I go through and delete ll the notifier in a cluster but
+         somehow that fails to remove v1 - then the migration script from Rancher will
+         not work - what would I do?
+         + So the flow is: you want to run =migrate-rules.py= - will not write or change
+           your cluster - it's read-only.  Also run the "migrate dashboard" scripts - the
+           scripts will output YAML manifest files that you can track.  So now you've
+           stored all possible things that could be migrated from alerting v1 to v2 in
+           your manifests.  so now - worst case if things go wrong you can =kubectl apply=
+           those manifests to be back at the v1 starting point.  you would then run the
+           "check monitoring disabled" script. Disable the things it tells you are still
+           enabled, until the script gives you the green light that says monitoring v1 is
+           entirely disabled.  You will then =kubectl apply= the manifests, then enable
+           monitoring v2.
+         + Alerting v1 slide
+           [[./documents/monitoring-v2/images/alerting-v1-02.png]]
+         + vs. Alerting v2
+           [[./documents/monitoring-v2/images/alerting-v2-03.png]]
+       + *Sources* for all the metrics:
+         + NodeExporter - exports metric on each node
+           + CPU of node, memory, utilization
+         + kube scheduler metrics
+         + kube state metrics - queries the Kubernetes API and some up with series for
+           information about your pods, information about your nodes from the perspective
+           of API use.  Check =kube-state-metrics= links above
+       + So let's look at for example the [[https://github.com/kubernetes/kube-state-metrics/blob/master/docs/node-metrics.md][kube_node_status_capacity]] metric.  That
+         is what you'd use in the promql query - kube_node_status_capacity is the name of
+         the series and within brackets you'd put "node = {name-of=node}
+       + and based on what you really want to alert on, it makes sense to put this in a
+         PromethusRule to figure out from a number of metrics when you want to alert based
+         on some type of node capacity measure
+       + 56:26 - share a specific rule being worked on
+       + To get auto-completion, click on =Overview > Prometheus Graph=
+         + helpful to write the promql to go into a rule
+       + 59:00 shows some basics of routes
+         + grouping
+         + matching
+       + the =null= receiver could be attached to Slack for example to get everything over
+         there but to do anything more advanced you need to configure routes
+       + uncertain: monitoring v2 will not work with Microsoft Teams at the current moment (2.5.5?)
+       + check 'edit as form' if you seem to be missing a button in the UI!  (1:03:30)
+       + 1:07:30 - example of a high memory usage; Prometheus commonly uses 2-3 GB total
+       + article on a site called [[https://www.robustperception.io/how-much-ram-does-prometheus-2-x-need-for-cardinality-and-ingestion][Robust Perception]] - came up with a way to roughly calculate how much
+         memory usage you have
+       + 1:08:53 - The way Prometheus works as a time series database is that it stores the latest
+         two hours of metrics that it scraped in what's known as the =head chunk=, which
+         is stored directly in memory.  Then after a two hour period of time it will flush
+         whatever is in memory into your disk; that's how it is able to store metrics over
+         time.  But the current two hours of of metrics that you have collected will be
+         what contributes to the amount of memory that you have.  On the robust perception
+         website that's exactly the kind of information they ask you for: the number of
+         time series you have in your cluster.  That's relevant because on top of having
+         memory allocated for the head chunk they also allocate a certain amount of memory
+         for each series you have. That's the way that you make queries - it needs to have
+         some pointer to that particular chunk to be able to know how to get the data
+         required to process a particular query.
+
+
+#  LocalWords:  v2 v1 etcd kube PodMonitor ServiceMonitor TaxHawk promql
