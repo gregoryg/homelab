@@ -404,6 +404,17 @@
                       --image-id "image-m2d7r" \
                       gorto
      #+end_src
+* The "official" node driver
+  #+begin_src bash
+    docker-machine create -d harvester-harvester \
+                   --harvester-username admin \
+                   --harvester-password=${HARVESTER_PASSWORD} \
+                   --harvester-image-name image-opensuse-leap-15sp2-qcow2 \
+                   --harvester-network-name vlan \
+                   --harvester-host protomolecule.magichome \
+                   --harvester-port 30443 \
+                   mynewvm
+  #+end_src
 * Create multi-VM bootable image in Harvester from start to finish
 ** Install from =.iso= using Ubuntu
    Image: [[http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/mini.iso][ubuntu-mini 20.04]]
