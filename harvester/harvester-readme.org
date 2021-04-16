@@ -10,7 +10,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 28.0.50 (Org mode 9.4.4)
-#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
 
    Official site: [[https://harvesterhci.io/][Harvester - Open-source hyperconverged infrastructure]]
 
