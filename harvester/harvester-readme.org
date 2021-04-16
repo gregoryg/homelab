@@ -30,44 +30,23 @@
                -o jsonpath='{.items[*].spec.dataVolumeTemplates[0].metadata.annotations.harvester\.cattle\.io/imageId}' ; echo
      #+end_src
 
-     #+RESULTS:
-     : default/image-q8l5g default/image-q8l5g default/image-pj8k8
-
 
    + Then use that to find the image used to create the VM
      #+begin_src bash
        kubectl -n default get vmimage image-q8l5g \
          -o custom-columns=NAME:.metadata.name,DISPLAY_NAME:.spec.displayName
      #+end_src
-
-     #+RESULTS:
-     | NAME        | DISPLAY_NAME                            |
-     | image-q8l5g | opensuse-leap-15.2.x86_64-nocloud.qcow2 |
    + Info for the running VM instances
      #+begin_src bash
        kubectl -n default get virtualmachineinstances \
                -o custom-columns=NAME:.metadata.name,CPU:.spec.domain.cpu.cores,MAC:.spec.domain.devices.interfaces[].macAddress,IP:.status.interfaces[].ipAddress,HOSTNAME:.spec.hostname,NETWORK:.spec.networks[].name,DISK1:.spec.volumes[0].dataVolume.name
      #+end_src
-
-     #+RESULTS:
-     | NAME        | CPU | MAC               |         IP | HOSTNAME    | NETWORK | DISK1                      |
-     | gg-party-3  |   2 | <none>            | 10.42.0.68 | gg-party-3  | default | gg-party-3-rootdisk-urvnp  |
-     | gg-party-2  |   2 | <none>            | 10.42.0.69 | gg-party-2  | default | gg-party-2-rootdisk-0qens  |
-     | gg-rescueme |   2 | 02:00:00:db:57:cc | 10.42.0.81 | gg-rescueme | default | gg-rescueme-rootdisk-alkif |
-     | gg-party1   |   4 | <none>            | 10.42.0.85 | gg-party1   | default | gg-party1-disk-0-qz4fd     |
    + Simpler list of hostnames and IPs, just running =k get pod=
      #+begin_src bash :results table
        kubectl get pods -l kubevirt.io=virt-launcher \
          -o custom-columns=LAUNCHER_NAME:.metadata.name,HOSTNAME:.spec.hostname,IP:.status.podIP,STATUS:.status.phase \
          --sort-by=.spec.hostname
      #+end_src
-
-     #+RESULTS:
-     | LAUNCHER_NAME                      | HOSTNAME       |          IP | STATUS  |
-     | virt-launcher-gg-harvestme-1-9ljzb | gg-harvestme-1 | 10.42.0.104 | Running |
-     | virt-launcher-gg-harvestme-2-7ddpf | gg-harvestme-2 | 10.42.0.108 | Running |
-     | virt-launcher-gg-harvestme-3-nbxlx | gg-harvestme-3 | 10.42.0.109 | Running |
-     | virt-launcher-gg-rescueme-4ls6z    | gg-rescueme    |  10.42.0.81 | Running |
 
 ** Setting root password on a =.qcow2= image
 
@@ -108,19 +87,9 @@
      kubectl get volumes.longhorn.io -o custom-columns="NAME:metadata.name,STATE:status.state,NUMREPLICAS:spec.numberOfReplicas,ROBUSTNESS:status.robustness,SIZE:spec.size,ACTUAL:status.actualSize,NODE:status.currentNodeID"
    #+end_src
 
-   #+RESULTS:
-   | NAME                                     | STATE    | NUMREPLICAS | ROBUSTNESS |        SIZE |    ACTUAL | NODE                |
-   | pvc-057fd8cd-6e7a-43e0-b9d3-0ebb8a34b838 | attached |           4 | degraded   | 21474836480 | 480030720 | chewbacca.magichome |
-   | pvc-5868f344-11d7-4d5c-983f-673c6eff86b0 | attached |           2 | healthy    | 21474836480 | 480407552 | chewbacca.magichome |
-   | pvc-7320258a-4bd3-4858-aae7-73aba22373ea | attached |           2 | healthy    | 21474836480 | 480378880 | chewbacca.magichome |
-   | pvc-ff1c04f6-083b-4727-9aef-3e554ede73a9 | attached |           2 | healthy    | 21474836480 | 479825920 | chewbacca.magichome |
-
    #+begin_src bash
      kubectl -n longhorn-system patch  volume pvc-057fd8cd-6e7a-43e0-b9d3-0ebb8a34b838 --type merge -p '{"spec":{"numberOfReplicas": 2}}'
    #+end_src
-
-   #+RESULTS:
-   : volume.longhorn.io/pvc-057fd8cd-6e7a-43e0-b9d3-0ebb8a34b838 patched
 
 ** Grabbing volumes from Longhorn
    + Get Longhorn volumes with info of disk size, actual used size and PVC name
@@ -323,8 +292,6 @@
      #+begin_src bash :results output raw
        kubectl config view -o json|jq -r '.contexts[] | select(.name == "rancher") | .context'
      #+end_src
-
-     #+RESULTS:
      {
        "cluster": "rancher",
        "user": "rancher"
@@ -333,8 +300,6 @@
      #+begin_src bash :results output raw
        kubectl config view --flatten -o json | jq -r '.clusters[] | select(.name == "rancher")' | sed 's,LS0.\+,blah-blah,'
      #+end_src
-
-     #+RESULTS:
      {
        "name": "rancher",
        "cluster": {
@@ -365,13 +330,6 @@
      #+begin_src bash :results output table
        kubectl config get-contexts
      #+end_src
-
-     #+RESULTS: gorto
-     | CURRENT         | NAME             | CLUSTER          | AUTHINFO         | NAMESPACE |
-     | *               | gg-harvester-lab | gg-harvester-lab | gg-harvester-lab |           |
-     | gg-one-and-done | gg-one-and-done  | gg-one-and-done  |                  |           |
-     | gg-rke-gcp      | gg-rke-gcp       | gg-rke-gcp       |                  |           |
-     | rancher         | rancher          | rancher          |                  |           |
 
    + ohai
      #+begin_src emacs-lisp :var table=gorto
@@ -471,9 +429,9 @@
      #+begin_src bash
        echo -n | sudo tee /etc/machine-id
      #+end_src
-   + Deal with hostname
-     [ ] Actually, don't - I think Harvester populates hostname - let's find out
-     - but *do* remove =/etc/hostname=
+   + Deal with hostname (by removing it)
+     + Harvester populates hostname using cloud-init
+     + but *do* remove =/etc/hostname=
        #+begin_src bash
          sudo rm -v /etc/hostname
        #+end_src
