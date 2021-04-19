@@ -524,7 +524,7 @@
    + Set our cluster prefix / VM group name
    #+name: cluster-prefix
    #+begin_src text
-   cent
+   leapy
    #+end_src
    + Set namespace where the VMs will run
    #+name: vmnamespace
@@ -533,7 +533,7 @@
    #+end_src
    #+name: vmuser
       #+begin_src text
-     centos
+     opensuse
    #+end_src
    + Figure out correct storage class
 
@@ -563,8 +563,6 @@
        apiVersion: kubevirt.io/v1
        kind: VirtualMachine
        metadata:
-         finalizers:
-         - wrangler.cattle.io/VMController.UnsetOwnerOfDataVolumes
          labels:
            harvester.cattle.io/creator: harvester
            vmgroup: <<cluster-prefix>>
@@ -586,7 +584,7 @@
                resources:
                  requests:
                    storage: 10Gi
-               storageClassName: longhorn-image-d4z5p
+               storageClassName: longhorn-image-opensuse-leap-15sp2.qcow2
                volumeMode: Block
              source:
                blank: {}
@@ -657,11 +655,12 @@
                name: cloudinitdisk
      #+end_src
    + Create the set of VMs based on the cluster prefix
-   #+begin_src bash  :results none :async yes :noweb yes
+   #+begin_src bash  :results output :async no :noweb yes
      for i in $(seq 1 12); do
          cat /tmp/peeps-1.vm.yaml | sed "s,peeps-1,<<cluster-prefix>>-${i}," | kubectl apply -f -
      done
    #+end_src
+
    + Label our VM instancess with label key =vmgroup= (if required) and show status
    #+begin_src bash :results output table replace :noweb yes
      for i in $(kubectl -n <<vmnamespace>> get vmi -o name -l vmgroup!=<<cluster-prefix>>| grep <<cluster-prefix>>); do
@@ -715,7 +714,8 @@
    + Set up pre-requisites for k3s installation on bastion
      #+begin_src bash :session bastion-sh :noweb yes
        # Get the keys all settled in known_hosts
-       for i in $(cat all-nodes.txt); do
+       for i in `cat all-nodes.txt`
+       do
            ssh -i ~/.ssh/k8s-local -o StrictHostKeyChecking=no  <<vmuser>>@${i} hostname
        done
      #+end_src
@@ -727,18 +727,16 @@
    #+end_src
 
    + Generate cluster hosts file for the halibut
-     #+begin_src bash :noweb yes :results output raw
+     #+begin_src bash :noweb yes :results output replace
        kubectl -n <<vmnamespace>> \
                get vmi \
+               -l vmgroup=<<cluster-prefix>> \
                -o custom-columns=IP:status.interfaces[0].ipAddress,NAME:metadata.name \
+               --sort-by=metadata.name \
        | tail -n +2
      #+end_src
-     10.52.0.118   cent-1
-     10.52.2.27    cent-2
-     10.52.2.28    cent-3
-     10.52.1.30    cent-4
-     10.52.1.29    cent-5
-     10.52.0.119   cent-6
+
+
 
    #+begin_src bash :session bastion-sh
      # install the first server
