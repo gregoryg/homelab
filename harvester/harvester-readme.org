@@ -907,6 +907,8 @@
    + [[https://github.com/rancher/harvester/issues/666][rancher/harvester#666 {BUG} Rebooting a node makes VMs unable to start]]
 
 ** Cooking
+*** Harvester node driver node pool template should include cloud config drop-down
+*** Harvester node driver node pool template should include SSH public key name
 *** Add grouping label to instance when creating multiple instances of VM
     + Use =Name/Prefix= as value
 *** CLI get settings should show value
