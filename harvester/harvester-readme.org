@@ -37,12 +37,13 @@
          -o custom-columns=NAME:.metadata.name,DISPLAY_NAME:.spec.displayName
      #+end_src
    + Info for the running VM instances
-     #+begin_src bash
+     #+begin_src bash :results table replace
        kubectl -n default get virtualmachineinstances \
-               -o custom-columns=NAME:.metadata.name,CPU:.spec.domain.cpu.cores,MAC:.spec.domain.devices.interfaces[].macAddress,IP:.status.interfaces[].ipAddress,HOSTNAME:.spec.hostname,NETWORK:.spec.networks[].name,DISK1:.spec.volumes[0].dataVolume.name
+               -o custom-columns=NAME:.metadata.name,CPU:.spec.domain.cpu.cores,MAC:.status.interfaces[].mac,IP:.status.interfaces[].ipAddress,HOSTNAME:.spec.hostname,NETWORK:.spec.networks[].name,DISK1:.spec.volumes[0].dataVolume.name
      #+end_src
+
    + Simpler list of hostnames and IPs, just running =k get pod=
-     #+begin_src bash :results table
+     #+begin_src bash :results table replace
        kubectl get pods -l kubevirt.io=virt-launcher \
          -o custom-columns=LAUNCHER_NAME:.metadata.name,HOSTNAME:.spec.hostname,IP:.status.podIP,STATUS:.status.phase \
          --sort-by=.spec.hostname
