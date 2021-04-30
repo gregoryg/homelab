@@ -340,13 +340,13 @@
      #+end_src
    + A magic intermediate command
      #+begin_src bash
-       HARVESTER_CONTEXT="gg-harvester-lab"
-       HARVESTER_CLUSTER=`kubectl config view -o json|jq -r ".contexts[]|select(.name == \"${HARVESTER_CONTEXT}\") | .context.cluster"`
-       HARVESTER_USER=`kubectl config view -o json|jq -r ".contexts[]|select(.name == \"${HARVESTER_CONTEXT}\") | .context.user"`
-       HARVESTER_CLUSTER_CA=`kubectl config view --flatten -o json | jq -r ".clusters[] | select(.name == \"${HARVESTER_CLUSTER}\") | .cluster[\"certificate-authority-data\"]"`
-       HARVESTER_URL=`kubectl config view --flatten -o json | jq -r ".clusters[] | select(.name == \"${HARVESTER_CLUSTER}\") | .cluster.server"`
-       HARVESTER_USER_CERT=`kubectl config view --flatten -o json | jq -r ".users[] | select(.name == \"${HARVESTER_USER}\") | .user[\"client-certificate-data\"]"`
-       HARVESTER_USER_KEY=`kubectl config view --flatten -o json | jq -r ".users[] | select(.name == \"${HARVESTER_USER}\") | .user[\"client-key-data\"]"`
+       export HARVESTER_CONTEXT="protomolecule"
+       export HARVESTER_CLUSTER=`kubectl config view -o json|jq -r ".contexts[]|select(.name == \"${HARVESTER_CONTEXT}\") | .context.cluster"`
+       export HARVESTER_USER=`kubectl config view -o json|jq -r ".contexts[]|select(.name == \"${HARVESTER_CONTEXT}\") | .context.user"`
+       export HARVESTER_CLUSTER_CA=`kubectl config view --flatten -o json | jq -r ".clusters[] | select(.name == \"${HARVESTER_CLUSTER}\") | .cluster[\"certificate-authority-data\"]"`
+       export HARVESTER_URL=`kubectl config view --flatten -o json | jq -r ".clusters[] | select(.name == \"${HARVESTER_CLUSTER}\") | .cluster.server"`
+       export HARVESTER_USER_CERT=`kubectl config view --flatten -o json | jq -r ".users[] | select(.name == \"${HARVESTER_USER}\") | .user[\"client-certificate-data\"]"`
+       export HARVESTER_USER_KEY=`kubectl config view --flatten -o json | jq -r ".users[] | select(.name == \"${HARVESTER_USER}\") | .user[\"client-key-data\"]"`
        docker-machine create -d harvester \
                       --ca-cert ${HARVESTER_CLUSTER_CA} \
                       --cert ${HARVESTER_USER_CERT} \
@@ -363,14 +363,15 @@
                       --image-id "image-m2d7r" \
                       gorto
      #+end_src
-* The "official" node driver
+* The official node driver
   #+begin_src bash
-    docker-machine create -d harvester-harvester \
+    docker-machine create -d harvester \
                    --harvester-username admin \
                    --harvester-password=${HARVESTER_PASSWORD} \
-                   --harvester-image-name image-opensuse-leap-15sp2-qcow2 \
+                   --harvester-image-name image-opensuse-leap-15sp2.qcow2 \
                    --harvester-network-name vlan \
                    --harvester-host protomolecule.magichome \
+                   --harvester-namespace default \
                    --harvester-port 30443 \
                    mynewvm
   #+end_src
