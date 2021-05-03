@@ -733,6 +733,7 @@
        cd /tmp
        for i in `cat all-nodes.txt`
        do
+           ssh-keygen -R ${i}
            ssh -i ~/.ssh/k8s-local -o StrictHostKeyChecking=no  <<vmuser>>@${i} hostname
        done
 
