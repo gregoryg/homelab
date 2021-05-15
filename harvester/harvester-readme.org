@@ -23,31 +23,42 @@
      Consider setting =--set helm.persistence.size=200Gi=
 ** My GitHub issues
    + [[https://github.com/rancher/harvester/issues/646][rancher/harvester#646 {BUG} Specifying an internet proxy during installtion o...]]
-** Getting details about vms
-   + Jsonpath for getting the CD image IDs
-     #+begin_src bash
+** Possibly complex commands to get details about vms
+*** Jsonpath for getting the CD image IDs
+     #+begin_src bash :session sh1 :results raw outputrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
        kubectl -n default get vm \
-               -o jsonpath='{.items[*].spec.dataVolumeTemplates[0].metadata.annotations.harvester\.cattle\.io/imageId}' ; echo
+               -o jsonpath='{.items[*].spec.dataVolumeTemplates[0].metadata.annotations.harvesterhci\.io/imageId}'
      #+end_src
 
-
-   + Then use that to find the image used to create the VM
+*** Then use that to find the image used to create the VM
      #+begin_src bash
        kubectl -n default get vmimage image-q8l5g \
          -o custom-columns=NAME:.metadata.name,DISPLAY_NAME:.spec.displayName
      #+end_src
-   + Info for the running VM instances
-     #+begin_src bash :results table replace
+*** Info for the running VM instances
+     #+begin_src bash :session sh1 :results table replace
        kubectl -n default get virtualmachineinstances \
                -o custom-columns=NAME:.metadata.name,CPU:.spec.domain.cpu.cores,MAC:.status.interfaces[].mac,IP:.status.interfaces[].ipAddress,HOSTNAME:.spec.hostname,NETWORK:.spec.networks[].name,DISK1:.spec.volumes[0].dataVolume.name
      #+end_src
 
-   + Simpler list of hostnames and IPs, just running =k get pod=
-     #+begin_src bash :results table replace
+
+*** Simpler list of hostnames and IPs, just running =k get pod=
+     #+begin_src bash :session sh1 :results table replace
        kubectl get pods -l kubevirt.io=virt-launcher \
          -o custom-columns=LAUNCHER_NAME:.metadata.name,HOSTNAME:.spec.hostname,IP:.status.podIP,STATUS:.status.phase \
          --sort-by=.spec.hostname
      #+end_src
+
+*** Get
+    #+name: ohaithere
+    #+begin_src bash :session sh1 :results table replace
+      kubectl -n cattle-global-nt get nodetemplates.management.cattle.io \
+              -o custom-columns=NAME:metadata.name,DISPLAY:spec.displayName,DRIVER:spec.driver,IMAGE:harvesterConfig.imageName
+    #+end_src
+
+    #+begin_src bash :results raw
+      echo $KUBECONFIG
+    #+end_src
 
 ** Setting root password on a =.qcow2= image
 
@@ -195,6 +206,10 @@
    + Remember to literally start the config with =#cloud-config=
      #+begin_src yaml
        #cloud-config
+       chpasswd:
+         list: |
+           gregj:mypassword-unencoded-dude
+         expire: false
        groups:
          - sudo
          - wheel
@@ -513,13 +528,14 @@
 ** TODO still need to automate
 *** Figure out storage class to use with image
 
-      #+begin_src bash
+      #+begin_src bash :session sh1
       kubectl get sc -o custom-columns=NAME:metadata.name,PROVISIONER:provisioner,BACKINGIMAGE:parameters.backingImage
       #+end_src
 
-      #+begin_src bash
+      #+begin_src bash :session sh1
       kubectl get virtualmachineimages.harvester.cattle.io -o custom-columns=NAME:metadata.name,DISPLAY_NAME:spec.displayName
       #+end_src
+
 
 
 ** Initialize settings used for code execution and tangling
@@ -535,7 +551,7 @@
    #+end_src
    #+name: vmuser
       #+begin_src text
-     gregj
+     opensuse
    #+end_src
    + Figure out correct storage class
 
@@ -555,7 +571,7 @@
    #+begin_src bash
      kubectl apply -f /tmp/opensuse-leap-vmimage.yaml
    #+end_src
-   #+begin_src bash
+   #+begin_src bash :session sh1
      kubectl get sc -o custom-columns=NAME:metadata.name,PROVISIONER:provisioner,BACKINGIMAGE:parameters.backingImage,BACKINGURL:parameters.backingImageURL
    #+end_src
 
@@ -793,6 +809,7 @@
            --server \
            --k3s-channel v1.19
    #+end_src
+
 
 
 * Prep to access k3os
