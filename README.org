@@ -1132,11 +1132,12 @@
    + Ref: [[https://www.home-assistant.io/installation/linux][Linux - Home Assistant]]
    + Docker install
      #+begin_src bash
-       docker run --init -d \
-         --name homeassistant \
-         --restart=unless-stopped \
-         -v /etc/localtime:/etc/localtime:ro \
-         -v /var/services/homes/gregj/homeassistant/gregj-starter:/config \
-         --network=host \
-         homeassistant/home-assistant:stable
+       docker run --init -d --restart=always \
+              --name="homeassistant" \
+              -e "TZ=America/Denver" \
+              -v /volume1/homes/gregj/homeassistant/gregj-starter:/config \
+              --network=host \
+              homeassistant/home-assistant:stable
+
+       # --device=/dev/ttyACM0 \
      #+end_src
