@@ -1,0 +1,16 @@
+##
+## Rancher Labs cow from K3Os
+##
+# $thoughts = "/";
+$the_cow = <<EOC;
+               $thoughts
+                $thoughts
+                 $thoughts
+              ,        ,
+  ,-----------|'------'|
+ /.           '-'    |-'
+|/|             |    |
+  |   .________.'----'
+  |  ||        |  ||
+  \\__|'        \\__|'
+EOC
