@@ -738,6 +738,15 @@
                --server \
                --k3s-extra-args="--disable servicelb --node-taint=node-role.kubernetes.io/master=true:NoSchedule"
        #+end_src
+* Up and Running: k3s - with Adrian Goins
+  + [[https://community.suse.com/courses/4522316/feed][Course on SUSE Community]]
+  + [[https://community.suse.com/courses/4522316/topics/4563584][Week 2: Networking and Drivers]]
+    + [[https://youtu.be/ebbdJVRi4Ng][Up and Running: K3s - Session Two - YouTube]]
+    + [[file:Up_and_Running_K3s_-_Topic_Session_2.pdf][slides]]
+    + ServiceLB can be selectively included on nodes by adding the label =svccontroller.k3s.cattle.io/enablelb=
+    + If the label is present, *only* those hosts will receive the servicelb pods
+    +  
+
 * Build Rancher 2.3.6
   Put together for customer testing
   + [X] provision nodes on GCP
