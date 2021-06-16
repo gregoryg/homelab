@@ -548,7 +548,7 @@
    + Set our cluster prefix / VM group name
    #+name: cluster-prefix
    #+begin_src text
-   vzdev
+   ggdev
    #+end_src
    + Set namespace where the VMs will run
    #+name: vmnamespace
@@ -557,24 +557,8 @@
    #+end_src
    #+name: vmuser
       #+begin_src text
-     opensuse
+     ubuntu
    #+end_src
-   + Figure out correct storage class
-
-
-** TODO still need to automate
-*** Figure out storage class to use with image
-
-      #+begin_src bash :session sh1
-      kubectl get sc -o custom-columns=NAME:metadata.name,PROVISIONER:provisioner,BACKINGIMAGE:parameters.backingImage
-      #+end_src
-
-
-      #+begin_src bash :session sh1
-      kubectl get virtualmachineimages.harvesterhci.io -o custom-columns=NAME:metadata.name,DISPLAY_NAME:spec.displayName
-      #+end_src
-
-
 
 ** Upload bootable image
    #+begin_src yaml :tangle /tmp/opensuse-leap-vmimage.yaml :noweb yes
@@ -704,17 +688,6 @@
      kubectl -n <<vmnamespace>> get vmi -l vmgroup=<<cluster-prefix>> --sort-by=metadata.name
    #+end_src
 
-   #+RESULTS:
-   | NAME    | AGE  | PHASE   |            IP | NODENAME      |
-   | vzdev-1 | 3m5s | Running |  172.16.17.78 | pandora       |
-   | vzdev-2 | 46m  | Running | 172.16.17.159 | protomolecule |
-   | vzdev-3 | 46m  | Running | 172.16.17.176 | protomolecule |
-   | vzdev-4 | 48m  | Running | 172.16.17.132 | pandora       |
-   | vzdev-5 | 57m  | Running |  172.16.17.41 | pandora       |
-   | vzdev-6 | 46m  | Running |  172.16.17.65 | protomolecule |
-   | vzdev-7 | 115s | Running | 172.16.17.105 | pandora       |
-   | vzdev-8 | 46m  | Running |  172.16.17.60 | protomolecule |
-
 
 
 ** Create node lists for k3s or rke AND start bastion container
@@ -734,16 +707,6 @@
        head -3 /tmp/all-nodes.txt > /tmp/master-nodes.txt
        tail -n +4 /tmp/all-nodes.txt > /tmp/worker-nodes.txt
      #+end_src
-
-     #+RESULTS:
-     | 172.16.17.126 |
-     |  172.16.17.27 |
-     |  172.16.17.44 |
-     | 172.16.17.155 |
-     | 172.16.17.142 |
-     | 172.16.17.111 |
-     | 172.16.17.153 |
-     | 172.16.17.108 |
 
 ** Open bastion container shell
    + open a shell to the bastion container
@@ -798,38 +761,52 @@
        | tail -n +2
      #+end_src
 
+*** do them servers
    #+begin_src bash :session bastion-sh
      # install the first server
      k3sup install \
-           --ip $(head -1 master-nodes.txt) \
-           --user gregj \
+           --host $(head -1 master-nodes.txt) \
+           --user ubuntu \
            --ssh-key ~/.ssh/k8s-local \
            --cluster \
-           --context k3s-vms \
-           --k3s-channel v1.19 \
-           --no-extras \
+           --context ggdev-lab \
            --k3s-extra-args '--cluster-cidr 10.72.0.0/16 --service-cidr 10.73.0.0/16 --cluster-dns 10.73.0.10'
 
      # join the second server
      k3sup join \
-           --ip $(sed '2q;d' master-ndes.txt) \
-           --user gregj \
-           --server-user gregj \
+           --host $(sed '2q;d' master-nodes.txt) \
+           --user ubuntu \
+           --server-user ubuntu \
            --ssh-key ~/.ssh/k8s-local \
-           --server-ip $(head -1 master-nodes.txt) \
+           --server-host $(head -1 master-nodes.txt) \
            --server \
-           --k3s-channel v1.19
+           --k3s-extra-args '--cluster-cidr 10.72.0.0/16 --service-cidr 10.73.0.0/16 --cluster-dns 10.73.0.10'
 
      # join the third server
      k3sup join \
-           --ip $(sed '3q;d' master-nodes.txt) \
-           --user gregj \
-           --server-user gregj \
+           --host $(sed '3q;d' master-nodes.txt) \
+           --user ubuntu \
+           --server-user ubuntu \
            --ssh-key ~/.ssh/k8s-local \
-           --server-ip $(head -1 master-nodes.txt) \
+           --server-host $(head -1 master-nodes.txt) \
            --server \
-           --k3s-channel v1.19
+           --k3s-extra-args '--cluster-cidr 10.72.0.0/16 --service-cidr 10.73.0.0/16 --cluster-dns 10.73.0.10'
+
    #+end_src
+*** and now the workers
+     #+begin_src bash
+       cd /tmp
+       # All the workers at once!
+       for i in `cat worker-nodes.txt`; do
+           k3sup join \
+                 --host $i \
+                 --user ubuntu \
+                 --server-user ubuntu \
+                 --ssh-key ~/.ssh/k8s-local \
+                 --server-host $(head -1 master-nodes.txt)
+       done
+     #+end_src
+
 
 * Prep to access k3os
   #+name: harvester-ingress-hostname
