@@ -1127,6 +1127,453 @@
        --set metrics.serviceMonitor.enabled=true
 #+end_src
 
+* Graph database(s)
+** Tigergraph
+*** STARTED Learn Tigergraph on Udemy
+    DEADLINE: <2021-06-19 Sat 18:55>
+    :LOGBOOK:
+    CLOCK: [2021-06-27 Sun 12:14]
+    CLOCK: [2021-06-27 Sun 08:42]--[2021-06-27 Sun 08:57] =>  0:15
+    CLOCK: [2021-06-20 Sun 15:02]--[2021-06-20 Sun 15:18] =>  0:16
+    CLOCK: [2021-06-20 Sun 11:51]--[2021-06-20 Sun 14:46] =>  2:55
+    CLOCK: [2021-06-20 Sun 08:10]--[2021-06-20 Sun 10:30] =>  2:20
+    CLOCK: [2021-06-19 Sat 22:29]--[2021-06-19 Sat 23:20] =>  0:51
+    CLOCK: [2021-06-19 Sat 22:21]--[2021-06-19 Sat 22:28] =>  0:07
+    CLOCK: [2021-06-19 Sat 18:56]--[2021-06-19 Sat 20:34] =>  1:38
+    - State "STARTED"    from "TODO"       [2021-06-19 Sat 18:56]
+    CREATED: [2021-06-19 Sat 18:55]
+    :END:
+
+**** Pre-requisites and setup
+     + Generate startup script - very large image (~3GB)
+       #+begin_src bash :tangle ~/bin/start-tigergraph.sh
+         docker run -d \
+                -p 14022:22 \
+                -p 3306:3306 \
+                -p 9000:9000 \
+                -p 14240:14240 \
+                --name tigergraph_server \
+                --ulimit nofile=1000000:1000000 \
+                -v ~/data:/home/tigergraph/mydata \
+                tigergraphbootcamp/tigergraph-image:latest
+       #+end_src
+     + If docker instance was stopped, just run
+       #+begin_src bash
+       #+end_src
+
+**** Terminology
+      #+begin_example
+        In computing, a graph database is a database that uses graph
+        structures for semantic queries with nodes (AKA vertices), edges, and
+        attributes to represent and store data
+      #+end_example
+      + Nodes / Vertices
+        + A vertex represents *anything*: a company, person, product etc
+      + Edges
+        + lines that connect vertices
+      + Attributes
+        + associated with vertices
+      + Hops
+        + distance between 2 vertices - the number of edges *traversed*
+      + Directionality (?)
+        + A single graph may have multiple vertex types (i.e. Person and Store), and
+          multiple edge types (i.e. Friendship and Buys From)
+        + Friendship goes both ways - we call this an undirected edge
+        + Buys From would be a directed edge
+        + Graph visualizations typically show an arrowhead on the edges between vertices
+        +
+      +
+
+**** Database evolution
+     + relational
+       + acid compliant
+       + great for transactions
+       + good for analytics
+       + standard SQL
+     + nosql
+       + unstructured - or ... less structured
+       + limited ACID compliance
+       + identifying relationships is hard
+     + graph
+       + relationships
+       + AWS Neptune, Neo4j, Tigergraph
+       + no standard query language has emerged
+       + not well suited to traditional analytics
+
+**** What is Tigergraph
+     + speed
+       + native graph storage
+       + data compression
+       + MPP
+       + efficient distributed computation
+     + Scale-out
+       +
+     + Deep-link analytics
+       + Queries can traverse 10 or more hops
+     + Graph Query Language
+       + GraphSQL or GSQL
+     + Multigraph
+       + multiple groups can share the same master database
+     + Visual Interface
+     + Developer, Cloud, Enterprise
+
+**** Running Tigergraph on Docker (for MacOS)
+     + Run or start up  the script generated under Pre-requisites section
+       #+begin_src bash
+         sudo systemctl start docker
+         # ~/bin/start-tigergraph.sh
+         docker run tigergraph_server
+       #+end_src
+**** GSQL
+     + We will use GSQL to
+       + define a graph schema
+       + create a graph
+       + load data into the graph
+       + run graph queries
+     + define a graph schema: vertices and edges
+
+**** GSQL Getting Ready
+     + for data files to be loaded: drop them into =~/data= provided by the =docker run=
+       volume mount
+***** SSH to Tigergraph server
+      #+begin_src bash
+        ssh-add ~/.ssh/tigergraph_rsa
+      #+end_src
+      #+begin_src emacs-lisp
+        (call-process-shell-command "ssh -o StrictHostKeyChecking=no -p 14022  tigergraph@localhost id")
+        (cd "/ssh:tigergraph@localhost#14022:")
+        (shell "tigergraph-sh")
+      #+end_src
+***** Start Tigergraph
+      #+begin_src bash :session tigergraph-sh :results value
+        time gadmin start all
+      #+end_src
+***** Get GSQL goin'
+      =gsql=
+
+**** Creating a graph
+     #+begin_src sql
+       CREATE VERTEX person (PRIMARY_ID id INT, first_name STRING, last_name STRING, age INT, email STRING, gender STRING, phone STRING)
+     #+end_src
+     #+begin_src sql
+       CREATE UNDIRECTED EDGE friendship (FROM person, TO person, friendship_date DATETIME)
+     #+end_src
+     #+begin_src sql
+       CREATE GRAPH friends (person, friendship)
+     #+end_src
+     + Shortcuts to create empty graph or a graph using all global edges and vertices
+       and edges
+       #+begin_src bash
+         CREATE GRAPH GraphName()
+         CREATE GRAPH GraphName(*)
+       #+end_src
+**** Create loading job
+     + =USE GRAPH friends=
+     + When we create a graph, we are techincally creating a "local graph" TigerGraph
+       already has one graph named Global.  It can be leveraged by other graphs
+     + To exit the scope of your graph: =USE GRAPH global=
+     #+begin_src sql
+       CREATE LOADING JOB friends_data FOR GRAPH friends {       DEFINE FILENAME people = "/home/tigergraph/mydata/people.csv";       DEFINE FILENAME friendship = "/home/tigergraph/mydata/friendship.csv";       LOAD people TO VERTEX person VALUES ($"id", $"first_name", $"last_name", $"age", $"email", $"gender", $"phone") USING header="true", separator=",";       LOAD friendship TO EDGE friendship VALUES ($"from_id", $"to_id", $"friendship_date") USING header="true", separator=",";}
+     #+end_src
+     + Pro tip: you can map using position or field name: ($1, $2...) instead of ($"id", $"first_name"...)
+**** Run the loading job
+     + =run loading job friends_data=
+     + take note of job id
+       + =show loading status friends.friends_data.file.m1.1624199308621=
+     + default data storage path is =/tigergraph/data/gstore=
+     + when in doubt use =gstatusgraph= to check the graph data storage path
+**** GSQL - Delete stuff
+     + =DROP=
+       #+begin_src sql
+         drop vertex <vertex_name>
+         drop edge <edge_name>
+         drop job <job_name>
+         drop graph <graph_name>
+         -- delete all vertices/edges, jobs, queries and data!
+         drop all
+       #+end_src
+     +
+**** GSQL - Query basics
+     + interactive and saved queries
+       #+begin_src sql
+         select * FROM person-(friendship)->person WHERE from_id == 456
+
+         CREATE QUERY close_friends(VERTEX <person>p) FOR GRAPH friends{Start = {p}; Result = SELECT tgt FROM Start:src -(friendship:e) -> person:tgt; PRINT Result;}
+         INSTALL QUERY close_friends
+         RUN QUERY close_friends(456)
+       #+end_src
+     + running saved queries using API
+       #+begin_src bash
+         curl -X GET http://localhost:9000/query/friends/close_friends?p=456
+       #+end_src
+     + Built-in queries - available using the API
+       #+begin_src bash :session tigergraph-sh :results output replace
+         # --List all information about a specific vertex
+         # curl -X GET "http://server:port/graph/<graph_name>/vertices/<vertex_name>/<vertex_id>"
+         # --List all vertices originating from a specific vertex, traversing a specific edge type
+         # curl -X GET "http://server:port/graph/<graph_name>/edges/<source> <vertex_name>/<source> <vertex_id>/<edge_name>/"
+         # --List TigerGraph version information
+         # curl -X GET "http://server:port/version"
+
+         curl -s -X GET "http://localhost:9000/graph/friends/vertices/person/123" | jq -r '.'
+         curl -s -X GET "http://localhost:9000/graph/friends/vertices/person/496"|jq -r '.'
+       #+end_src
+     + GSQL: return specific vertex information
+       #+begin_src sql
+         SELECT * FROM person where email =="gmaslen3e@fastcompany.com"
+       #+end_src
+     + return multiple edges meeting conditions
+       + list all friendship edge connected to Gabriella
+         #+begin_src sql
+            SELECT friendship_date FROM person-(friendship)->person WHERE from_id == 123
+         #+end_src
+**** GSQL - Advanced - Saved Queries
+     + Named query syntax
+
+       [[file:databases/tigergraph/udemy/img/tigergraph-udemy-named-query-syntax.png]]
+
+     + Query 1: Return all info for a specific vertex
+       #+begin_src sql
+         CREATE QUERY personal_info (STRING email) FOR GRAPH friends {  all_people = {person.*}; info = SELECT s FROM all_people:s WHERE s.email==email; PRINT info; }
+         INSTALL QUERY personal_info
+         RUN QUERY personal_info("apeekeb6@chronoengine.com")
+         RUN QUERY personal_info("gmaslen3e@fastcompany.com")
+       #+end_src
+     + Query 2: list all women aged 20-30 who are friends with person X
+       #+begin_src sql
+         CREATE QUERY female_20s_friends (VERTEX <person> p) FOR GRAPH friends { start = {p}; result = SELECT tgt FROM start:src -(friendship:e)- person:tgt WHERE tgt.gender == "Female" AND tgt.age >= 20 AND tgt.age <= 30; PRINT result;}
+         INSTALL QUERY female_20s_friends
+         RUN QUERY female_20s_friends(123)
+       #+end_src
+**** Graph Studio intro
+     + http://localhost:14240/
+**** Graph Studio hands on
+     + create a professional social network (more complex graph than previous)
+     + Subtle differences in terminology
+       | GraphStudio       | GSQL                        |
+       |-------------------+-----------------------------|
+       | Create Graph      | CREATE GRAPH                |
+       | Design Schema     | CREATE VERTEX / CREATE EDGE |
+       | Map Data to Graph | CREATE LOADING JOB          |
+       | Load Data         | RUN LOADING JOB             |
+     + Do all the following steps
+       1. Start TigerGraph
+       2. Open GraphStudio at http://localhost:14240/
+       3. Create a Graph
+         a. Click Global View, then Create a graph. Set the name to LinkedUp
+       4. Create Vertices (Local)
+          - Vertex type name: =Account=
+            - Primary id: id
+            - Primary id type: INT
+            - Color: #FF6D00
+            - Icon: person
+            - Attributes (attribute type is STRING unless indicated otherwise)
+              - FirstName
+              - LastName
+              - Email
+              - Gender
+              - JobTitle
+              - Salary (DOUBLE)
+              - Recruitable (BOOL)
+          - Vertex type name: =Company=
+            - Primary id: id
+            - Primary id type: INT
+            - Color: #C1D82F
+            - Icon: company
+            - Attributes (attribute type is STRING unless indicated otherwise)
+              - name
+          - Vertex type name: =City=
+            - Primary id: id
+            - Primary id type: INT
+            - Color: #F8B717
+            - Icon: upload and use city icon
+            - Attributes (attribute type is STRING unless indicated otherwise)
+              - Name
+          - Vertex type name: =State=
+            - Primary id: id
+            - Primary id type: INT
+            - Color: #FF3E02
+            - Icon: upload and use state icon
+            - Attributes (attribute type is STRING unless indicated otherwise)
+              - name
+          - Vertex type name: =Industry=
+            - Primary id: id
+            - Primary id type: INT
+            - Color: #6871FF
+            - Icon: upload and use industry icon
+            - Attributes (attribute type is STRING unless indicated otherwise)
+              - Name
+       5. Create Edges (local)
+          1) Edge type name: =connected_to=
+             - From -> To: Account -> Account
+             - Directed: No
+             - Color: #FF6D00
+          2) Edge type name: =works_in=
+             - From -> To: Account -> Company
+             - Directed: Yes
+             - Color: #C1D82F
+          3) Edge type name: =in_industry=
+             - From -> To: Company -> Industry
+             - Directed: Yes
+             - Color: #6871FF
+          4) Edge type name: =located_in=
+             - From -> To: Company -> City
+             - Directed: Yes
+             - Color: #F8B717
+          5) Edge type name: =is_in=
+             - From -> To: City -> State
+             - Directed: Yes
+             - Color: #FF3E02
+       6. Download and save CSV files from this video.
+          - Into your =data= folder. You may create a subfolder named =LinkedUp= to keep your files organized.
+       7. Map Data to Graph
+          - In GraphStudio, select the =Map Data to Graph= link from the menu.
+          - Click Add data file, browse to your LinkedUp folder and upload all 10 files.
+          - Select the =account.csv= file from the =Files on Server= section, and check the
+            =Has Header= checkbox, then click =Add=.
+          - Click =map data file to vertex or edge=, then select the =account.csv= file
+            icon, and then the =account= vertex. This will result in the mapping pane being displayed on the right.
+            - Map the fields by clicking the field name in the source table (which is the
+              CSV file), then selecting the field to map in the target (which is a vertex or edge).
+          - Repeat the file mapping process for the remaining 9 vertices and edges
+          - Click =publish data mapping=.
+       8. Load Data
+          - In GraphStudio, select =Load Data= from the menu.
+          - Click the =Start/Resume Loading= button.
+          - Click =Confirm= to start loading
+          - Wait until all files have the =FINISHED= badge.
+**** Graph Studio - explore graph
+     transcript: [[file:databases/tigergraph/udemy/documents/GraphStudio-exploregraph.org]]
+**** Graph Studio - add GSQL queries
+     + THE QUERY
+       #+begin_src sql
+         // 1. Return all companies to which I am connected through my direct neighbours. Only include companies in city New York City and Industry Aerospace.
+         // Vertex to test with: 291
+
+         CREATE QUERY company_network(VERTEX <account> p) FOR GRAPH linkedup {
+             //Define the Start point as the person in the parameter
+             Start = {p};
+
+             // Get all the contacts to said person
+             contact_list= SELECT tgt_p
+                         FROM Start:src - (connected_to) - account:tgt_p ;
+
+             // Get all the companies in which contacts work
+             contacts_companies= SELECT c
+                               FROM contact_list:src - (works_in) -> company:c;
+
+             // Get all the companies with location in New York
+             companies_new_york= SELECT src
+                                 FROM contacts_companies:src - (located_in) - city:c
+                                 WHERE c.city_name=="New York";
+
+             // Get all the companies in Aerospace Industry
+             companies_new_york_industry = SELECT src
+                                          FROM companies_new_york:src - (in_industry) - industry:i
+                                          WHERE i.industry_name=="Aerospace";
+
+             //Return all the companies
+             PRINT companies_new_york_industry;
+         }
+       #+end_src
+
+**** GraphStudio - visual query builder
+     + Question: which companies are operating in the Aerospace industry, have an offfice
+       based in New York and employ a contact of (person)?
+     +
+
+**** GraphStudio - RDBMS migration tool
+
+**** Use case: Hub & Community detection
+     + Identify the most influential member in a group and the community around them
+***** Create new graph schema
+****** Vertex =account=
+       #+begin_src sql
+         CREATE VERTEX account (
+           PRIMARY_ID account_id INT,
+           user_name STRING,
+           first_name STRING,
+           last_name STRING,
+           email STRING,
+           gender STRING,
+           age INT)
+           WITH PRIMARY_ID_AS_ATTRIBUTE = "true"
+       #+end_src
+****** Vertex =hobby=
+       #+begin_src sql
+         CREATE VERTEX hobby (
+           PRIMARY_ID hobby_id INT,
+           description STRING)
+           WITH PRIMARY_ID_AS_ATTRIBUTE = "true"
+       #+end_src
+****** Edges
+       #+begin_src sql
+         CREATE DIRECTED EDGE follows (FROM account, TO account)
+         CREATE DIRECTED EDGE referred_by (FROM account, TO account, referral_date DATETIME)
+         CREATE DIRECTED EDGE interested_in (FROM account, TO hobby)
+       #+end_src
+****** Create graph =influencers=
+       #+begin_src sql
+         CREATE GRAPH influencers(account, hobby, follows, referred_by, interested_in)
+       #+end_src
+****** Create loading job
+       #+begin_src sql
+         USE GRAPH influencers
+
+         BEGIN
+         CREATE LOADING JOB load_influencers FOR GRAPH influencers {
+           DEFINE FILENAME person_data="/home/tigergraph/mydata/insta-follow/users.csv";
+           DEFINE FILENAME followers_data="/home/tigergraph/mydata/insta-follow/followers.csv";
+           DEFINE FILENAME referred_data="/home/tigergraph/mydata/insta-follow/referrals.csv";
+           DEFINE FILENAME interests="/home/tigergraph/mydata/insta-follow/interests.csv";
+           DEFINE FILENAME people_interests="/home/tigergraph/mydata/insta-follow/people_interests.csv";
+
+           LOAD person_data TO VERTEX account VALUES ($"id", $"user_name",
+             $"first_name", $"last_name", $"email", $"gender",$"age")
+             USING header="true", separator=",";
+           LOAD interests TO VERTEX hobby VALUES ($"id", $"interest")
+             USING header="true", separator=",";
+           LOAD followers_data TO EDGE follows VALUES ($"from_id", $"to_id")
+             USING header="true", separator=",";
+           LOAD referred_data TO EDGE referred_by VALUES ($"from_id", $"to_id",
+             $"referral_date")
+             USING header="true", separator=",";
+           LOAD people_interests TO EDGE interested_in VALUES ($"id", $"int_id")
+             USING header="true", separator=",";
+         }
+         END
+       #+end_src
+****** Load the data
+       #+begin_src sql
+         USE GRAPH influencers
+         RUN LOADING JOB load_influencers
+       #+end_src
+****** Try a bunch of queries
+       + Sample queries for this module
+
+         file:databases/tigergraph/udemy/documents/InstaFollow+Sample+Queries.sql
+**** Questions for Steven
+     + What automation is common for creating graphs and loading data (Terraform for
+       example)
+       + Related: what use of cloud platforms are common for the field?   and for customers
+         (vSphere for example)
+     + what steps are being taken   towards Kubernetes implementation in distributed processing
+     + how can I prepare for Tigergraph certification
+     + Neo4j is way ahead on Kubernetes deployment - with Helm charts even.  What is the
+       timeline for getting k8s horizontal scale out deployment?
+     + The images for Tigergraph seem to be quite large
+     + images are massive - what disk and memory in laptops do y'all provide?
+     + API Server runs on port 9000 - can require authentication with use of bearer token.
+       What higher level auth is supported (Okta, AD etc?)
+     + Are you going to stick with this company?  What's the growth plan?
+     + in-person interview?
+     + How well does the RDBMS importer work?  Are there common mismatches with good graph
+       db design coming from RDBMS?
+     + How do you start designing while thinking graphs?  What makes a good edge -
+       e.g. artist composes songs vs. song is-composed-by artist.
+     + Why can I not get interactive =gsql= to accept multiline CREATE statements?
+     + OSS: almost everything is proprietary, even gsql - is there any significant
+       contribution to OSS 
 * Home automation
 ** Home Assistant
    + Ref: [[https://www.home-assistant.io/installation/linux][Linux - Home Assistant]]
