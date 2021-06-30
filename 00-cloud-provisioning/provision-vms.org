@@ -31,7 +31,7 @@
    | OS     | image-family    | image-project  |
    |--------+-----------------+----------------|
    | debian | debian-10       | debian-cloud   |
-   | ubuntu | ubuntu-2004-lts | ubuntu-cloud   |
+   | ubuntu | ubuntu-2004-lts | ubuntu-os-cloud |
    | leap   | opensuse-leap   | opensuse-cloud |
    | centos | centos-7        | centos-cloud   |
 
@@ -263,7 +263,7 @@
    #+end_src
    #+begin_src bash :session gg-bastion-sh :results none
      sudo apt update ; sudo apt -y install pdsh wget
-     for i in in `cat all-nodes.txt` ; do
+      for i in in `cat all-nodes.txt` ; do
          ssh-keygen -R $i
          ssh -o StrictHostKeyChecking=no $i pwd
      done
@@ -745,7 +745,7 @@
     + [[file:Up_and_Running_K3s_-_Topic_Session_2.pdf][slides]]
     + ServiceLB can be selectively included on nodes by adding the label =svccontroller.k3s.cattle.io/enablelb=
     + If the label is present, *only* those hosts will receive the servicelb pods
-    +  
+    +
 
 * Build Rancher 2.3.6
   Put together for customer testing
