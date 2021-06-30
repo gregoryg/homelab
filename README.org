@@ -10,7 +10,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 27.0.91 (Org mode 9.3.6)
-#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
+#+setupfile: ~/projects/emacs/org-html-themes/org/./theme-readtheorg-local.setup
 # #+setupfile: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
 #+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :eval never-export
 
@@ -74,6 +74,7 @@
     mount --rbind /dev dev/
   #+end_src
 * Squid caching proxy
+  TODO: update how-to for Synology DSM
 ** Server
   Instructions for setting up on Debian
   #+begin_src bash
@@ -1129,10 +1130,11 @@
 
 * Graph database(s)
 ** Tigergraph
-*** STARTED Learn Tigergraph on Udemy
+*** DONE Learn some Tigergraph
     DEADLINE: <2021-06-19 Sat 18:55>
     :LOGBOOK:
-    CLOCK: [2021-06-27 Sun 12:14]
+    - State "DONE"       from "STARTED"    [2021-06-27 Sun 15:45]
+    CLOCK: [2021-06-27 Sun 12:14]--[2021-06-27 Sun 15:45] =>  3:31
     CLOCK: [2021-06-27 Sun 08:42]--[2021-06-27 Sun 08:57] =>  0:15
     CLOCK: [2021-06-20 Sun 15:02]--[2021-06-20 Sun 15:18] =>  0:16
     CLOCK: [2021-06-20 Sun 11:51]--[2021-06-20 Sun 14:46] =>  2:55
@@ -1159,6 +1161,7 @@
        #+end_src
      + If docker instance was stopped, just run
        #+begin_src bash
+         docker start tigergraph_server
        #+end_src
 
 **** Terminology
@@ -1552,12 +1555,266 @@
        + Sample queries for this module
 
          file:databases/tigergraph/udemy/documents/InstaFollow+Sample+Queries.sql
-**** Questions for Steven
+
+**** Use case: pattern matching
+     + Search a graph for all occurences of a
+***** Create vertices and edges
+      #+begin_src sql
+        CREATE VERTEX customer (
+          PRIMARY_ID customer_id INT,
+          first_name STRING,
+          last_name STRING,
+          user_name STRING,
+          email STRING,
+          gender STRING,
+          date_of_birth DATETIME)
+          WITH primary_id_as_attribute="true"
+
+        CREATE VERTEX product (
+          PRIMARY_ID product_id INT,
+          product_name STRING,
+          product_category STRING)
+          WITH primary_id_as_attribute="true"
+
+        CREATE DIRECTED EDGE has_purchased (FROM customer, TO product, purchase_date DATETIME)
+      #+end_src
+***** Create graph
+      #+begin_src sql
+        CREATE GRAPH ecommerce( customer, product, has_purchased)
+      #+end_src
+***** Create loading job
+      #+begin_src sql
+        USE GRAPH ecommerce
+
+        BEGIN
+        CREATE LOADING JOB load_ecommerce FOR GRAPH ecommerce {
+          DEFINE FILENAME customer_data = "/home/tigergraph/mydata/ecommerce/customer.csv";
+          DEFINE FILENAME product_data = "/home/tigergraph/mydata/ecommerce/product.csv";
+          DEFINE FILENAME purchase_data = "/home/tigergraph/mydata/ecommerce/purchases/";
+
+          LOAD customer_data TO VERTEX customer
+          VALUES (
+            $"customer_id",
+            $"first_name",
+            $"last_name",
+            $"user_name",
+            $"email",
+            $"gender",
+            $"date_of_birth")
+          USING header="true", separator=",";
+
+          LOAD product_data TO VERTEX product
+          VALUES (
+            $"product_id",
+            $"product_name",
+            $"product_category")
+          USING header="true", separator=",";
+
+          LOAD purchase_data TO EDGE has_purchased
+          VALUES (
+            $"customer_id",
+            $"product_id",
+            $"purchase_date")
+          USING header="true", separator=",";
+        }
+        END
+      #+end_src
+***** Run loading job
+      #+begin_src sql
+        USE GRAPH ecommerce
+
+        RUN LOADING JOB load_ecommerce
+      #+end_src
+***** Run some queries
+      + GraphStudio was used in the course
+      + Query 1: Return Customers Adhering to Given Pattern
+        // Products: 1,2,3,4,5,6
+
+        #+begin_src sql
+          use graph ecommerce
+          /* 1. Return Customers Adhering to Given Pattern */
+          /* Products: 1,2,3,4,5,6 */
+          CREATE QUERY find_customers_with_pattern(Vertex<product>p_1, Vertex<product>p_2, Vertex<product>p_3, Vertex<product> p_4, Vertex<product> p_5, Vertex<product>p_6) FOR GRAPH ecommerce SYNTAX v2 {
+
+              /* Define the Start point as all customers in the Shop */
+              Start = {customer.*};
+
+              /* Get all the customers exhibiting the pattern */
+              customers_with_pattern= SELECT src
+                                      FROM Start:src - (has_purchased>:h) - product:p,
+                                    Start:src - (has_purchased>:h2) - product:p2,
+                                    Start:src - (has_purchased>:h3) - product:p3,
+                                    Start:src - (has_purchased>:h4) - product:p4,
+                                    Start:src - (has_purchased>:h5) - product:p5,
+                                    Start:src - (has_purchased>:h6) - product:p6
+                                      WHERE
+                                          h.purchase_date< h2.purchase_date AND
+                                          h2.purchase_date< h3.purchase_date AND
+                                          h3.purchase_date< h4.purchase_date AND
+                                          h4.purchase_date < h5.purchase_date AND
+                                          h5.purchase_date< h6.purchase_date AND
+                                          p==p_1 AND p2==p_2 AND p3==p_3 AND p4==p_4 AND p5==p_5 AND p6==p_6;
+
+              /* Return all the customers */
+              PRINT customers_with_pattern;
+          }
+        #+end_src
+      + Query 2: Return customers adhering to *start* of given pattern
+        #+begin_src sql
+          use graph ecommerce
+          /* 2. Return Customers Adhering to Start of Given Pattern */
+          /* Products: 1,2,3 */
+          /* End_Pattern: 4,5,6 */
+          CREATE QUERY find_customers_with_first_3_pattern(Vertex<product>p_1, Vertex<product>p_2, Vertex<product>p_3, SET<int> end_pattern) FOR GRAPH ecommerce SYNTAX v2 {
+
+              SetAccum<Vertex<customer>> @@customers_with_pattern_b;
+              SetAccum<Vertex<customer>> @@customers_with_pattern_e;
+              SetAccum<Vertex<customer>> @@final_list;
+
+
+              /* Define the Start point as all customers in the Shop */
+              Start = {customer.*};
+
+              /* Get all the customers exhibiting the beginning pattern */
+              customers_with_pattern_b= SELECT src
+                                        FROM Start:src - (has_purchased>:h) - product:p,
+                                      Start:src - (has_purchased>:h2) - product:p2,
+                                      Start:src - (has_purchased>:h3) - product:p3
+                                        WHERE
+                                            h.purchase_date< h2.purchase_date AND
+                                            h2.purchase_date< h3.purchase_date AND
+                                            p==p_1 AND p2==p_2 AND p3==p_3
+                                            ACCUM @@customers_with_pattern_b+=src
+              ;
+
+
+              /* Get all the customers exhibiting the end of the pattern */
+              customers_with_pattern_e= SELECT src
+                                        FROM Start:src - (has_purchased>:h) - product:p
+                                        WHERE
+                                            p.product_id in end_pattern
+                                            ACCUM @@customers_with_pattern_e+=src
+              ;
+
+              /* Get all the customers with the beginning of the pattern but no product on the end of the pattern */
+              @@final_list=@@customers_with_pattern_b MINUS @@customers_with_pattern_e;
+
+              /* Return all the customers */
+              PRINT @@final_list;
+          }
+        #+end_src
+**** Use case: Deep link analysis
+     + Traverse a graph via three or more hops and then analyze the data encountered in
+       that traversal
+***** Create vertices and edges
+      #+begin_src sql
+        CREATE VERTEX user_account (
+          PRIMARY_ID account_id INT,
+          user_name STRING,
+          member_since DATETIME,
+          last_login DATETIME)
+          WITH primary_id_as_attribute="true"
+
+        CREATE VERTEX movie (
+          PRIMARY_ID movie_id INT,
+          title_type STRING,
+          primary_title STRING,
+          original_title STRING,
+          is_adult BOOL,
+          release_year INT,
+          runtime_minutes INT,
+          genres SET<STRING>)
+          WITH primary_id_as_attribute="true"
+
+        CREATE VERTEX cluster (PRIMARY_ID cluster_id INT, description STRING) WITH primary_id_as_attribute="true"
+
+        CREATE DIRECTED EDGE watched (FROM user_account, TO movie)
+        CREATE DIRECTED EDGE recommended_to (FROM movie, TO user_account)
+        CREATE DIRECTED EDGE belongs_to (FROM user_account, TO cluster)
+      #+end_src
+***** Create graph
+      #+begin_src bash
+        CREATE GRAPH streaming (user_account, movie, cluster, watched, recommended_to, belongs_to)
+      #+end_src
+***** Create loading job
+      #+begin_src sql
+        USE GRAPH streaming
+
+        BEGIN
+        CREATE LOADING JOB load_streaming FOR GRAPH streaming {
+          DEFINE FILENAME user_data="/home/tigergraph/mydata/streaming/user.csv";
+          DEFINE FILENAME movie_data="/home/tigergraph/mydata/streaming/movies.csv";
+          DEFINE FILENAME clusters_data="/home/tigergraph/mydata/streaming/clusters.csv";
+          DEFINE FILENAME watched="/home/tigergraph/mydata/streaming/movies_watched/";
+          DEFINE FILENAME recommended_to="/home/tigergraph/mydata/streaming/movies_recommended/";
+          DEFINE FILENAME belongs_to="/home/tigergraph/mydata/streaming/users_clusters/";
+
+          LOAD user_data TO VERTEX user_account
+          VALUES (
+            $"id",
+            $"user_name",
+            $"member_since",
+            $"last_login")
+          USING header="true", separator=",";
+
+          LOAD movie_data TO VERTEX movie
+          VALUES (
+            $"id",
+            $"title_type",
+            $"primary_title",
+            $"original_title",
+            $"is_adult",
+            $"release_year",
+            $"runtime_minutes",
+            SPLIT($"genres","|"))
+          USING header="true", separator=",";
+
+          LOAD clusters_data TO VERTEX cluster
+          VALUES (
+            $"id",
+            $"cluster")
+          USING header="true", separator=",";
+
+          LOAD watched TO EDGE watched
+          VALUES (
+            $"user_id",
+            $"movie_id")
+          USING header="true", separator=",";
+
+          LOAD recommended_to TO EDGE recommended_to
+          VALUES (
+            $"movie_id",
+            $"user_id")
+          USING header="true",separator=",";
+
+          LOAD belongs_to TO EDGE belongs_to
+          VALUES (
+            $"user_id",
+            $"cluster_id")
+          USING header="true", separator=",";
+        }
+        END
+      #+end_src
+***** Run loading job
+      #+begin_src sql
+        use graph streaming
+
+        run loading job load_streaming
+      #+end_src
+**** TigerGraph Associate Certification
+     +
+**** Knowledge test
+
+
+**** DONE Questions
+     :LOGBOOK:
+     - State "DONE"       from "TODO"       [2021-06-30 Wed 17:16]
+     :END:
      + What automation is common for creating graphs and loading data (Terraform for
        example)
        + Related: what use of cloud platforms are common for the field?   and for customers
          (vSphere for example)
-     + what steps are being taken   towards Kubernetes implementation in distributed processing
+     + what steps are being taken towards Kubernetes implementation in distributed processing
      + how can I prepare for Tigergraph certification
      + Neo4j is way ahead on Kubernetes deployment - with Helm charts even.  What is the
        timeline for getting k8s horizontal scale out deployment?
@@ -1565,15 +1822,14 @@
      + images are massive - what disk and memory in laptops do y'all provide?
      + API Server runs on port 9000 - can require authentication with use of bearer token.
        What higher level auth is supported (Okta, AD etc?)
-     + Are you going to stick with this company?  What's the growth plan?
-     + in-person interview?
      + How well does the RDBMS importer work?  Are there common mismatches with good graph
        db design coming from RDBMS?
      + How do you start designing while thinking graphs?  What makes a good edge -
        e.g. artist composes songs vs. song is-composed-by artist.
      + Why can I not get interactive =gsql= to accept multiline CREATE statements?
      + OSS: almost everything is proprietary, even gsql - is there any significant
-       contribution to OSS 
+       contribution to OSS?  Plans to open source components?
+
 * Home automation
 ** Home Assistant
    + Ref: [[https://www.home-assistant.io/installation/linux][Linux - Home Assistant]]
