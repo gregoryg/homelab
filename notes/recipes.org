@@ -19,7 +19,7 @@
    #+begin_quote
    *Smoked OUT!*
 
-   Pasilla Chili Coriander Mezcal Infusion, Aperol, 
+   Pasilla Chili Coriander Mezcal Infusion, Aperol,
 
    Sweet Vermouth, Lime Juice, Orange Bitters
    #+end_quote
@@ -28,3 +28,8 @@
    + 1 oz Aperol (maybe less)
    + 1/2-1 oz sweet vermouth
    + 1/2 oz lime juice
+** Margarita El Presidente style
+   + 2 oz blanco tequila
+   + .5 oz Orange Curacao
+   + 1 oz lime juice
+   + .5 oz Chambord (OR LESS)

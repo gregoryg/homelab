@@ -1254,7 +1254,7 @@
 ***** Get GSQL goin'
       =gsql=
 
-**** Creating a graph
+**** Create a graph
      #+begin_src sql
        CREATE VERTEX person (PRIMARY_ID id INT, first_name STRING, last_name STRING, age INT, email STRING, gender STRING, phone STRING)
      #+end_src
