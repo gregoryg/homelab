@@ -1128,7 +1128,7 @@
        --set metrics.serviceMonitor.enabled=true
 #+end_src
 
-* Graph database(s)
+* Graph databases
 ** Tigergraph
 *** DONE Learn some Tigergraph
     DEADLINE: <2021-06-19 Sat 18:55>
@@ -1804,31 +1804,7 @@
 **** TigerGraph Associate Certification
      +
 **** Knowledge test
-
-
-**** DONE Questions
-     :LOGBOOK:
-     - State "DONE"       from "TODO"       [2021-06-30 Wed 17:16]
-     :END:
-     + What automation is common for creating graphs and loading data (Terraform for
-       example)
-       + Related: what use of cloud platforms are common for the field?   and for customers
-         (vSphere for example)
-     + what steps are being taken towards Kubernetes implementation in distributed processing
-     + how can I prepare for Tigergraph certification
-     + Neo4j is way ahead on Kubernetes deployment - with Helm charts even.  What is the
-       timeline for getting k8s horizontal scale out deployment?
-     + The images for Tigergraph seem to be quite large
-     + images are massive - what disk and memory in laptops do y'all provide?
-     + API Server runs on port 9000 - can require authentication with use of bearer token.
-       What higher level auth is supported (Okta, AD etc?)
-     + How well does the RDBMS importer work?  Are there common mismatches with good graph
-       db design coming from RDBMS?
-     + How do you start designing while thinking graphs?  What makes a good edge -
-       e.g. artist composes songs vs. song is-composed-by artist.
-     + Why can I not get interactive =gsql= to accept multiline CREATE statements?
-     + OSS: almost everything is proprietary, even gsql - is there any significant
-       contribution to OSS?  Plans to open source components?
+     + 95%
 
 * Home automation
 ** Home Assistant

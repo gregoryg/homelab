@@ -1,0 +1,13 @@
+# Note: change storage class as appropriate
+# TODO: Add storage class to values.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-ingestion
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 128Mi

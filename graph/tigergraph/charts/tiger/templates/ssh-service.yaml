@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "tiger.fullname" . }}-ssh
+  labels:
+    {{- include "tiger.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.sshService.type }}
+  ports:
+    - port: {{ .Values.sshService.port }}
+      targetPort: {{ .Values.sshService.targetPort }}
+      protocol: TCP
+      name: ssh
+  selector:
+    {{- include "tiger.selectorLabels" . | nindent 4 }}

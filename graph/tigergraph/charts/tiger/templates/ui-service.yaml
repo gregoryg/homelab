@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "tiger.fullname" . }}-ui
+  labels:
+    {{- include "tiger.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.uiService.type }}
+  ports:
+    - port: {{ .Values.uiService.port }}
+      targetPort: {{ .Values.uiService.targetPort }}
+      protocol: TCP
+      name: ui
+  selector:
+    {{- include "tiger.selectorLabels" . | nindent 4 }}
