@@ -17,6 +17,7 @@
           texinfo \
           build-essential \
           xorg-dev \
+          libmagickwand-dev \
           libgtk2.0-dev \
           libjpeg-dev \
           libncurses5-dev \
@@ -69,7 +70,7 @@
 #+begin_src bash
   cd emacs-source
   ./autogen.sh
-  ./configure --with-imagemagick --with-mailutils --with-xwidgets --with-nativecomp --with-json
+  ./configure --with-imagemagick --with-mailutils --with-xwidgets --with-native-compilation --with-json
   make
   sudo make install
 #+end_src
