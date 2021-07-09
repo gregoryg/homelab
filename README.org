@@ -1333,7 +1333,7 @@
 **** GSQL - Advanced - Saved Queries
      + Named query syntax
 
-       [[file:databases/tigergraph/udemy/img/tigergraph-udemy-named-query-syntax.png]]
+       [[file:images/tigergraph-udemy-named-query-syntax.png]]
 
      + Query 1: Return all info for a specific vertex
        #+begin_src sql
@@ -1446,7 +1446,7 @@
           - Click =Confirm= to start loading
           - Wait until all files have the =FINISHED= badge.
 **** Graph Studio - explore graph
-     transcript: [[file:databases/tigergraph/udemy/documents/GraphStudio-exploregraph.org]]
+     transcript: [[file:graph/tigergraph/udemy/documents/GraphStudio-exploregraph.org]]
 **** Graph Studio - add GSQL queries
      + THE QUERY
        #+begin_src sql
