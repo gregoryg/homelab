@@ -92,3 +92,10 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+volume:
+  name: "data-ingest"
+  mountPath: "/home/tigergraph/mydata"
+  storageClass: "local-path"
+  accessMode: ReadWriteOnce
+  size: "20Gi"

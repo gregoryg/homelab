@@ -10,53 +10,54 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      app: kubemq-cluster-{{ .Release.Name }}
+      {{- include "tiger.selectorLabels" . | nindent 6 }}
   replicas: {{ .Values.replicaCount }}
-  serviceName: kubemq-cluster-{{ .Release.Name }}
+  serviceName: {{ include "tiger.fullname" . }}-whatisthis
   template:
     metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       labels:
-        app: kubemq-cluster-{{ .Release.Name }}
+        {{- include "tiger.selectorLabels" . | nindent 8 }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "tiger.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - env:
-            - name: KUBEMQ_TOKEN
-              value: {{ required "A Valid token value must be set" .Values.token }}
-            - name: CLUSTER_ROUTES
-              value: "kubemq-cluster-{{ .Release.Name }}-service:{{ .Values.clusterPort }}"
-            - name: CLUSTER_PORT
-              value: {{ .Values.clusterPort | quote }}
-            - name: CLUSTER_ENABLE
-              value: 'true'
-            - name: GRPC_PORT
-              value: {{ .Values.grpcPort | quote }}
-            - name: REST_PORT
-              value: {{ .Values.restPort | quote }}
-            - name: KUBEMQ_PORT
-              value: {{ .Values.kubeMQPort | quote  }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          name: kubemq-cluster-{{ .Release.Name }}
-          ports:
-            - containerPort: {{ .Values.grpcPort }}
-              name: grpc-port
-              protocol: TCP
-            - containerPort: {{ .Values.kubeMQPort }}
-              name: metrics-port
-              protocol: TCP
-            - containerPort: {{ .Values.restPort }}
-              name: rest-port
-              protocol: TCP
-            - containerPort: {{ .Values.clusterPort }}
-              name: cluster-port
-              protocol: TCP
-{{- if .Values.volume.enabled }}
+          # ports:
+          #   - name: http
+          #     containerPort: 80
+          #     protocol: TCP
+          livenessProbe:
+            initialDelaySeconds: 300
+            failureThreshold: 3
+            timeoutSeconds: 2
+            periodSeconds: 30
+            tcpSocket:
+              port: 9000
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
           - mountPath: {{ .Values.volume.mountPath | quote }}
-            name: {{ .Values.volume.name  }}-{{ .Release.Name }}
+            name: {{ .Values.volume.name  }}
   volumeClaimTemplates:
   - metadata:
-      name: {{ .Values.volume.name  }}-{{ .Release.Name }}
+      name: {{ .Values.volume.name  }}
     spec:
       accessModes:
         - {{ .Values.volume.accessMode | quote }}
@@ -70,5 +71,4 @@ spec:
       resources:
         requests:
           storage: "{{ .Values.volume.size }}"
-{{ end }}
-      restartPolicy: Always
+      # restartPolicy: Always
