@@ -99,3 +99,5 @@ volume:
   storageClass: "local-path"
   accessMode: ReadWriteOnce
   size: "20Gi"
+# Place the data set in data/ dir of this chart
+dataset: customer_data.tar.gz

@@ -1,3 +1,4 @@
+# TODO: set up headless service for 3 ports: api, ui, ssh
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -29,6 +30,13 @@ spec:
       serviceAccountName: {{ include "tiger.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: dataloader
+          image: gregoryg/sh-net-utils
+          command: [ "sh", "-c", "touch /home/tigergraph/mydata/ohai.txt" ]
+          volumeMounts:
+          - mountPath: {{ .Values.volume.mountPath | quote }}
+            name: {{ .Values.volume.name  }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
