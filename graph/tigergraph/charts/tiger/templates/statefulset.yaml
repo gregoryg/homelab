@@ -33,7 +33,7 @@ spec:
       initContainers:
         - name: dataloader
           image: gregoryg/sh-net-utils
-          command: [ "sh", "-c", "touch /home/tigergraph/mydata/ohai.txt" ]
+          command: [ "sh", "-c", "cd /home/tigergraph/mydata; wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/data/customer_data.tar.gz'; tar xf customer_data.tar.gz ; rm customer_data.tar.gz"]
           volumeMounts:
           - mountPath: {{ .Values.volume.mountPath | quote }}
             name: {{ .Values.volume.name  }}
