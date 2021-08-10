@@ -47,10 +47,10 @@
      fi
      case ${mycow} in
          rancher*|tux|chameleon)
-             db='linux computers debian science startrek steven-wright'
+             db=linux computers debian science startrek steven-wright
              ;;
          owl|satanic)
-             db='cookie definitions steven-wright deep-thoughts'
+             db=cookie definitions steven-wright deep-thoughts off/zippy
              ;;
          ,*)
              db=
