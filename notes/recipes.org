@@ -12,6 +12,28 @@
 #+creator: Emacs 27.0.60 (Org mode 9.3.6)
 #+setupfile: ~/projects/emacs/org-html-themes/setup/theme-readtheorg.setup
 * Food
+** Mountainous Noodles - Peanutty Noodles
+   + 1 lb. thin fresh noodles
+   + cooking oil
+   + 4 tbs. sesame oil
+   + 1/4 cup crunchy peanut butter
+   + 1 clove garlic, mashed
+   + 1/4 cup light soy sauce
+   + 2 tbs. Tabasco or pepper sauce
+   + 1/2 cup malt or white vinegar
+   + 1 tbs. Worcesteshire sauce
+
+   Cook noodles in plenty of boiling water, adding 1 tbs cooking oil for each 2 quarts of
+   water. When noodles are done drain, rinse with tap water and drain well.
+
+   Heat 2 tbs of the sesame oil and mix into drained noodles.  Chill at least 1 hour.
+
+   Blend remaining sesame oil and peanut butter into a paste.  Add garlic, soy sauce,
+   Tabasco, vinegar and Worcesteshire sauce.
+
+   Stir until well blended.
+
+   Serve sauce in separate bowl
 * Drink
 ** Mezcal/Aperol drink
    Drink served up by [[https://www.murphysmountaingrill.com/drink][Murphy's Mountain Grill]]
