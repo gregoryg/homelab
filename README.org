@@ -96,13 +96,13 @@
     quick_abort_min -1 KB
   #+end_src
 ** Client
-*** Apt for Ubuntu and Debian
+*** Proxy Apt for Ubuntu and Debian
     in =/etc/apt/apt.conf.d/proxy.conf=
     #+begin_src conf
       Acquire::http::Proxy "http://172.16.17.5:3128/";
       Acquire::https::Proxy "http://172.16.17.5:3128/";
     #+end_src
-*** Everything on openSUSE
+*** Proxy all the things on openSUSE
     Change the following in =/etc/sysconfig/proxy=
     #+begin_src conf
       PROXY_ENABLED="yes"
