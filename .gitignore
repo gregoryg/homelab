@@ -9,3 +9,4 @@ manifests/
 *terraform.tfstate
 *terraform.tfstate.backup
 harvester/src
+notes/src
