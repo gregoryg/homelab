@@ -10,7 +10,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 27.0.60 (Org mode 9.3.6)
-#+setupfile: ~/projects/emacs/org-html-themes/setup/theme-readtheorg.setup
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
 * Food
 ** Mountainous Noodles - Peanutty Noodles
    + 1 lb. thin fresh noodles
@@ -21,7 +21,7 @@
    + 1/4 cup light soy sauce
    + 2 tbs. Tabasco or pepper sauce
    + 1/2 cup malt or white vinegar
-   + 1 tbs. Worcesteshire sauce
+   + 1 tbs. Worcestershire sauce
 
    Cook noodles in plenty of boiling water, adding 1 tbs cooking oil for each 2 quarts of
    water. When noodles are done drain, rinse with tap water and drain well.
@@ -29,7 +29,7 @@
    Heat 2 tbs of the sesame oil and mix into drained noodles.  Chill at least 1 hour.
 
    Blend remaining sesame oil and peanut butter into a paste.  Add garlic, soy sauce,
-   Tabasco, vinegar and Worcesteshire sauce.
+   Tabasco, vinegar and Worcestershire sauce.
 
    Stir until well blended.
 
@@ -52,6 +52,6 @@
    + 1/2 oz lime juice
 ** Margarita El Presidente style
    + 2 oz blanco tequila
-   + .5 oz Orange Curacao
+   + .5 oz Orange Curacao or other orange liqueur
    + 1 oz lime juice
    + .5 oz Chambord (OR LESS)
