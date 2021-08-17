@@ -209,11 +209,10 @@
        apt:
          proxy: http://172.16.17.5:3128
          https_proxy: http://172.5.17.16:3128
-
-       chpasswd:
-         list: |
-           gregj:mypassword-unencoded-dude
-         expire: false
+       # chpasswd:
+       #   list: |
+       #     gregj:mypassword-unencoded-dude
+       #   expire: false
        groups:
          - sudo
          - wheel
