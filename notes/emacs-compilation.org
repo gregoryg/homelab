@@ -17,6 +17,7 @@
           texinfo \
           build-essential \
           xorg-dev \
+          fonts-hack \
           libmagickwand-dev \
           libgtk2.0-dev \
           libjpeg-dev \
