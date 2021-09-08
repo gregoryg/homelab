@@ -96,7 +96,7 @@ affinity: {}
 volume:
   name: "data-ingest"
   mountPath: "/home/tigergraph/mydata"
-  storageClass: "local-path"
+  storageClass: "longhorn"
   accessMode: ReadWriteOnce
   size: "20Gi"
 # Place the data set in data/ dir of this chart

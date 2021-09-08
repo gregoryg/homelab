@@ -3,11 +3,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: data-ingestion
+  name: data-ingest
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: local-path
+  storageClassName: longhorn
   resources:
     requests:
       storage: 128Mi
