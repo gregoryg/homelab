@@ -1379,8 +1379,8 @@
         ssh-add ~/.ssh/tigergraph_rsa
       #+end_src
       #+begin_src emacs-lisp
-        (call-process-shell-command "ssh -o StrictHostKeyChecking=no -p 14022  tigergraph@localhost id")
-        (cd "/ssh:tigergraph@localhost#14022:")
+        (call-process-shell-command "ssh -o StrictHostKeyChecking=no -p 30022  tigergraph@protomolecule id")
+        (cd "/ssh:tigergraph@protomolecule:#30022:")
         (shell "tigergraph-sh")
       #+end_src
 ***** Start Tigergraph
