@@ -31,8 +31,11 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
         - name: dataloader
+          securityContext:
+            runAsUser: 1000
           image: gregoryg/sh-net-utils
-          command: [ "sh", "-c", "cd /home/tigergraph/mydata; rm -v *.sh* *.csv*; wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/data/customer_data.tar.gz'; tar xf customer_data.tar.gz ; rm customer_data.tar.gz; wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/scripts/01-create-graph-zedlink.sh';wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/scripts/02-load-zedlink.sh'"]
+          command: ["/bin/sh"]
+          args: ["-c", "sudo chown -R 1000:1000 /home/tigergraph/mydata ; cd /home/tigergraph/mydata/; rm -v *.sh* *.csv*; wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/data/customer_data.tar.gz'; tar xf customer_data.tar.gz ; rm customer_data.tar.gz; wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/scripts/01-create-graph-zedlink.sh';wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/scripts/02-load-zedlink.sh'"]
           volumeMounts:
           - mountPath: {{ .Values.volume.mountPath | quote }}
             name: {{ .Values.volume.name  }}
