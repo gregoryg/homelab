@@ -1128,6 +1128,84 @@
        --set metrics.serviceMonitor.enabled=true
 #+end_src
 
+* Linux setup odds and ends
+** Debian and Ubuntu deprecated =apt-key= follow these miserable steps instead
+   Painful, but necessary for now
+   ref: [[https://askubuntu.com/questions/1286545/what-commands-exactly-should-replace-the-deprecated-apt-key][What commands (exactly) should replace the deprecated apt-key? - Ask Ubuntu]]
+   + Set up the key url and file name, and open a shell in =/tmp=
+   #+begin_src emacs-lisp
+     (cd "/tmp")
+     (shell "gg-tmp-sh")
+   #+end_src
+
+   #+name: key-url
+   #+begin_src emacs-lisp :results table replace
+     (read-string "URL for signing key: ")
+   #+end_src
+
+   + Download the key:
+     Org-babel note: specify the org variables only on this first session definition to
+     avoid being re-prompted for URL
+   #+begin_src bash :session gg-tmp-sh :var keyurl=key-url :results none
+     export keyfile=$(basename ${keyurl})
+     curl -s -L -O ${keyurl}
+   #+end_src
+
+
+   + Verify that the filetype is =PGP public key block Public-Key (old)=
+   #+begin_src bash :session gg-tmp-sh :results output replace
+     file /tmp/${keyfile}
+   #+end_src
+
+   #+RESULTS:
+   : /tmp/linux_signing_key.pub: PGP public key block Public-Key (old)
+
+   + If your key is in a different format, convert it by importing it into a temp keyring,
+     then exporting it again
+
+     Here we go through the steps regardless because it doesn't hurt to "convert" in any case
+   #+begin_src bash :session gg-tmp-sh :results output replace
+     gpg --no-default-keyring --keyring ./temp-keyring.gpg --import ${keyfile}
+     gpg --no-default-keyring --keyring ./temp-keyring.gpg --export --output ${keyfile}_keyring.gpg
+     rm temp-keyring.gpg
+   #+end_src
+
+   #+RESULTS:
+   #+begin_example
+   gpg: keybox './temp-keyring.gpg' created
+   " imported
+   gpg: key 7721F63BD38B4796: 1 signature not checked due to a missing key
+   " imported
+   gpg: Total number processed: 2
+   gpg:               imported: 2
+   gpg: public key of ultimately trusted key 88F1B1F338F524AC not found
+   gpg: public key of ultimately trusted key 8BED022043E6E8FC not found
+   gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+   gpg: depth: 0  valid:   2  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 2u
+   #+end_example
+
+   + Now that you have your converted key, do *not* add it to apt's trusted keystore by
+     copying it into =/etc/apt/trusted.gpg.d/=. Instead, put it somewhere like
+     =/usr/local/share/keyrings/=. (You'll need to create that keyrings directory first.)
+     #+begin_src bash :session gg-tmp-sh :results output replace
+       sudo mkdir -p /usr/local/share/keyrings/
+       sudo mv -iv ${keyfile}_keyring.gpg /usr/local/share/keyrings/
+     #+end_src
+
+     #+RESULTS:
+     :
+     : renamed 'gpgkey_keyring.gpg' -> '/usr/local/share/keyrings/gpgkey_keyring.gpg'
+
+   + At this point, nothing has changed and apt doesn't know the key exists. The last step
+     is to modify the specific =.list= file for the repository to tell apt where to find the
+     key for that specific repo.
+
+     Edit the file =/etc/apt/sources.list.d/<example>.list=, and in between deb and the url,
+     add =[signed-by=/usr/local/share/keyrings/<your-keyfile-name>.gpg]=
+
+     Now apt will accept that key's signature for all packages in that repo and only that
+     repo.
+
 * Graph databases
 ** Tigergraph
 *** Tigergraph Download and Installation instructions
