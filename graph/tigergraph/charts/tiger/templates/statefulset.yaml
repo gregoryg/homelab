@@ -1,5 +1,6 @@
+# TODO: set up headless service for 3 ports: api, ui, ssh
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "tiger.fullname" . }}
   labels:
@@ -11,6 +12,7 @@ spec:
   selector:
     matchLabels:
       {{- include "tiger.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "tiger.fullname" . }}-whatisthis
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -27,6 +29,13 @@ spec:
       serviceAccountName: {{ include "tiger.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: dataloader
+          image: gregoryg/sh-net-utils
+          command: [ "sh", "-c", "cd /home/tigergraph/mydata; rm -v *.sh* *.csv*; wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/data/customer_data.tar.gz'; tar xf customer_data.tar.gz ; rm customer_data.tar.gz; wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/scripts/01-create-graph-zedlink.sh';wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/scripts/02-load-zedlink.sh'"]
+          volumeMounts:
+          - mountPath: {{ .Values.volume.mountPath | quote }}
+            name: {{ .Values.volume.name  }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -51,21 +60,22 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-          - name: data-ingest
-            mountPath: /home/tigergraph/mydata
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      volumes:
-      - name: data-ingest
-        persistentVolumeClaim:
-          claimName: data-ingestion
+          - mountPath: {{ .Values.volume.mountPath | quote }}
+            name: {{ .Values.volume.name  }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ .Values.volume.name  }}
+    spec:
+      accessModes:
+        - {{ .Values.volume.accessMode | quote }}
+    {{- if .Values.volume.storageClass }}
+    {{- if (eq "-" .Values.volume.storageClass) }}
+      storageClassName: ""
+    {{- else }}
+      storageClassName: "{{ .Values.volume.storageClass }}"
+    {{- end }}
+    {{- end }}
+      resources:
+        requests:
+          storage: "{{ .Values.volume.size }}"
+     # restartPolicy: Always
