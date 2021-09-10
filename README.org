@@ -1132,6 +1132,7 @@
 ** Debian and Ubuntu deprecated =apt-key= follow these miserable steps instead
    Painful, but necessary for now
    ref: [[https://askubuntu.com/questions/1286545/what-commands-exactly-should-replace-the-deprecated-apt-key][What commands (exactly) should replace the deprecated apt-key? - Ask Ubuntu]]
+   ref: [[https://www.linuxuprising.com/2021/01/apt-key-is-deprecated-how-to-add.html][apt-key Is Deprecated. How To Add OpenPGP Repository Signing Keys Without It ...]]
    + Set up the key url and file name, and open a shell in =/tmp=
    #+begin_src emacs-lisp
      (cd "/tmp")
