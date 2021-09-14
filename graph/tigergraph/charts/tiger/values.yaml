@@ -5,11 +5,12 @@
 replicaCount: 1
 
 image:
-  repository: dbakereffendi/tigergraph
-  # repository: docker.tigergraph.com/tigergraph
+  repository: docker.io/library/tigergraph
+  # repository: dbakereffendi/tigergraph
+  repository: docker.tigergraph.com/tigergraph
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "3.1.6"
 
 imagePullSecrets: []
 nameOverride: ""
