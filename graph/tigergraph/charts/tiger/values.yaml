@@ -5,12 +5,13 @@
 replicaCount: 1
 
 image:
-  repository: docker.io/library/tigergraph
-  # repository: dbakereffendi/tigergraph
   repository: docker.tigergraph.com/tigergraph
+  # repository: tigergraph
   pullPolicy: IfNotPresent
+  # pullPolicy: Never
   # Overrides the image tag whose default is the chart appVersion.
   tag: "3.1.6"
+  # tag: "3.2.0-preview"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -43,8 +44,9 @@ securityContext: {}
 #   port: 80
 
 sshService:
-  type: ClusterIP
+  type: NodePort
   port: 14022
+  nodePort: 30022
   targetPort: 22
 
 apiService:
@@ -52,7 +54,8 @@ apiService:
   port: 9000
 
 uiService:
-  type: ClusterIP
+  type: NodePort
+  nodePort: 30240
   port: 14240
   # targetPort: 14240
 
