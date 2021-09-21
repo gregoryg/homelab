@@ -9,6 +9,7 @@ spec:
   ports:
     - port: {{ .Values.sshService.port }}
       targetPort: {{ .Values.sshService.targetPort }}
+      nodePort: {{ .Values.sshService.nodePort }}
       protocol: TCP
       name: ssh
   selector:

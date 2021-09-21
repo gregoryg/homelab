@@ -9,6 +9,7 @@ spec:
   ports:
     - port: {{ .Values.uiService.port }}
       targetPort: {{ .Values.uiService.targetPort }}
+      nodePort: {{ .Values.uiService.nodePort }}
       protocol: TCP
       name: ui
   selector:
