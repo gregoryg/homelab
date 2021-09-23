@@ -10,8 +10,8 @@ image:
   pullPolicy: IfNotPresent
   # pullPolicy: Never
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "3.1.6"
-  # tag: "3.2.0-preview"
+  # tag: "3.1.6"
+  tag: "3.2.0"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -86,7 +86,7 @@ resources: {}
 
 autoscaling:
   enabled: false
-  minReplicas: 1
+  minReplicas: 3
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
