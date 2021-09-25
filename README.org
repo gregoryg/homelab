@@ -35,6 +35,9 @@
 ** Cow me, baby
    Assure =fortune= and =cowsay= are installed
 
+   + Some additional cows
+     + [[https://github.com/piuccio/cowsay/tree/master/cows][cowsay/cows at master · piuccio/cowsay · GitHub]]
+
    The cownonical Cow Me! script
    #+begin_src bash :tangle ~/bin/cowme :results replace output
      # Optionally specify a cow - whether or not in the safe list
