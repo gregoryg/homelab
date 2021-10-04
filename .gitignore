@@ -1,12 +1,6 @@
-*.html
-pdsh/
-mysql-data/
-*.rkestate
-kube_config_cluster.yaml
-manifests/
+*.org.html
 .terraform/
 .terraform.lock.hcl
 *terraform.tfstate
 *terraform.tfstate.backup
-harvester/src
-notes/src
+src
