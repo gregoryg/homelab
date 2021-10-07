@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-config
+  labels:
+    {{- include "tiger.labels" . | nindent 4 }}
+data:
+  service.headless.name: tigergraph
+  pod.prefix: tigergraph
+  namespace: {{ .Values.namespace }}
+  cluster_size: "{{ .Values.replicaCount }}"
+  license: ""
+  ha: "{{ .Values.ha }}"

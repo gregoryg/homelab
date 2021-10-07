@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ include "tiger.fullname" . }}
+  namespace: {{ .Values.namespace }}
   labels:
     {{- include "tiger.labels" . | nindent 4 }}
 spec:
@@ -25,7 +26,7 @@ spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+n      {{- end }}
       serviceAccountName: {{ include "tiger.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
@@ -37,8 +38,8 @@ spec:
           command: ["/bin/sh"]
           args: ["-c", "sudo chown -R 1000:1000 /home/tigergraph/mydata ; cd /home/tigergraph/mydata/; rm -v *.sh* *.csv*; wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/data/customer_data.tar.gz'; tar xf customer_data.tar.gz ; rm customer_data.tar.gz; wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/scripts/01-create-graph-zedlink.sh';wget 'https://github.com/gregoryg/homelab/raw/cluster/graph/tigergraph/charts/tiger/scripts/02-load-zedlink.sh'"]
           volumeMounts:
-          - mountPath: {{ .Values.volume.mountPath | quote }}
-            name: {{ .Values.volume.name  }}
+          - mountPath: {{ .Values.ingestVolume.mountPath | quote }}
+            name: {{ .Values.ingestVolume.name  }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -64,22 +65,40 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-          - mountPath: {{ .Values.volume.mountPath | quote }}
-            name: {{ .Values.volume.name  }}
+          - mountPath: {{ .Values.dataVolume.mountPath | quote }}
+            name: {{ .Values.dataVolume.name  }}
+          - mountPath: {{ .Values.ingestVolume.mountPath | quote }}
+            name: {{ .Values.ingestVolume.name  }}
   volumeClaimTemplates:
   - metadata:
-      name: {{ .Values.volume.name  }}
+      name: {{ .Values.dataVolume.name }}
     spec:
       accessModes:
-        - {{ .Values.volume.accessMode | quote }}
-    {{- if .Values.volume.storageClass }}
-    {{- if (eq "-" .Values.volume.storageClass) }}
+        - {{ .Values.dataVolume.accessMode | quote }}
+    {{- if .Values.dataVolume.storageClass }}
+    {{- if (eq "-" .Values.dataVolume.storageClass) }}
       storageClassName: ""
     {{- else }}
-      storageClassName: "{{ .Values.volume.storageClass }}"
+      storageClassName: "{{ .Values.dataVolume.storageClass }}"
+
+      {{- end }}
+    {{- end }}
+      resources:
+        requests:
+          storage: "{{ .Values.dataVolume.size }}"
+  - metadata:
+      name: {{ .Values.ingestVolume.name  }}
+    spec:
+      accessModes:
+        - {{ .Values.ingestVolume.accessMode | quote }}
+    {{- if .Values.ingestVolume.storageClass }}
+    {{- if (eq "-" .Values.ingestVolume.storageClass) }}
+      storageClassName: ""
+    {{- else }}
+      storageClassName: "{{ .Values.ingestVolume.storageClass }}"
     {{- end }}
     {{- end }}
       resources:
         requests:
-          storage: "{{ .Values.volume.size }}"
+          storage: "{{ .Values.ingestVolume.size }}"
      # restartPolicy: Always
