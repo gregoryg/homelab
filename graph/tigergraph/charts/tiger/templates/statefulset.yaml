@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "tiger.fullname" . }}
+  name: {{ .Values.name }}
   namespace: {{ .Values.namespace }}
   labels:
     {{- include "tiger.labels" . | nindent 4 }}
@@ -13,7 +13,7 @@ spec:
   selector:
     matchLabels:
       {{- include "tiger.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "tiger.fullname" . }}-whatisthis
+  serviceName: {{ .Values.name }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -26,31 +26,45 @@ spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
-n      {{- end }}
+      {{- end }}
       serviceAccountName: {{ include "tiger.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      initContainers:
-        - name: dataloader
-          securityContext:
-            runAsUser: 1000
-          image: gregoryg/sh-net-utils
-          command: ["/bin/sh"]
-          args: ["-c", "sudo chown -R 1000:1000 /home/tigergraph/mydata ; cd /home/tigergraph/mydata/; rm -v *.sh* *.csv*; wget 'https://gitcdn.link/repo/gregoryg/homelab/master/graph/tigergraph/charts/tiger/data/customer_data.tar.gz'; tar xf customer_data.tar.gz ; rm customer_data.tar.gz; wget 'https://gitcdn.link/repo/gregoryg/homelab/master/graph/tigergraph/charts/tiger/scripts/01-create-graph-zedlink.sh';wget 'https://gitcdn.link/repo/gregoryg/homelab/master/graph/tigergraph/charts/tiger/scripts/02-load-zedlink.sh'"]
-          volumeMounts:
-          - mountPath: {{ .Values.ingestVolume.mountPath | quote }}
-            name: {{ .Values.ingestVolume.name  }}
       containers:
         - name: {{ .Chart.Name }}
+          env:
+          - name: SERVICE_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: env-config
+                key: service.headless.name
+          - name: POD_PREFIX
+            valueFrom:
+              configMapKeyRef:
+                name: env-config
+                key: pod.prefix
+          - name: NAMESPACE
+            valueFrom:
+              configMapKeyRef:
+                name: env-config
+                key: namespace
+          - name: CLUSTER_SIZE
+            valueFrom:
+              configMapKeyRef:
+                name: env-config
+                key: cluster_size
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["/bin/sleep", "24d"]
-          # ports:
-          #   - name: http
-          #     containerPort: 80
-          #     protocol: TCP
+          ports:
+          - containerPort: 9000
+            name: rest
+          - containerPort: 14240
+            name: graphstudio
+          - containerPort: 22
+            name: ssh
           livenessProbe:
             initialDelaySeconds: 300
             failureThreshold: 3
@@ -69,6 +83,37 @@ n      {{- end }}
             name: {{ .Values.dataVolume.name  }}
           - mountPath: {{ .Values.ingestVolume.mountPath | quote }}
             name: {{ .Values.ingestVolume.name  }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                - "/bin/bash"
+                - "-c"
+                - |
+                  (
+                    if [ "$(ls -A /home/tigergraph/tigergraph/data/|grep -v lost|tail -1)" ]; then
+                      for i in $(seq 1 ${CLUSTER_SIZE});
+                      do
+                        until nslookup ${POD_PREFIX}-$((i-1)).${SERVICE_NAME}.${NAMESPACE}.svc.cluster.local;
+                        do
+                          echo "wait dns to be updated";
+                          sleep 1;
+                        done;
+                      done;
+                      sleep 15;
+                      export PATH=/home/tigergraph/tigergraph/app/cmd:$PATH
+                      ln -sf /home/tigergraph/tigergraph/data/configs/tg.cfg /home/tigergraph/.tg.cfg
+                      grun all "hostname"
+                      echo "starting service at $(date)"
+                      gadmin start all --with-config /home/tigergraph/.tg.cfg;
+                    else
+                      sudo chown -R tigergraph:tigergraph /home/tigergraph/tigergraph/data;
+                    fi
+                  ) > /tmp/init.log 2>&1 &
+                  disown -a
+                  exit 0
+                  "
+
   volumeClaimTemplates:
   - metadata:
       name: {{ .Values.dataVolume.name }}
