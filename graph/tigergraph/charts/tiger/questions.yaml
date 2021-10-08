@@ -34,4 +34,38 @@ questions:
   type: int
   description: "TigerGraph Cluster High Availability Setting"
   label: ha
+- variable: resources.requests.cpu
+  group: "Resources"
+  default: 4000m
+  type: string
+  description: Minimum CPU to reserve
+  label: CPU
+- variable: resources.requests.memory
+  group: "Resources"
+  default: 8Gi
+  type: string
+  description: Minimum Memory to reserve
+  label: Memory with Mi or Gi
+- variable: autoscaling.enabled
+  group: "Auto-scaling"
+  default: "false"
+  description: "Scale # of pods automatically based on CPU usage"
+  type: boolean
+  label: "Horizontal pod auto-scaling enabled"
+  show_subquestion_if: true
+  subquestions:
+  - variable: autoscaling.minReplicas
+    # group: "Min/Max pods"
+    default: 1
+    type: int
+    min: 1
+    max: 20
+    label: "Minimum number of pods (replicas)"
+  - variable: autoscaling.maxReplicas
+    # group: "Min/Max pods"
+    default: 20
+    type: int
+    min: 2
+    max: 100
+    label: "Maximum number of pods (replicas)"
   
