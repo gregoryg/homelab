@@ -1,0 +1,37 @@
+categories:
+- Database
+- Graph
+namespace: tigergraph
+questions:
+- variable: image.defaultImage
+  group: "TigerGraph images"
+  default: "true"
+  description: Use the default TigerGraph Kubernetes image (recommended)
+  label: "Use default image"
+  type: boolean
+  show_subquestion_if: false
+  subquestions:
+  - variable: image.repository
+    type: string
+    default: docker.tigergraph.com/tigergraph-k8s
+    description: Specify TigerGraph Kubernetes image
+    label: Image
+  - variable: image.tag
+    type: string
+    default: "3.2.0"
+    description: "Specify TigerGraph Kubernetes image tag"
+    label: Tag
+
+- variable: replicaCount
+  group: "Cluster Sizing and Replication"
+  default: 3
+  type: int
+  description: Number of Pods (Servers) in TigerGraph cluster
+  label: "# replicas"
+- variable: ha
+  group: "Cluster Sizing and Replication"
+  default: 1
+  type: int
+  description: "TigerGraph Cluster High Availability Setting"
+  label: ha
+  
