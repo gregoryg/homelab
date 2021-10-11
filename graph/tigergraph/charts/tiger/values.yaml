@@ -52,9 +52,9 @@ securityContext: {}
 #   nodePort: 30022
 #   targetPort: 22
 
-# apiService:
-#   type: ClusterIP
-#   port: 9000
+apiService:
+  type: ClusterIP
+  port: 9000
 
 uiService:
   type: NodePort

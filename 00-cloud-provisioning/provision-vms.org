@@ -1,5 +1,60 @@
 #+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :tangle no :eval never-export
 #+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
+* Set up EKS Cluster
+  #+begin_src bash
+    eksctl create cluster \
+           --profile <MYPROFILE> \
+           --name gg-tiger32-test \
+           --region us-west-2 \
+           --with-oidc \
+           --ssh-access \
+           --ssh-public-key <MYSSHKEYNAME> \
+           --nodes 4 \
+           --node-volume-size 100 \
+           --node-type m5.2xlarge
+  #+end_src
+* Set up AKS cluster
+  + ref: [[https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough][Quickstart: Deploy an AKS cluster by using Azure CLI - Azure Kubernetes Servi...]]
+    #+begin_src bash
+    # create resource group
+    az group create --name gg-aks-rg --location eastus
+    #+end_src
+  + Assure cluster monitoring is ready to go
+    #+begin_src bash
+      az provider show -n Microsoft.OperationsManagement -o table
+      az provider show -n Microsoft.OperationalInsights -o table
+      ## If not already registered - then register!
+      az provider register --namespace Microsoft.OperationsManagement
+      az provider register --namespace Microsoft.OperationalInsights
+    #+end_src
+  + Create AKS cluster
+    #+begin_src bash
+      ##   --generate-ssh-keys \
+      az aks create \
+         --name gg-tiger32-test \
+         --resource-group gg-aks-rg \
+         --node-count 3 \
+         --enable-addons monitoring \
+         --ssh-key-value ~/.ssh/azure_gg-tg_key.pub \
+         --admin-username gregj \
+         --node-vm-size Standard_DS4_v2
+    #+end_src
+  + Install =kubectl= using Azure (*VERY* OPTIONAL)
+    #+begin_src bash
+      az aks install-cli
+    #+end_src
+  + Nab credentials
+    #+begin_src bash
+      az aks get-credentials --resource-group gg-aks-rg --name gg-tiger32-test --file -
+    #+end_src
+  + Nuke the cluster by deleting the resource group (love Azure)
+    #+begin_src bash
+      az group delete --name gg-aks-rg --yes --no-wait
+    #+end_src
+
+
+
+
 * Single-node Rancher
   #+begin_src bash
     IP=nn.nn.nn.nn # reserved IP
