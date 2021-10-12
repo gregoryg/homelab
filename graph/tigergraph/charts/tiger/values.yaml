@@ -1,6 +1,7 @@
 # Default values for tiger.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+# TODO: Partition factor (splits) and Replication factor (copies)
 
 replicaCount: 3
 ha: 1
