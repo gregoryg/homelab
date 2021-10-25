@@ -1,0 +1,25 @@
+drop graph Northwind
+create graph Northwind()
+use graph Northwind
+create schema_change job schema_change_northwind {
+# Vertex Reps
+ADD VERTEX Reps(PRIMARY_ID id INT, LastName STRING, FirstName STRING, Title STRING, CourtesyTitle STRING, BirthDate DATETIME, HireDate DATETIME, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, HomePhone STRING, PhoneExtension STRING, ReportsTo INT, group_id INT, is_root BOOL) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+
+# Vertex Customers
+ADD VERTEX Customers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, Phone STRING, referred_by STRING, group_id INT, is_root BOOL) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+
+# Vertex Orders
+ADD VERTEX Orders(PRIMARY_ID id INT, CustomerID STRING, EmployeeID INT, OrderDate DATETIME, RequiredDate DATETIME, ShippedDate DATETIME, ShipVia INT, Freight DOUBLE, ShipName STRING, ShipAddress STRING, ShipCity STRING, ShipRegion STRING, ShipPostalCode STRING, ShipCountry STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+
+# Vertex Products
+ADD VERTEX Products(PRIMARY_ID id INT, ProductName STRING, SupplierID INT, CategoryID INT, QuantityPerUnit STRING, UnitPrice DOUBLE, UnitsInStock INT, UnitsOnOrder INT, ReorderLevel INT, Discontinued INT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+
+ADD DIRECTED EDGE include(FROM Orders, TO Products, Quantity INT, UnitPrice DOUBLE, Discount DOUBLE) WITH REVERSE_EDGE="reverse_include";
+
+ADD DIRECTED EDGE referredby(FROM Customers, TO Customers) WITH REVERSE_EDGE="reverse_referredby";
+
+ADD DIRECTED EDGE fulfill(FROM Reps, TO Orders) WITH REVERSE_EDGE="reverse_fulfill";
+ADD UNDIRECTED EDGE place(FROM Customers, TO Orders, CustomerID STRING, OrderID INT);
+}
+run schema_change job schema_change_northwind
+drop job schema_change_northwind

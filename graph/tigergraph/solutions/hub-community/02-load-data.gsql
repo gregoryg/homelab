@@ -1,0 +1,24 @@
+USE GRAPH influencers
+
+BEGIN
+CREATE LOADING JOB load_influencers FOR GRAPH influencers {
+  DEFINE FILENAME person_data="/home/tigergraph/mydata/insta-follow/users.csv";
+  DEFINE FILENAME followers_data="/home/tigergraph/mydata/insta-follow/followers.csv";
+  DEFINE FILENAME referred_data="/home/tigergraph/mydata/insta-follow/referrals.csv";
+  DEFINE FILENAME interests="/home/tigergraph/mydata/insta-follow/interests.csv";
+  DEFINE FILENAME people_interests="/home/tigergraph/mydata/insta-follow/people_interests.csv";
+
+  LOAD person_data TO VERTEX account VALUES ($"id", $"user_name",
+    $"first_name", $"last_name", $"email", $"gender",$"age")
+    USING header="true", separator=",";
+  LOAD interests TO VERTEX hobby VALUES ($"id", $"interest")
+    USING header="true", separator=",";
+  LOAD followers_data TO EDGE follows VALUES ($"from_id", $"to_id")
+    USING header="true", separator=",";
+  LOAD referred_data TO EDGE referred_by VALUES ($"from_id", $"to_id",
+    $"referral_date")
+    USING header="true", separator=",";
+  LOAD people_interests TO EDGE interested_in VALUES ($"id", $"int_id")
+    USING header="true", separator=",";
+}
+END
