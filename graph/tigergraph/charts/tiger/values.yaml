@@ -1,16 +1,20 @@
 # Default values for tiger.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+# TODO: Partition factor (splits) and Replication factor (copies)
 
-replicaCount: 1
+replicaCount: 3
+ha: 1
+namespace: default
+# The name of the StatefulSet (deployment) within the specified namespace
+name: tigergraph
 
 image:
-  repository: docker.tigergraph.com/tigergraph
+  repository: docker.tigergraph.com/tigergraph-k8s
   # repository: tigergraph
   pullPolicy: IfNotPresent
   # pullPolicy: Never
   # Overrides the image tag whose default is the chart appVersion.
-  # tag: "3.1.6"
   tag: "3.2.0"
 
 imagePullSecrets: []
@@ -42,12 +46,12 @@ securityContext: {}
 # service:
 #   type: ClusterIP
 #   port: 80
-
-sshService:
-  type: NodePort
-  port: 14022
-  nodePort: 30022
-  targetPort: 22
+# TODO: switch services to use load balancer resource
+# sshService:
+#   type: NodePort
+#   port: 14022
+#   nodePort: 30022
+#   targetPort: 22
 
 apiService:
   type: ClusterIP
@@ -72,15 +76,13 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+# Please consider this section to be a minimal specification.
+# Adjust only if you want to reserve a set amount of resource
+resources:
+  requests:
+    cpu: 4000m
+    memory: 8Gi
   # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
   #   cpu: 100m
   #   memory: 128Mi
 
@@ -97,11 +99,17 @@ tolerations: []
 
 affinity: {}
 
-volume:
+ingestVolume:
   name: "data-ingest"
   mountPath: "/home/tigergraph/mydata"
   storageClass: "longhorn"
   accessMode: ReadWriteOnce
-  size: "20Gi"
+  size: "2Gi"
+dataVolume:
+  name: "tigergraph-data"
+  mountPath: "/tgdata"
+  storageClass: "longhorn"
+  accessMode: ReadWriteOnce
+  size: "56Gi"
 # Place the data set in data/ dir of this chart
 dataset: customer_data.tar.gz

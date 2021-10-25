@@ -1,0 +1,71 @@
+categories:
+- Database
+- Graph
+namespace: tigergraph
+questions:
+- variable: image.defaultImage
+  group: "TigerGraph images"
+  default: "true"
+  description: Use the default TigerGraph Kubernetes image (recommended)
+  label: "Use default image"
+  type: boolean
+  show_subquestion_if: false
+  subquestions:
+  - variable: image.repository
+    type: string
+    default: docker.tigergraph.com/tigergraph-k8s
+    description: Specify TigerGraph Kubernetes image
+    label: Image
+  - variable: image.tag
+    type: string
+    default: "3.2.0"
+    description: "Specify TigerGraph Kubernetes image tag"
+    label: Tag
+
+- variable: replicaCount
+  group: "Cluster Sizing and Replication"
+  default: 3
+  type: int
+  description: Number of Pods (Servers) in TigerGraph cluster
+  label: "# replicas"
+- variable: ha
+  group: "Cluster Sizing and Replication"
+  default: 1
+  type: int
+  description: "TigerGraph Cluster High Availability Setting"
+  label: ha
+- variable: resources.requests.cpu
+  group: "Resources"
+  default: 4000m
+  type: string
+  description: Minimum CPU to reserve
+  label: CPU
+- variable: resources.requests.memory
+  group: "Resources"
+  default: 8Gi
+  type: string
+  description: Minimum Memory to reserve
+  label: Memory with Mi or Gi
+- variable: autoscaling.enabled
+  group: "Auto-scaling"
+  default: "false"
+  description: "Scale # of pods automatically based on CPU usage"
+  type: boolean
+  label: "Horizontal pod auto-scaling enabled"
+  show_subquestion_if: true
+  subquestions:
+  - variable: autoscaling.minReplicas
+    # group: "Min/Max pods"
+    default: 1
+    type: int
+    min: 1
+    max: 20
+    label: "Minimum number of pods (replicas)"
+  - variable: autoscaling.maxReplicas
+    # group: "Min/Max pods"
+    default: 20
+    type: int
+    min: 2
+    max: 100
+    label: "Maximum number of pods (replicas)"
+  
