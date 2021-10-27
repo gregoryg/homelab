@@ -1,0 +1,41 @@
+# -*- mode: sql; -*-
+use graph Northwind
+CREATE LOADING JOB load_all_north {
+    DEFINE FILENAME categories="/home/tigergraph/mydata/northwind/data/categories.csv";
+    DEFINE FILENAME customers="/home/tigergraph/mydata/northwind/data/customers.csv";
+    DEFINE FILENAME employees="/home/tigergraph/mydata/northwind/data/employees.csv";
+    DEFINE FILENAME employee_territories="/home/tigergraph/mydata/northwind/data/employee-territories.csv";
+    DEFINE FILENAME order_details="/home/tigergraph/mydata/northwind/data/order-details.csv";
+    DEFINE FILENAME orders="/home/tigergraph/mydata/northwind/data/orders.csv";
+    DEFINE FILENAME products="/home/tigergraph/mydata/northwind/data/products.csv";
+    DEFINE FILENAME regions="/home/tigergraph/mydata/northwind/data/regions.csv";
+    DEFINE FILENAME suppliers="/home/tigergraph/mydata/northwind/data/suppliers.csv";
+    DEFINE FILENAME territories="/home/tigergraph/mydata/northwind/data/territories.csv";
+
+      LOAD employees TO VERTEX Reps VALUES($"EmployeeID", $"LastName", $"FirstName", $"Title", $"TitleOfCourtesy", $"BirthDate", $"HireDate", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"HomePhone", $"Extension", $"ReportsTo", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+
+      LOAD employee_territories TO EDGE operate_in VALUES($"EmployeeID", $"TerritoryID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      LOAD regions TO VERTEX Regions VALUES($"RegionID", $"RegionDescription") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      LOAD territories TO VERTEX Territories VALUES($"TerritoryID", $"TerritoryDescription") USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD territories TO EDGE located_in VALUES($"TerritoryID", $"RegionID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      LOAD customers TO VERTEX Customers VALUES($"CustomerID", $"CompanyName", $"ContactName", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"Phone", $"ReferredBy", _, _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      LOAD suppliers TO VERTEX Suppliers VALUES($"SupplierID", $"CompanyName", $"ContactName", $"ContactTitle", $"Address", $"City", $"Region", $"PostalCode", $"Phone", $"Country", $"HomePage") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      LOAD products TO VERTEX Products VALUES($"ProductID", $"ProductName", $"SupplierID", $"CategoryID", $"QuantityPerUnit", $"UnitPrice", $"UnitsInStock", $"UnitsOnOrder", $"ReorderLevel", $"Discontinued") USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD products TO EDGE provide VALUES($"SupplierID", $"ProductID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      LOAD order_details TO VERTEX Orders VALUES($"OrderID", _, _, _, _, _, _, _, _, _, _, _, _, _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD order_details TO EDGE include VALUES($"OrderID", $"ProductID", $"Quantity", $"UnitPrice", $"Discount", $"LineTotalNoDiscount", $"LineTotal") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      LOAD orders TO VERTEX Orders VALUES($"OrderID", $"CustomerID", $"EmployeeID", $"OrderDate", $"RequiredDate", $"ShippedDate", $"ShipVia", $"Freight", $"ShipName", $"ShipAddress", $"ShipCity", $"ShipRegion", $"ShipPostalCode", $"ShipCountry", $"OrderAmt") USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD orders TO EDGE place VALUES($"CustomerID", $"OrderID", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD orders TO EDGE rep_customer VALUES($"EmployeeID", $"CustomerID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD orders TO EDGE fulfill VALUES($"EmployeeID", $"OrderID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+}
+run loading job load_all_north
+drop job load_all_north

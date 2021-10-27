@@ -9,7 +9,7 @@ ADD VERTEX Reps(PRIMARY_ID id INT, LastName STRING, FirstName STRING, Title STRI
 ADD VERTEX Customers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, Phone STRING, referred_by STRING, group_id INT, is_root BOOL, Type STRING DEFAULT "DIRECT") WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
 # Vertex Orders
-ADD VERTEX Orders(PRIMARY_ID id INT, CustomerID STRING, EmployeeID INT, OrderDate DATETIME, RequiredDate DATETIME, ShippedDate DATETIME, ShipVia INT, Freight DOUBLE, ShipName STRING, ShipAddress STRING, ShipCity STRING, ShipRegion STRING, ShipPostalCode STRING, ShipCountry STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+ADD VERTEX Orders(PRIMARY_ID id INT, CustomerID STRING, EmployeeID INT, OrderDate DATETIME, RequiredDate DATETIME, ShippedDate DATETIME, ShipVia INT, Freight DOUBLE, ShipName STRING, ShipAddress STRING, ShipCity STRING, ShipRegion STRING, ShipPostalCode STRING, ShipCountry STRING, OrderAmount DOUBLE) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
 # Vertex Products
 ADD VERTEX Products(PRIMARY_ID id INT, ProductName STRING, SupplierID INT, CategoryID INT, QuantityPerUnit STRING, UnitPrice DOUBLE, UnitsInStock INT, UnitsOnOrder INT, ReorderLevel INT, Discontinued INT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
@@ -20,7 +20,7 @@ ADD VERTEX Regions(PRIMARY_ID id INT, Description STRING) WITH STATS="OUTDEGREE_
 
 ADD VERTEX Suppliers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, ContactTitle STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Phone STRING, Country STRING, HomePage STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
 
-ADD DIRECTED EDGE include(FROM Orders, TO Products, Quantity INT, UnitPrice DOUBLE, Discount DOUBLE) WITH REVERSE_EDGE="reverse_include";
+ADD DIRECTED EDGE include(FROM Orders, TO Products, Quantity INT, UnitPrice DOUBLE, Discount DOUBLE, LineTotalNoDiscount DOUBLE, LineTotal DOUBLE) WITH REVERSE_EDGE="reverse_include";
 
 ADD DIRECTED EDGE referredby(FROM Customers, TO Customers) WITH REVERSE_EDGE="reverse_referredby";
 
@@ -34,8 +34,6 @@ ADD UNDIRECTED EDGE located_in(FROM Territories, TO Regions);
 ADD UNDIRECTED EDGE rep_customer(FROM Reps, TO Customers);
 
 ADD DIRECTED EDGE provide(FROM Suppliers, TO Products) WITH REVERSE_EDGE="reverse_provide";
-
-ADD DIRECTED EDGE reverse_provide(FROM Products, TO Suppliers) WITH REVERSE_EDGE="provide";
 
 }
 run schema_change job schema_change_northwind
