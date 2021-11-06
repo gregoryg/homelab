@@ -29,10 +29,10 @@ CREATE LOADING JOB load_all_north {
       LOAD products TO VERTEX Products VALUES($"ProductID", $"ProductName", $"SupplierID", $"CategoryID", $"QuantityPerUnit", $"UnitPrice", $"UnitsInStock", $"UnitsOnOrder", $"ReorderLevel", $"Discontinued") USING SEPARATOR=",", HEADER="true", EOL="\n";
       LOAD products TO EDGE provide VALUES($"SupplierID", $"ProductID") USING SEPARATOR=",", HEADER="true", EOL="\n";
 
-      LOAD order_details TO VERTEX Orders VALUES($"OrderID", _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD order_details TO VERTEX Orders VALUES($"OrderID", _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
       LOAD order_details TO EDGE include VALUES($"OrderID", $"ProductID", $"Quantity", $"UnitPrice", $"Discount", $"LineTotalNoDiscount", $"LineTotal") USING SEPARATOR=",", HEADER="true", EOL="\n";
 
-      LOAD orders TO VERTEX Orders VALUES($"OrderID", $"CustomerID", $"EmployeeID", $"OrderDate", $"RequiredDate", $"ShippedDate", $"ShipVia", $"Freight", $"ShipName", $"ShipAddress", $"ShipCity", $"ShipRegion", $"ShipPostalCode", $"ShipCountry", $"OrderAmt", $"CommissionAmt") USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD orders TO VERTEX Orders VALUES($"OrderID", $"CustomerID", $"EmployeeID", $"OrderDate", $"RequiredDate", $"ShippedDate", $"ShipVia", $"Freight", $"ShipName", $"ShipAddress", $"ShipCity", $"ShipRegion", $"ShipPostalCode", $"ShipCountry", $"OrderAmt", $"CommissionAmt",_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
       LOAD orders TO EDGE place VALUES($"CustomerID", $"OrderID", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
       LOAD orders TO EDGE rep_customer VALUES($"EmployeeID", $"CustomerID") USING SEPARATOR=",", HEADER="true", EOL="\n";
       LOAD orders TO EDGE fulfill VALUES($"EmployeeID", $"OrderID") USING SEPARATOR=",", HEADER="true", EOL="\n";

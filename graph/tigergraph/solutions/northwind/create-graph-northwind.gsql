@@ -9,7 +9,7 @@ ADD VERTEX Reps(PRIMARY_ID id INT, LastName STRING, FirstName STRING, Title STRI
 ADD VERTEX Customers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, Phone STRING, referred_by STRING, group_id INT, is_root BOOL, Type STRING DEFAULT "DIRECT") WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
 # Vertex Orders
-ADD VERTEX Orders(PRIMARY_ID id INT, CustomerID STRING, EmployeeID INT, OrderDate DATETIME, RequiredDate DATETIME, ShippedDate DATETIME, ShipVia INT, Freight DOUBLE, ShipName STRING, ShipAddress STRING, ShipCity STRING, ShipRegion STRING, ShipPostalCode STRING, ShipCountry STRING, OrderAmount DOUBLE, CommissionAmount DOUBLE) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+ADD VERTEX Orders(PRIMARY_ID id INT, CustomerID STRING, EmployeeID INT, OrderDate DATETIME, RequiredDate DATETIME, ShippedDate DATETIME, ShipVia INT, Freight DOUBLE, ShipName STRING, ShipAddress STRING, ShipCity STRING, ShipRegion STRING, ShipPostalCode STRING, ShipCountry STRING, OrderAmount DOUBLE, CommissionAmount DOUBLE, fraud_score DOUBLE, ReturnedDate STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
 # Vertex Products
 ADD VERTEX Products(PRIMARY_ID id INT, ProductName STRING, SupplierID INT, CategoryID INT, QuantityPerUnit STRING, UnitPrice DOUBLE, UnitsInStock INT, UnitsOnOrder INT, ReorderLevel INT, Discontinued INT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
@@ -25,6 +25,7 @@ ADD DIRECTED EDGE include(FROM Orders, TO Products, Quantity INT, UnitPrice DOUB
 ADD DIRECTED EDGE referredby(FROM Customers, TO Customers) WITH REVERSE_EDGE="reverse_referredby";
 
 ADD DIRECTED EDGE fulfill(FROM Reps, TO Orders) WITH REVERSE_EDGE="reverse_fulfill";
+
 ADD UNDIRECTED EDGE place(FROM Customers, TO Orders, CustomerID STRING, OrderID INT);
 
 ADD UNDIRECTED EDGE operate_in(FROM Reps, TO Territories);
@@ -35,6 +36,7 @@ ADD UNDIRECTED EDGE rep_customer(FROM Reps, TO Customers);
 
 ADD DIRECTED EDGE provide(FROM Suppliers, TO Products) WITH REVERSE_EDGE="reverse_provide";
 
+ADD DIRECTED EDGE deliver_within(FROM Suppliers, TO Regions) WITH REVERSE_EDGE="reverse_deliver_within";
 }
 run schema_change job schema_change_northwind
 drop job schema_change_northwind
