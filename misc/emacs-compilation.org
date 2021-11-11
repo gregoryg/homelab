@@ -71,7 +71,7 @@
   cd emacs-source
   ./autogen.sh
   ./configure --with-imagemagick --with-mailutils --with-xwidgets --with-native-compilation --with-json
-  make
+  time make -j
   sudo make install
 #+end_src
 * gccemacs hints
