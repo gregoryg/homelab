@@ -3,40 +3,40 @@ drop graph Northwind
 create graph Northwind()
 use graph Northwind
 create schema_change job schema_change_northwind {
-# Vertex Reps
-ADD VERTEX Reps(PRIMARY_ID id INT, LastName STRING, FirstName STRING, Title STRING, CourtesyTitle STRING, BirthDate DATETIME, HireDate DATETIME, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, HomePhone STRING, PhoneExtension STRING, ReportsTo INT, group_id INT, is_root BOOL) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+  # Vertex Reps
+  ADD VERTEX Reps(PRIMARY_ID id INT, LastName STRING, FirstName STRING, Title STRING, CourtesyTitle STRING, BirthDate DATETIME, HireDate DATETIME, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, HomePhone STRING, PhoneExtension STRING, ReportsTo INT, group_id INT, is_root BOOL) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
-ADD VERTEX Customers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, Phone STRING, referred_by STRING, group_id INT, is_root BOOL, Type STRING DEFAULT "DIRECT") WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+  ADD VERTEX Customers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, Phone STRING, referred_by STRING, group_id INT, is_root BOOL, Type STRING DEFAULT "DIRECT") WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
-# Vertex Orders
-ADD VERTEX Orders(PRIMARY_ID id INT, CustomerID STRING, EmployeeID INT, OrderDate DATETIME, RequiredDate DATETIME, ShippedDate DATETIME, ShipVia INT, Freight DOUBLE, ShipName STRING, ShipAddress STRING, ShipCity STRING, ShipRegion STRING, ShipPostalCode STRING, ShipCountry STRING, OrderAmount DOUBLE, CommissionAmount DOUBLE, fraud_score DOUBLE, ReturnedDate STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+  # Vertex Orders
+  ADD VERTEX Orders(PRIMARY_ID id INT, CustomerID STRING, EmployeeID INT, OrderDate DATETIME, RequiredDate DATETIME, ShippedDate DATETIME, ShipVia INT, Freight DOUBLE, ShipName STRING, ShipAddress STRING, ShipCity STRING, ShipRegion STRING, ShipPostalCode STRING, ShipCountry STRING, OrderAmount DOUBLE, CommissionAmount DOUBLE, fraud_score DOUBLE, ReturnedDate STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
-# Vertex Products
-ADD VERTEX Products(PRIMARY_ID id INT, ProductName STRING, SupplierID INT, CategoryID INT, QuantityPerUnit STRING, UnitPrice DOUBLE, UnitsInStock INT, UnitsOnOrder INT, ReorderLevel INT, Discontinued INT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+  # Vertex Products
+  ADD VERTEX Products(PRIMARY_ID id INT, ProductName STRING, SupplierID INT, CategoryID INT, QuantityPerUnit STRING, UnitPrice DOUBLE, UnitsInStock INT, UnitsOnOrder INT, ReorderLevel INT, Discontinued INT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
-ADD VERTEX Territories(PRIMARY_ID id STRING, Description STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+  ADD VERTEX Territories(PRIMARY_ID id STRING, Description STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+  
+  ADD VERTEX Regions(PRIMARY_ID id INT, Description STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
-ADD VERTEX Regions(PRIMARY_ID id INT, Description STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+  ADD VERTEX Suppliers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, ContactTitle STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Phone STRING, Country STRING, HomePage STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
 
-ADD VERTEX Suppliers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, ContactTitle STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Phone STRING, Country STRING, HomePage STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+  ADD DIRECTED EDGE include(FROM Orders, TO Products, Quantity INT, UnitPrice DOUBLE, Discount DOUBLE, LineTotalNoDiscount DOUBLE, LineTotal DOUBLE) WITH REVERSE_EDGE="reverse_include";
 
-ADD DIRECTED EDGE include(FROM Orders, TO Products, Quantity INT, UnitPrice DOUBLE, Discount DOUBLE, LineTotalNoDiscount DOUBLE, LineTotal DOUBLE) WITH REVERSE_EDGE="reverse_include";
+  ADD DIRECTED EDGE referredby(FROM Customers, TO Customers) WITH REVERSE_EDGE="reverse_referredby";
 
-ADD DIRECTED EDGE referredby(FROM Customers, TO Customers) WITH REVERSE_EDGE="reverse_referredby";
+  ADD DIRECTED EDGE fulfill(FROM Reps, TO Orders) WITH REVERSE_EDGE="reverse_fulfill";
 
-ADD DIRECTED EDGE fulfill(FROM Reps, TO Orders) WITH REVERSE_EDGE="reverse_fulfill";
+  ADD UNDIRECTED EDGE place(FROM Customers, TO Orders, CustomerID STRING, OrderID INT);
 
-ADD UNDIRECTED EDGE place(FROM Customers, TO Orders, CustomerID STRING, OrderID INT);
+  ADD UNDIRECTED EDGE operate_in(FROM Reps, TO Territories);
 
-ADD UNDIRECTED EDGE operate_in(FROM Reps, TO Territories);
+  ADD UNDIRECTED EDGE located_in(FROM Territories, TO Regions);
 
-ADD UNDIRECTED EDGE located_in(FROM Territories, TO Regions);
+  ADD UNDIRECTED EDGE rep_customer(FROM Reps, TO Customers);
 
-ADD UNDIRECTED EDGE rep_customer(FROM Reps, TO Customers);
-
-ADD DIRECTED EDGE provide(FROM Suppliers, TO Products) WITH REVERSE_EDGE="reverse_provide";
-
-ADD DIRECTED EDGE deliver_within(FROM Suppliers, TO Regions) WITH REVERSE_EDGE="reverse_deliver_within";
+  ADD DIRECTED EDGE provide(FROM Suppliers, TO Products) WITH REVERSE_EDGE="reverse_provide";
+  
+  ADD DIRECTED EDGE deliver_within(FROM Suppliers, TO Regions) WITH REVERSE_EDGE="reverse_deliver_within";
 }
 run schema_change job schema_change_northwind
 drop job schema_change_northwind
