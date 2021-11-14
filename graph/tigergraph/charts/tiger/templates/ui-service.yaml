@@ -3,6 +3,7 @@ kind: Service
 metadata:
   name: {{ .Values.name }}-ui
   labels:
+    app: tigergraph
     {{- include "tiger.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.uiService.type }}

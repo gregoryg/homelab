@@ -1,13 +1,13 @@
-# Default values for tiger.
+# Default values for TigerGraph.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-# TODO: Partition factor (splits) and Replication factor (copies)
 
 replicaCount: 3
 ha: 1
-namespace: default
 # The name of the StatefulSet (deployment) within the specified namespace
 name: tigergraph
+# Pod Management Policy may be set to Parallel for faster deployment (not recommended)
+podManagementPolicy: OrderedReady
 
 image:
   repository: docker.tigergraph.com/tigergraph-k8s
@@ -15,7 +15,7 @@ image:
   pullPolicy: IfNotPresent
   # pullPolicy: Never
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "3.2.0"
+  tag: "3.3.0"
 
 imagePullSecrets: []
 nameOverride: ""

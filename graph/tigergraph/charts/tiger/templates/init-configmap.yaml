@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: tg-config
   labels:
+    app: tigergraph
     {{- include "tiger.labels" . | nindent 4 }}
 data:
   init_tg_cfg: |

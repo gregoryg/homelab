@@ -2,19 +2,20 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: installer
-  namespace: {{ .Values.namespace }}
   labels:
+    app: tigergraph
     {{- include "tiger.labels" . | nindent 4 }}
 spec:
   ttlSecondsAfterFinished: 60
   template:
     metadata:
       labels:
+        app: tigergraph
         {{- include "tiger.selectorLabels" . | nindent 8 }}
     spec:
       initContainers:
       - name: init-tigergraph
-        image: alpine:latest
+        image: gregoryg/alpinetg:1.0.0
         env:
           - name: SERVICE_NAME
             valueFrom:
@@ -52,7 +53,7 @@ spec:
           sleep 15;
       containers:
       - name: cluster-installer
-        image: alpine:latest
+        image: gregoryg/alpinetg:1.0.0
         env:
         - name: LICENSE
           valueFrom:
@@ -84,7 +85,6 @@ spec:
         - "-c"
         - |
           set -e;
-          apk update && apk add sshpass openssh jq;
           export SSHPASS='tigergraph';
           sshpass -e ssh -o StrictHostKeyChecking=no tigergraph@${POD_PREFIX}-0.${SERVICE_NAME}.${NAMESPACE} "
             if [[ \$(ls -A /home/tigergraph/tigergraph/data/|grep -v lost|tail -1) ]]; then

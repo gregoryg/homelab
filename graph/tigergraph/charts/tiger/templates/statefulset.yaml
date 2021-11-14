@@ -3,8 +3,8 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .Values.name }}
-  namespace: {{ .Values.namespace }}
   labels:
+    app: tigergraph
     {{- include "tiger.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
@@ -21,6 +21,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
+        app: tigergraph
         {{- include "tiger.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}

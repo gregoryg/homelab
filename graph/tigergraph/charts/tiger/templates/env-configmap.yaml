@@ -3,11 +3,12 @@ kind: ConfigMap
 metadata:
   name: env-config
   labels:
+    app: tigergraph
     {{- include "tiger.labels" . | nindent 4 }}
 data:
   service.headless.name: tigergraph
   pod.prefix: tigergraph
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   cluster_size: "{{ .Values.replicaCount }}"
   license: ""
   ha: "{{ .Values.ha }}"
