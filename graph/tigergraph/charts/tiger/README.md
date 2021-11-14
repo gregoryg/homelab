@@ -20,7 +20,7 @@ THe Helm chart supports deployment into any specified namespace.  Specify number
 
 Example installation using Helm
 ```sh
-helm install tigergraph --namespace tiger --create-namespace --set replicaCount=3 .
+helm install tigergraph --namespace tiger --create-namespace --set replicaCount=3,image.tag=3.3.0 .
 ```
 
 # Documentation
