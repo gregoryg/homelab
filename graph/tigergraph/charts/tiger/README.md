@@ -18,7 +18,14 @@ TigerGraph can be installed on a Kubernetes cluster in two ways:
 
 THe Helm chart supports deployment into any specified namespace.  Specify number of TigerGraph server nodes using [values.yaml](./values.yaml) or `--set`
 
-Example installation using Helm
+Example installation using Helm into default namespace using `values.yaml` for all parameters
+
+```sh
+helm install tigergraph .
+```
+
+Example installing into newly created namespace and overriding values with `--set``
+
 ```sh
 helm install tigergraph --namespace tiger --create-namespace --set replicaCount=3,image.tag=3.3.0 .
 ```
