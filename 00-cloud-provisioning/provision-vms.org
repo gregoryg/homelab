@@ -13,6 +13,9 @@
            --node-volume-size 100 \
            --node-type m5.2xlarge
   #+end_src
+  #+begin_src bash
+    eksctl delete cluster --name gg-tiger --profile <MYPROFILE>
+  #+end_src
 * Set up AKS cluster
   + ref: [[https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough][Quickstart: Deploy an AKS cluster by using Azure CLI - Azure Kubernetes Servi...]]
     #+begin_src bash
@@ -744,6 +747,23 @@
      # Join the agents - to either server
      k3sup join --host ${AGENT1_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --server-host ${SERVER2_HOST}
      k3sup join --host ${AGENT2_HOST} --user gregj --ssh-key ~/.ssh/k8s-local --server-host ${SERVER2_HOST}
+   #+end_src
+** With k3sup and Calico networking
+   #+begin_src bash
+     k3sup install  \
+           --cluster \
+           --context k3s-lab \
+           --host pandora \
+           --k3s-channel v1.21 \
+           --k3s-extra-args="--flannel-backend=none --cluster-cidr=192.168.0.0/16 --disable-network-policy --disable=traefik,servicelb" \
+           --user gregj
+
+     k3sup join \
+           --host wheatley \
+           --k3s-channel v1.21 \
+           --server-host pandora \
+           --server-user gregj \
+           --user gregj
    #+end_src
 ** From Adrian's video: k3s+kube-vip+metallb
    + Source video: [[https://www.youtube.com/watch?v=9PLw1xalcYA&t=471s][HA K3s with etcd, kube-vip, MetalLB, and Rancher! - YouTube]]
