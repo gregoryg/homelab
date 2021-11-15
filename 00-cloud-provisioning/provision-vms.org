@@ -755,7 +755,7 @@
            --context k3s-lab \
            --host pandora \
            --k3s-channel v1.21 \
-           --k3s-extra-args="--flannel-backend=none --cluster-cidr=192.168.0.0/16 --disable-network-policy --disable=traefik,servicelb" \
+           --k3s-extra-args="--flannel-backend none --cluster-cidr 192.168.0.0/16 --disable-network-policy --disable traefik,servicelb" \
            --user gregj
 
      k3sup join \
