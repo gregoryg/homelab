@@ -1,0 +1,141 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:t
+#+options: todo:t |:t
+#+title: TigerGraph how-tos and solution sets
+#+date: <2021-11-16 Tue>
+#+author: Gregory Grubbs
+#+email: gregory.grubbs@gmail.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 27.0.91 (Org mode 9.3.6)
+#+setupfile: ~/projects/emacs/org-html-themes/org/./theme-readtheorg-local.setup
+# #+setupfile: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
+#+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :eval never-export
+* Tigergraph Download and Installation instructions
+  + [[https://docs.tigergraph.com/admin/admin-guide/install-and-config/install][Detailed Instructions]]
+  + Download the TigerGraph Enterprise Free Edition for Linux: https://dl.tigergraph.com/download.html
+  + [[https://dl.tigergraph.com/enterprise-edition/tigergraph-3.1.6-offline-docker-image.tar.gz][Direct download for 3.1.6]]
+  + [[http://gorto.magichome:8420/Linux/software/tigergraph-3.1.6-offline.tar][3.1.6 on erebor]] in =archive/Linux/software=
+  + On Ubuntu 18.04, install these packages *prior to* running Tigergraph install
+    #+begin_src bash
+      sudo apt -y install net-tools ntp iptables-persistent
+    #+end_src
+  + The =iptables-persistent= package will prompt during install, preventing a scripted
+    installation via =pdsh=
+* Enable GSQL Authentication and RESTPP authentication
+  Run =ALTER PASSWORD= at GSQL prompt
+
+  To log in a a specific user
+  #+begin_src bash
+    gsql -u myuser -p mypassword
+  #+end_src
+
+  Enable RESTPP auth
+  #+begin_src bash
+    gadmin config set RESTPP.Factory.EnableAuth true
+    gadmin config apply
+    gadmin restart restpp nginx gui -y
+  #+end_src
+* Using the API
+  + [ ] Grab Elliot's slides!
+* Install TigerGraph 3.2+ on EKS
+
+** Documentation links
+   These may come in handy but will not be needed if you just want to follow the
+   instructions.
+   + Docs: [[https://docs.tigergraph.com/v/3.2/admin/admin-guide/kubernetes/quickstart-with-eks][Quickstart with EKS - TigerGraph Documentation]]
+
+** Install your command line tools
+   + Download and install the [[https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html][AWS CLI]]
+   + Download and install the EKS command line [[https://github.com/weaveworks/eksctl/releases][eksctl]]
+   + Download and install the Kubernetes command line [[https://kubernetes.io/docs/tasks/tools/#kubectl][kubectl]]
+   + Download and install the [[https://kubectl.docs.kubernetes.io/installation/kustomize/binaries/][Kustomize]] command
+   + Optionally, install [[https://git-scm.com/downloads][git]]
+   + Download or clone the =ecosys= repository on GitHub
+     + =git clone https://github.com/tigergraph/ecosys.git=
+     + [[https://github.com/tigergraph/ecosys][Web URL]] for downloading
+
+** Set up EKS Cluster
+   The following command will set up a 3-node Kubernetes cluster using your AWS
+   credenttials.  If you use multiple profiles with the AWS CLI, either set the
+   =AWS_PROFILE= environment variable or add the ==--profile== parameter to the =eksctl=
+   command
+
+   The =ssh-public-key= prameter should be the *name* of one of your SSH key pairs in EC2.
+
+   #+begin_src bash
+     eksctl create cluster \
+            --name my-tiger32-test \
+            --region us-east-1 \
+            --with-oidc \
+            --ssh-access \
+            --ssh-public-key <MYSSHKEYNAME> \
+            --nodes 3 \
+            --node-volume-size 100 \
+            --node-type m5.2xlarge
+   #+end_src
+
+   This command can easily take 25 minutes or more to complete
+
+** Test that the cluster is ready
+
+   The above =eksctl create cluster= command should automatically update your
+   =~/.kube/config= file, which will allow you to access the new cluster using =kubectl=
+
+   To test, type
+   #+begin_src bash
+     kubectl get nodes -o wide
+   #+end_src
+
+   You should see output similar to the below
+   #+begin_example
+     NAME                                           STATUS   ROLES    AGE     VERSION               INTERNAL-IP      EXTERNAL-IP     OS-IMAGE         KERNEL-VERSION                CONTAINER-RUNTIME
+     ip-192-168-20-217.us-west-2.compute.internal   Ready    <none>   5m49s   v1.20.10-eks-3bcdcd   192.168.20.217   35.85.155.55    Amazon Linux 2   5.4.149-73.259.amzn2.x86_64   docker://20.10.7
+     ip-192-168-48-189.us-west-2.compute.internal   Ready    <none>   5m42s   v1.20.10-eks-3bcdcd   192.168.48.189   35.84.179.178   Amazon Linux 2   5.4.149-73.259.amzn2.x86_64   docker://20.10.7
+     ip-192-168-79-27.us-west-2.compute.internal    Ready    <none>   5m46s   v1.20.10-eks-3bcdcd   192.168.79.27    54.191.88.126   Amazon Linux 2   5.4.149-73.259.amzn2.x86_64   docker://20.10.7
+   #+end_example
+** Prepare the requisites for TigerGraph Kubernetes installation
+   + Change directory to the =k8s= directory in the =ecosys= repository that you cloned
+     in the preparation step, then run the =tg= script.  The =kustomize= command must be
+     executable and in your path!
+
+   #+begin_src bash
+     ./tg eks kustomize -n tigergraph --size 3 --version 3.3.0 --pv 50
+   #+end_src
+
+   + Edit the generated Kustomize template to lower the ludicrously high resource
+     requirements for our small test cluster
+
+     Change the =deploy/tigergrap-eks.yaml= to the following (halve the CPU and memory
+     requirements) :
+     #+begin_src yaml
+               resources:
+                 requests:
+                   cpu: 4000m
+                   memory: 8Gi
+     #+end_src
+** Deploy the TigerGraph cluster within Kubernetes
+   + Create the namespace specified in the =tg= command
+     #+begin_src bash
+       kubectl create namespace tigergraph
+     #+end_src
+   + Deploy TigerGraph using the generated Kustomize template:
+   #+begin_src bash
+     kubectl apply -f deploy/tigergraph-eks.yaml
+   #+end_src
+   + Wait for all 3 TigerGraph pods to become ready (optional)
+   #+begin_src bash
+     kubectl -n tigergraph rollout status statefulset tigergraph
+   #+end_src
+   + Verify all pods are in a ready state
+   #+begin_src bash
+     kubectl -n tigergraph get pods -o wide
+   #+end_src
+   + Display the load balancer that will take us to
+   #+begin_src bash
+     kubectl -n tigergraph get service tg-external-service
+   #+end_src
+   + Visit the GraphStudio URL in your browser
+   For example: http://a6329e9e4206742aa8ae3d2730e2070b-408156538.us-west-2.elb.amazonaws.com:14240
