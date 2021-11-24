@@ -139,3 +139,1515 @@
    #+end_src
    + Visit the GraphStudio URL in your browser
    For example: http://a6329e9e4206742aa8ae3d2730e2070b-408156538.us-west-2.elb.amazonaws.com:14240
+* Solutions
+  Principles
+  + Idempotent: graph will install into an existing TG cluster without wiping schema or data
+  + (extra credit): generate way to translate solution export file into scripted
+       nondestructive import
+  + Make GSQL scripts and loading jobs easily human-readable
+    + e.g. replace column positions with column names
+    + make import file names explicit
+  + Literate programming to create all scripts - orgmode
+  + Make nothing at the Global level
+
+** DONE CustExp / Customer 360 / Customer Attribution SFDC
+   :LOGBOOK:
+   - State "DONE"       from "STARTED"    [2021-10-11 Mon 18:56]
+   CLOCK: [2021-10-11 Mon 15:50]--[2021-10-11 Mon 18:56] =>  3:06
+   CLOCK: [2021-09-30 Thu 18:30]--[2021-09-30 Thu 18:59] =>  0:29
+   - State "STARTED"    from "TODO"       [2021-09-30 Thu 16:18]
+   CLOCK: [2021-09-30 Thu 16:18]--[2021-09-30 Thu 18:30] =>  2:12
+   :END:
+*** Resources
+     + data - [[file:/data/data-files/graph-data/cust-360/custattribution_sfdc-data.tar.gz]]
+     + GraphStudio export of TGCloud graph: [[file:/data/data-files/graph-data/cust-360/cust-attribution.tar.gz]]
+*** Graph creation
+
+     #+begin_src sql :tangle staging/custexp/custexp-graph.gsql :mkdirp yes
+     create graph CustExp()
+
+     use graph CustExp
+
+     create schema_change job custexp_schema for graph CustExp {
+
+            ADD VERTEX Account(PRIMARY_ID Account_id STRING,
+                                  Name STRING,
+                                  Parentid STRING,
+                                  BillingStreet STRING,
+                                  BillingCity STRING,
+                                  BillingState STRING,
+                                  BillingPostalCode STRING,
+                                  BillingCountry STRING,
+                                  Phone STRING,
+                                  Website STRING,
+                                  Industry STRING,
+                                  AnnualRevenue FLOAT,
+                                  NumberofEmployees INT,
+                                  Description STRING,
+                                  AccountOwnerid STRING,
+                                  CreatedDate DATETIME,
+                                  CreatedByid STRING,
+                                  LastModifiedDate DATETIME,
+                                  LastModifiedByid STRING,
+                                  LastActivityDate DATETIME,
+                                  AccountSource STRING)
+                                  WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                                  PRIMARY_ID_AS_ATTRIBUTE="false";
+
+            ADD VERTEX Campaign(PRIMARY_ID Campaign_id STRING,
+                                   Name STRING,
+                                   Parentid STRING,
+                                   Campaign_Type STRING,
+                                   Status STRING,
+                                   StartDate DATETIME,
+                                   EndDate DATETIME,
+                                   BudgetedCost FLOAT,
+                                   ActualCost FLOAT,
+                                   IsActive BOOL,
+                                   Description STRING,
+                                   Number_Of_Leads INT,
+                                   Number_Of_Converted_Leads INT,
+                                   Number_Of_Responses INT,
+                                   Number_Of_Opportunities INT,
+                                   Number_Of_Won_Opportunities INT,
+                                   Amount_All_Opportunities FLOAT,
+                                   Amount_Won_Opportunities FLOAT,
+                                   Hierarchy_Number_Of_Leads INT,
+                                   Hierarchy_Number_Of_Converted_Leads INT,
+                                   Hierarchy_Number_Of_Contacts INT,
+                                   Hierarchy_Number_Of_Responses INT,
+                                   Hierarchy_Number_Of_Opportunities INT,
+                                   Hierarchy_Number_Of_Won_Opportunities INT,
+                                   Hierarchy_Amount_Won_Opportunities FLOAT,
+                                   Hierarchy_Amount_All_Opportunities FLOAT,
+                                   Hierarchy_Budgeted_Cost FLOAT,
+                                   Hierarchy_Actual_Cost FLOAT,
+                                   Campaign_Owner_id STRING,
+                                   CreatedDate DATETIME,
+                                   LastModifiedDate DATETIME,
+                                   LastModifiedByid STRING)
+                          WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                          PRIMARY_ID_AS_ATTRIBUTE="false";
+
+            ADD VERTEX Contact(PRIMARY_ID Contact_id STRING,
+                                  FirstName STRING,
+                                  LastName STRING,
+                                  Phone STRING,
+                                  Email STRING,
+                                  Title STRING,
+                                  Department STRING,
+                                  LeadSource STRING,
+                                  Description STRING,
+                                  Contact_Ownerid STRING,
+                                  Has_Opted_Out_Of_Email BOOL,
+                                  DoNotCall BOOL,
+                                  CreatedDate DATETIME,
+                                  CreatedByid STRING,
+                                  LastModifiedDate DATETIME,
+                                  LastModifiedByid STRING,
+                                  Free_Trial_Start_date DATETIME,
+                                  Free_Trial_Status STRING,
+                                  Signed_Up_For_Free_Trial_On DATETIME,
+                                  Dev_edition_Date_Signed_Up DATETIME,
+                                  Employee_Band STRING,
+                                  Original_Lead_Source STRING)
+                          WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                          PRIMARY_ID_AS_ATTRIBUTE="false";
+
+            ADD VERTEX Lead(PRIMARY_ID Lead_id STRING,
+                               FirstName STRING,
+                               LastName STRING,
+                               Title STRING,
+                               Company STRING,
+                               City STRING,
+                               State STRING,
+                               LeadSource STRING,
+                               Status STRING,
+                               Industry STRING,
+                               Ownerid STRING,
+                               HasOptedOutOfEmail BOOL,
+                               IsConverted BOOL,
+                               ConvertedDate DATETIME,
+                               ConvertedAccountId STRING,
+                               ConvertedContactId STRING,
+                               ConvertedOpportunityId STRING,
+                               IsUnreadByOwner BOOL,
+                               CreatedDate DATETIME,
+                               CreatedById STRING,
+                               LastModifiedDate DATETIME,
+                               LastModifiedById STRING,
+                               LastActivityDate DATETIME,
+                               DoNotCall BOOL,
+                               LastTransferDate DATETIME,
+                               Free_Trial_License_Key__c STRING,
+                               Free_Trial_Start_Date__c DATETIME,
+                               Signed_up_for_free_trial_on__c DATETIME,
+                               Agree_to_FT_LicenseAgreement__c BOOL,
+                               Free_Trial_Project_Notes__c STRING,
+                               Free_Trial_Follow_Up_Notes__c STRING,
+                               Started_Test_Drive__c BOOL,
+                               Free_Trial_Status__c STRING,
+                               LinkedIn_Profile__c STRING,
+                               Dev_Edition_Agree_to_License_Agreement__c BOOL,
+                               Dev_Edition_Date_Signed_Up__c DATETIME,
+                               Free_Trial_Renewed_Date__c DATETIME,
+                               Goals_of_Developer_Edition__c STRING,
+                               Goal_of_Developer_Edition_Other__c STRING,
+                               Employee_Band__c STRING,
+                               Are_you_familar_with_Graph_db__c STRING,
+                               Competitor_Notes__c STRING,
+                               Use_Graph_Score__c STRING,
+                               What_s_your_interest_in_TigerGraph__c STRING,
+                               Interest_Notes__c STRING,
+                               Interest_Score__c STRING,
+                               What_capabilities_are_you_looking_for__c STRING,
+                               Do_you_have_a_timeline__c STRING,
+                               Contacts_Role__c STRING,
+                               Title_Rank__c STRING,
+                               Timeline_Score__c INT,
+                               Role_Score__c INT,
+                               Title_Score__c INT,
+                               How_do_you_want_to_deploy_o__c STRING,
+                               SQL_SCORE__c INT,
+                               Original_Lead_Source__c STRING,
+                               Event_Notes_L__c STRING,
+                               DiscoverOrg_EmployeeID__c STRING,
+                               DiscoverOrg_CompanyID__c STRING)
+                      WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                      PRIMARY_ID_AS_ATTRIBUTE="false";
+
+             ADD VERTEX CampaignMember(PRIMARY_ID CampaignMemberid STRING,
+                                           IsDeleted BOOL,
+                                           CampaignId STRING,
+                                           LeadId STRING,
+                                           ContactId STRING,
+                                           Status STRING,
+                                           HasResponded BOOL,
+                                           IsPrimary BOOL,
+                                           CreatedDate DATETIME,
+                                           CreatedById STRING,
+                                           LastModifiedDate DATETIME,
+                                           LastModifiedById STRING,
+                                           SystemModstamp STRING,
+                                           FirstRespondedDate DATETIME)
+                            WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                            PRIMARY_ID_AS_ATTRIBUTE="false";
+
+             ADD VERTEX Opportunity(PRIMARY_ID Opportunity_id STRING,
+                                       IsDeleted BOOL,
+                                       AccountID STRING,
+                                       IsPrivate BOOL,
+                                       Name STRING,
+                                       Description STRING,
+                                       StageName STRING,
+                                       StageSortOrder INT,
+                                       Amount FLOAT,
+                                       Probability FLOAT,
+                                       ExpectedRevenue FLOAT,
+                                       CloseDate DATETIME,
+                                       Opportunity_Type STRING,
+                                       NextStep STRING,
+                                       LeadSource STRING,
+                                       IsClosed BOOL,
+                                       IsWon BOOL,
+                                       ForecastCategory STRING,
+                                       ForecastCategoryName STRING,
+                                       CampaignId STRING,
+                                       HasOpportunityLineItem BOOL,
+                                       Pricebook2Id STRING,
+                                       Ownerid STRING,
+                                       CreatedDate DATETIME,
+                                       CreatedById STRING,
+                                       LastModified DATETIME,
+                                       LastModifiedById STRING,
+                                       SystemModstamp STRING,
+                                       LastActivityDate DATETIME,
+                                       LastStageChangeDate DATETIME,
+                                       FiscalYear STRING,
+                                       FiscalQuarter STRING,
+                                       Budget_Confirmed__c BOOL,
+                                       Discovery_Completed__c BOOL,
+                                       ROI_Analysis_Completed__c BOOL,
+                                       Referral_Partner_Company__c STRING,
+                                       Stage_Moved_to_POC__c DATETIME,
+                                       Are_you_familiar_with_Graph_db_O__c STRING,
+                                       Competitor_Notes_O__c STRING,
+                                       Contacts_Role_o__c STRING,
+                                       Do_you_have_a_timeline__c STRING,
+                                       How_do_you_want_to_deploy_o__c STRING,
+                                       Interest_Notes_o__c STRING,
+                                       Interest_Score_o__c INT,
+                                       Role_Score_o__c INT,
+                                       SQL_SCORE_o__c INT,
+                                       Timeline_Score_o__c INT,
+                                       Title_Rank__c STRING,
+                                       Title_Score_o__c INT,
+                                       Use_Graph_Score_o__c INT)
+                              WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                              PRIMARY_ID_AS_ATTRIBUTE="false";
+
+               ADD VERTEX Industry(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+
+               ADD VERTEX LeadSource(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+
+               ADD DIRECTED EDGE belongs_to(FROM Contact, TO Account) WITH REVERSE_EDGE="reverse_belongs_to";
+
+               ADD DIRECTED EDGE converted(FROM Lead, TO Contact) WITH REVERSE_EDGE="reverse_converted";
+
+               ADD DIRECTED EDGE is_active_as(FROM Lead, TO CampaignMember) WITH REVERSE_EDGE="reverse_is_active_as";
+
+               ADD DIRECTED EDGE is_part_of(FROM CampaignMember, TO Campaign) WITH REVERSE_EDGE="reverse_is_part_of";
+
+               ADD DIRECTED EDGE Has_Role(FROM Contact, TO Opportunity, role STRING, id STRING) WITH REVERSE_EDGE="reverse_Has_Role";
+
+               ADD DIRECTED EDGE Has(FROM Account, TO Opportunity) WITH REVERSE_EDGE="reverse_Has";
+
+               ADD DIRECTED EDGE Is_Driven_By(FROM Opportunity, TO Campaign) WITH REVERSE_EDGE="reverse_Is_Driven_By";
+
+               ADD DIRECTED EDGE is_connected_to(FROM Contact, TO CampaignMember) WITH REVERSE_EDGE="reverse_is_connected_to";
+
+               ADD DIRECTED EDGE belongs_to_industry(FROM Account, TO Industry) WITH REVERSE_EDGE="reverse_belongs_to_industry";
+
+               ADD DIRECTED EDGE created_by(FROM Account, TO LeadSource) WITH REVERSE_EDGE="reverse_created_by";
+
+               ADD DIRECTED EDGE is_from(FROM Contact, TO LeadSource) WITH REVERSE_EDGE="reverse_is_from";
+
+               ADD DIRECTED EDGE comes_from(FROM LeadSource, TO Lead) WITH REVERSE_EDGE="reverse_comes_from";
+
+               ADD DIRECTED EDGE comes_from_the(FROM Lead, TO Industry) WITH REVERSE_EDGE="reverse_comes_from_the";
+
+               ADD DIRECTED EDGE is_for_the(FROM Opportunity, TO Industry) WITH REVERSE_EDGE="reverse_is_for_the";
+
+     }
+    #+end_src
+     #+begin_src bash :tangle staging/custexp/01-create-graph.sh
+       gsql custexp-graph.gsql
+       gsql -g CustExp run schema_change job custexp_schema
+     #+end_src
+
+*** data loading
+     #+begin_src sql :tangle staging/custexp/loading-job.gsql
+       CREATE LOADING JOB load_job_custexp FOR GRAPH CustExp {
+         DEFINE FILENAME Lead="/home/tigergraph/mydata/custexp/Lead.csv";
+         DEFINE FILENAME OpportunityContactRole="/home/tigergraph/mydata/custexp/OpportunityContactRole.csv";
+         DEFINE FILENAME Campaign="/home/tigergraph/mydata/custexp/Campaign.csv";
+         DEFINE FILENAME CampaignMember="/home/tigergraph/mydata/custexp/CampaignMember.csv";
+         DEFINE FILENAME Opportunity="/home/tigergraph/mydata/custexp/Opportunity.csv";
+         DEFINE FILENAME Account="/home/tigergraph/mydata/custexp/Account.csv";
+         DEFINE FILENAME Contact="/home/tigergraph/mydata/custexp/Contact.csv";
+
+         LOAD Lead TO VERTEX Lead VALUES($0, $4, $5, _, $9, $11, $12, $24, $25, $26, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $43, $44, $46, $64, $65, $66, $67, $68, $69, $70, $71, $74, $57, $76, $77, $88, $89, $90, $91, $92, $93, $94, $95, $96, $97, $98, $99, $100, $101, $102, $103, $104, $105, $107, $109, $111, $112) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+         LOAD Lead TO EDGE comes_from VALUES($24, $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+         LOAD Lead TO EDGE converted VALUES($0, $35) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+         LOAD Lead TO EDGE comes_from_the VALUES($0, $26) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+         LOAD OpportunityContactRole TO EDGE Has_Role VALUES($2, $1, $3, $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+
+         LOAD Campaign TO VERTEX Campaign VALUES($0, $2, $3, $4, $5, $6, $7, $9, $10, $13, $14, $15, $16, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $33, $34, $35, $36, $38, $39) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+
+         LOAD CampaignMember TO VERTEX CampaignMember VALUES($0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) USING SEPARATOR=",", HEADER="true", EOL="\n";
+         LOAD CampaignMember TO EDGE is_part_of VALUES($0, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+         LOAD CampaignMember TO EDGE is_connected_to VALUES($4, $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+         LOAD CampaignMember TO EDGE is_active_as VALUES($3, $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+         LOAD Opportunity TO VERTEX Opportunity VALUES($0, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $36, $37, $38, $41, $43, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55, $56, $57) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+         LOAD Opportunity TO EDGE Has VALUES($2, $0) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+         LOAD Opportunity TO EDGE Is_Driven_By VALUES($0, $20) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+
+
+         LOAD Account TO VERTEX Account VALUES($0, $3, $5, $6, $7, $8, $9, $10, $22, $25, $27, $28, $29, $32, $35, $36, $37, $38, $39, $41, $44) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+         LOAD Account TO VERTEX Industry VALUES($27) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+         LOAD Account TO VERTEX LeadSource VALUES($44) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+         LOAD Account TO EDGE belongs_to_industry VALUES($0, $27) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+         LOAD Account TO EDGE created_by VALUES($0, $44) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+
+
+         LOAD Contact TO VERTEX Contact VALUES($0, $4, $5, $13, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $30, $31, $32, $33, $35, $36) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+         LOAD Contact TO VERTEX LeadSource VALUES($19) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+         LOAD Contact TO EDGE belongs_to VALUES($0, $2) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+         LOAD Contact TO EDGE is_from VALUES($0, $19) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+       }
+     #+end_src
+
+    #+begin_src bash :tangle staging/custexp/02-load-data.sh
+      gsql -g CustExp loading-job.gsql
+      gsql -g CustExp 'run loading job load_job_custexp'
+    #+end_src
+*** Queries
+      #+begin_src sql :tangle staging/custexp/queries.gsql
+        CREATE QUERY CustomerJourney(vertex<Contact> customer, set<string> campaignTypes, datetime startTime, datetime endTime) FOR GRAPH CustExp {
+        /*
+          Sample input:
+                Contact: Sam-Eisenberg
+                startTime: 2018-06-01
+                endTime: 2018-10-01
+        ,*/
+
+            SumAccum<string> @camType, @camName, @camDesc;
+            Customer = { customer };
+          print Customer;
+            Company = select t from Customer -(belongs_to)-> Account:t;
+            print Company;
+            campaign = select c
+                       from Customer-(is_connected_to)-> CampaignMember:c
+                       where c.CreatedDate >= startTime and c.CreatedDate <= endTime
+                       ;
+            campaign = select c from campaign:c -(is_part_of)-> Campaign:t
+                       where campaignTypes.size() == 0 or t.Campaign_Type in campaignTypes
+                       accum c.@camType = t.Campaign_Type,
+                             c.@camName = t.Name,
+                             c.@camDesc = t.Description;
+            print campaign as Campaign;
+        }
+        CREATE QUERY SimilarCustomers(VERTEX<Contact> sourceCustomer, set<string> campaignTypes, INT topK) FOR GRAPH CustExp {
+        /*
+          This query calculates the Jaccard Similarity between a given customer (of type Contact) and
+          every other customers (or Contacts) who share similar campaigns (of type Campaign).
+            The topK "similar" customers are printed out.
+
+            SAMPLE INPUT:
+                Contact: Sam-Eisenberg
+                campaignTypes:
+                          Webinar
+                                    Demo Signup / Trial
+                  topK: 5
+
+          A Jaccard Similarity score is calculated for each similar customer (who share similar Campaigns
+                              with the input sourceCustomer)
+          The set of similar customers is sorted with the topK # customers printed out.
+
+          Jaccard similarity = intersection_size / (size_A + size_B - intersection_size)
+
+            More info:
+              How to find Jaccard similarity?
+                  https://www.youtube.com/watch?v=5RRyzjvC5z4
+              Similarity Algorithms in GSQL
+                  https://github.com/tigergraph/gsql-graph-algorithms/tree/master/algorithms/examples/Similarity
+        ,*/
+                SumAccum<INT> @intersection_size, @@set_size_A, @set_size_B;
+                SumAccum<FLOAT> @similarity;
+
+                A(ANY) = {sourceCustomer};
+
+                A = SELECT s
+                      FROM A:s
+                    ACCUM @@set_size_A += s.outdegree("is_connected_to");
+
+                // From A set (Contact), traverse 'is_connected_to' edges to all CampaignMember s
+                CampaignMembersSet = SELECT t
+                    FROM A:s -(is_connected_to:e)-> CampaignMember:t;
+
+                  // From CampaignMember s, traverse 'is_part_of' edges to Campaign s, for all
+                  // desired campaignTypes (eg. Webinar, Website Direct, Demo Signup/Trial)
+                CampaignSet = SELECT t
+                    FROM CampaignMembersSet -(is_part_of:e)-> Campaign:t
+                      WHERE campaignTypes.size() == 0 OR (t.Campaign_Type in campaignTypes);
+
+                  // From Campaign s, traverse 'reverse_is_part_of' edges back to all CampaignMember s
+                CampaignMembersSet = SELECT t
+                    FROM CampaignSet:s -(reverse_is_part_of:e)-> CampaignMember:t;
+
+                  // From CampaignMember s, traverse 'reverse_is_connected_to' edges back to Contacts (B set)
+                  // For each Contact in B set, accumulate the intersection size of the shared Campaigns, and
+                  //   compute it's Jaccard Similarity score as
+                  //     Jaccard similarity = intersection_size / size of the Union of (A set + B set)
+                  //                        = intersection_size / (size_A + size_B - intersection_size)
+                B = SELECT t
+                    FROM CampaignMembersSet:s -(reverse_is_connected_to:e)-> Contact:t
+                    WHERE t != sourceCustomer
+                    ACCUM t.@intersection_size += 1,
+                               t.@set_size_B = t.outdegree("is_connected_to")
+                    POST-ACCUM t.@similarity = t.@intersection_size*1.0/
+                                                (@@set_size_A + t.@set_size_B - t.@intersection_size)
+                    ORDER BY t.@similarity DESC
+                    LIMIT topK;
+
+                //PRINT B;
+                  PRINT B[B.FirstName, B.LastName, B.@similarity];
+        }
+        CREATE QUERY CustJourney_Subgraph(vertex<Contact> customer, vertex<Opportunity> opportunity) FOR GRAPH CustExp {
+        /*
+          Sample input:
+              Contact: Sam-Eisenberg
+              opportunity: 0063600000gEoe0AAC
+
+        ,*/
+            SetAccum<edge> @@displaySet;
+          SetAccum<vertex> @@vertexSet;
+
+            cust = { customer };
+
+            acct = select t from cust:c -(belongs_to:e)-> Account:t
+                   accum @@displaySet += e, @@vertexSet += t;
+
+          opp = select t from cust -(Has_Role:e)-> Opportunity:t
+                  accum @@displaySet += e, @@vertexSet += t;
+
+            campaign_members =
+                    select t
+                    from cust -(is_connected_to:e)-> CampaignMember:t
+                    accum @@vertexSet += cust, @@vertexSet += t, @@displaySet += e;
+
+            campaigns = select t from campaign_members -(is_part_of:e)-> Campaign:t
+                        accum @@vertexSet += t, @@displaySet += e;
+
+            Verts = @@vertexSet;
+
+            print Verts;
+            //print@@vertexSet;
+
+            print @@displaySet;
+        }
+     #+end_src
+     #+begin_src bash :tangle staging/custexp/03-create-queries.sh
+       gsql -g CustExp queries.gsql
+     #+end_src
+*** runall script
+     #+begin_src bash :tangle staging/custexp/runall.sh
+       ./01-create-graph.sh
+       ./02-load-data.sh
+       ./03-create-queries.sh
+     #+end_src
+*** Install on current TigerGraph cluster
+    #+begin_src emacs-lisp
+    #+end_src
+
+** DONE Social Graph
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2021-11-02 Tue 12:13]
+   :END:
+** TODO
+** STARTED Supply Chain
+   :LOGBOOK:
+   - State "STARTED"    from "TODO"       [2021-10-11 Mon 19:47]
+   CLOCK: [2021-10-11 Mon 19:47]--[2021-10-11 Mon 20:52] =>  1:05
+   :END:
+   + Resources
+     + data - [[file:/data/data-files/graph-data/cust-360/custattribution_sfdc-data.tar.gz]]
+     + GraphStudio export of TGCloud graph: [[file:/data/data-files/graph-data/cust-360/cust-attribution.tar.gz]]
+   + Graph creation
+     #+begin_src sql :tangle staging/supplychain/supplychain-graph.gsql :mkdirp yes
+       CREATE GRAPH SupplyChain()
+       CREATE SCHEMA_CHANGE JOB schema_change_job_RwBCZV FOR GRAPH SupplyChain {
+         ADD VERTEX models(PRIMARY_ID ModelNumber STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+         ADD VERTEX warehouse(PRIMARY_ID WarehouseId STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+         ADD VERTEX BillofMaterial(PRIMARY_ID id STRING, item_number STRING, model_number STRING, model_year STRING, model_name STRING, parent_item_number STRING, level_in_bom STRING, site_id STRING, quantity_per INT, cost FLOAT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+         ADD VERTEX BuildSchedule(PRIMARY_ID id STRING, item_number STRING, order_number STRING, order_duedate DATETIME, warehouse STRING, open_qty INT, order_qty INT, deviation_qty INT, received_qty INT, load_date DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+         ADD VERTEX item(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+         ADD UNDIRECTED EDGE part_of(FROM BillofMaterial, TO BillofMaterial);
+         ADD UNDIRECTED EDGE build_plan(FROM BuildSchedule, TO warehouse);
+         ADD UNDIRECTED EDGE scheduled_to_build(FROM BuildSchedule, TO models);
+         ADD UNDIRECTED EDGE model_bom(FROM BillofMaterial, TO models);
+         ADD UNDIRECTED EDGE item_in_bom(FROM BillofMaterial, TO item);
+         ADD UNDIRECTED EDGE in_warehouse_inventory(FROM item, TO warehouse, qtyonhand INT);
+         ADD UNDIRECTED EDGE used_by(FROM models, TO item);
+         ADD UNDIRECTED EDGE at_risk_used_by(FROM models, TO item, SITEID STRING, ORDERMONTH STRING, DEMAND FLOAT, BOMQTY FLOAT, REQUIREDPARTQTY FLOAT);
+       }
+       RUN SCHEMA_CHANGE JOB schema_change_job_RwBCZV
+       DROP JOB schema_change_job_RwBCZV
+     #+end_src
+     #+begin_src bash :tangle staging/supplychain/01-create-graph.sh
+       gsql supplychain-graph.gsql
+       gsql -g SupplyChain run schema_change job custexp_schema
+     #+end_src
+   + Load data
+     #+begin_src sql :tangle staging/supplychain/loading-job.gsql
+       set exit_on_error = "false"
+       CREATE LOADING JOB load_job_supplychain FOR GRAPH SupplyChain {
+       DEFINE FILENAME Model_Number_Only="/home/tigergraph/mydata/supplychain/Model Number Only.csv";
+       DEFINE FILENAME ModelItemNumber="/home/tigergraph/mydata/supplychain/ModelItemNumber.csv";
+       DEFINE FILENAME Inventory="/home/tigergraph/mydata/supplychain/Inventory.csv";
+       DEFINE FILENAME BuildSchedule_July="/home/tigergraph/mydata/supplychain/BuildSchedule July 21.csv";
+       DEFINE FILENAME ItemMaster="/home/tigergraph/mydata/supplychain/ItemMaster POC.csv";
+       DEFINE FILENAME BOM="/home/tigergraph/mydata/supplychain/BOM with Unique Identifier.csv";
+       DEFINE FILENAME demandtopartusedby="/home/tigergraph/mydata/supplychain/demandtopartusedby.csv";
+
+
+       LOAD Model_Number_Only TO VERTEX models VALUES($0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+       LOAD ModelItemNumber TO EDGE used_by VALUES($0, $1) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+
+       LOAD Inventory TO VERTEX warehouse VALUES($1) USING SEPARATOR=",", HEADER="true", EOL="\n";
+       LOAD Inventory TO EDGE in_warehouse_inventory VALUES($0, $1, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+       LOAD BuildSchedule_July TO VERTEX BuildSchedule VALUES(gsql_concat($0,$3,$2), $0, $1, $2, _, $4, $5, $6, $7, $8) USING SEPARATOR=",", HEADER="true", EOL="\n";
+       LOAD BuildSchedule_July TO EDGE build_plan VALUES(gsql_concat($0,$3,$2), $3) USING SEPARATOR=",", HEADER="true", EOL="\n";
+       LOAD BuildSchedule_July TO EDGE scheduled_to_build VALUES(gsql_concat($0,$3,$2), $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+       LOAD ItemMaster TO VERTEX item VALUES($0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+       LOAD BOM TO VERTEX BillofMaterial VALUES($9, $0, $1, $2, _, $4, $5, $6, $7, $8) USING SEPARATOR=",", HEADER="true", EOL="\n";
+       LOAD BOM TO EDGE model_bom VALUES($9, $1) USING SEPARATOR=",", HEADER="true", EOL="\n";
+       LOAD BOM TO EDGE item_in_bom VALUES($9, $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+       LOAD demandtopartusedby TO EDGE at_risk_used_by VALUES($0, $2, $1, $3, $4, $5, $6) USING SEPARATOR=",", HEADER="true", EOL="\n";
+       }
+       set exit_on_error = "true"
+     #+end_src
+     #+begin_src bash :tangle staging/supplychain/02-load-data.sh
+       gsql -g SupplyChain loading-job.gsql
+       gsql -g SupplyChain 'run loading job load_job_supplychain'
+     #+end_src
+   + Queries
+     #+begin_src sql :tangle staging/supplychain/queries.gsql
+       set exit_on_error = "true"
+       CREATE QUERY scc (SET<STRING> v_type, SET<STRING> e_type, SET<STRING> rev_e_type,
+         INT top_k_dist, INT output_limit, INT max_iter = 500, INT iter_wcc = 5, BOOL print_accum = TRUE, STRING result_attr= "", STRING file_path=""){ //INT iter_end_trim = 3
+       /* This query detects strongly connected components based on the following papers:
+        ,* https://www.sandia.gov/~apinar/papers/irreg00.pdf
+        ,* https://www.sciencedirect.com/science/article/pii/S0743731505000535
+        ,* https://stanford-ppl.github.io/website/papers/sc13-hong.pdf
+
+        ,* iter: number of iteration of the algorithm
+        ,* iter_wcc: find weakly connected components for the active vertices in this iteration, since the largest sccs are already found after several iterations; usually a small number(3 to 10)
+        ,* top_k_dist: top k result in scc distribution
+
+        ,* DISTRIBUTED QUERY mode for this query is supported from TG 2.4.
+        ,*/
+           TYPEDEF TUPLE <INT csize, INT num> cluster_num;
+           MapAccum<INT, INT> @@cluster_size_map, @@cluster_dist_map;
+           HeapAccum<cluster_num>(top_k_dist, csize DESC) @@cluster_dist_heap;
+           OrAccum @is_forward, @is_backward, @detached, @has_pos_indegree, @has_pos_outdegree, @wcc_active;
+           SumAccum<INT> @cid, @vid;
+           MinAccum<INT> @@min_vid, @wcc_id_curr, @wcc_id_prev;
+           SumAccum<STRING> @flag;
+           MapAccum<INT, MinAccum<INT>> @@f_cid_map, @@b_cid_map, @@n_cid_map, @@s_cid_map;
+           FILE f (file_path);
+           INT i = 1;
+           v_all = {v_type};
+           tmp(ANY) ={};
+
+           active = SELECT s
+                   FROM v_all:s
+                   ACCUM s.@vid = getvid(s),
+                         @@min_vid += getvid(s)
+                   POST-ACCUM s.@cid = @@min_vid;
+
+           WHILE active.size()>0 LIMIT max_iter DO
+
+               WHILE TRUE DO
+                   tmp =  SELECT s
+                          FROM active:s -(e_type:e) -> :t
+                          WHERE t.@detached == FALSE AND s.@cid == t.@cid
+                          ACCUM s.@has_pos_outdegree = TRUE;
+
+                   tmp =  SELECT s
+                          FROM active:s -(rev_e_type:e) -> :t
+                          WHERE t.@detached == FALSE AND s.@cid == t.@cid
+                          ACCUM s.@has_pos_indegree = TRUE;
+                   trim_set = SELECT s
+                          FROM active:s
+                          WHERE s.@has_pos_indegree == FALSE OR s.@has_pos_outdegree == FALSE
+                          ACCUM s.@detached = TRUE,
+                                s.@cid = s.@vid;
+
+
+                   IF trim_set.size() == 0 THEN  // no single SCC anymore, terminate the while loop
+                           BREAK;
+                   END;
+                   active = SELECT s
+                            FROM active:s
+                            WHERE s.@detached == FALSE
+                            ACCUM @@n_cid_map += (s.@cid -> s.@vid)
+                            POST-ACCUM s.@cid = @@n_cid_map.get(s.@cid),
+                                       s.@has_pos_indegree = FALSE,
+                                       s.@has_pos_outdegree = FALSE;
+                   @@n_cid_map.clear();
+               END;
+               //END;
+               // get WCC
+               IF i == iter_wcc THEN
+                       active = SELECT s
+                                FROM active:s
+                                POST-ACCUM s.@wcc_id_curr = s.@vid,
+                                           s.@wcc_id_prev = s.@vid;
+                       curr = active;
+                       WHILE (curr.size()>0) DO
+                               curr = SELECT t
+                                      FROM curr:s -((e_type|rev_e_type):e)-> :t
+                                      WHERE s.@cid == t.@cid AND t.@detached == FALSE
+                                      ACCUM t.@wcc_id_curr += s.@wcc_id_prev // If s has a smaller id than t, copy the id to t
+                                      POST-ACCUM
+                                               CASE WHEN t.@wcc_id_prev != t.@wcc_id_curr THEN // If t's id has changed
+                                                         t.@wcc_id_prev = t.@wcc_id_curr,
+                                                         t.@wcc_active = true
+                                               ELSE
+                                                         t.@wcc_active = false
+                                               END
+                                       HAVING t.@wcc_active == true;
+                       END;
+                       active = SELECT s
+                                FROM active:s
+                                ACCUM s.@cid = s.@wcc_id_curr;
+               END;
+               i = i + 1;
+
+               pivots = SELECT s
+                        FROM active:s
+                        WHERE s.@cid == s.@vid
+                        ACCUM s.@is_forward = TRUE,
+                              s.@is_backward = TRUE;
+
+               // mark forward set
+               curr = pivots;
+               WHILE curr.size()>0 DO
+                   curr = SELECT t
+                          FROM curr:s -(e_type:e)->:t  // edge
+                          WHERE t.@detached == FALSE AND t.@is_forward == FALSE AND s.@cid == t.@cid // not traversed
+                          ACCUM t.@is_forward = TRUE;
+               END;
+
+               // mark backward set
+               curr = pivots;
+               WHILE curr.size()>0 DO
+                   curr = SELECT t
+                          FROM curr:s -(rev_e_type:e)->:t  // reverse edge
+                          WHERE t.@detached == FALSE AND t.@is_backward == FALSE AND s.@cid == t.@cid // not traversed
+                          ACCUM t.@is_backward = TRUE;
+               END;
+
+               active =
+                   SELECT s
+                   FROM active:s
+                   ACCUM IF s.@is_forward == TRUE AND s.@is_backward == TRUE THEN  // scc
+                              s.@detached = TRUE,
+                              @@s_cid_map += (s.@cid -> s.@vid)
+                      ELSE IF s.@is_forward == TRUE THEN  // forward set
+                           @@f_cid_map += (s.@cid -> s.@vid)
+                       ELSE IF s.@is_backward == TRUE THEN    // backward set
+                           @@b_cid_map += (s.@cid -> s.@vid)
+                       ELSE
+                           @@n_cid_map += (s.@cid -> s.@vid)   // null set
+                       END
+                       POST-ACCUM IF s.@is_forward == TRUE AND s.@is_backward == TRUE THEN //scc
+                               s.@cid = @@s_cid_map.get(s.@cid)
+                           END,
+                           IF s.@is_forward == TRUE THEN
+                               IF s.@is_backward == FALSE THEN   // forward set
+                                    s.@cid = @@f_cid_map.get(s.@cid)
+                               END
+                            ELSE
+                               IF s.@is_backward == TRUE THEN    // backward set
+                                    s.@cid = @@b_cid_map.get(s.@cid)
+                               ELSE                              // null set
+                                    s.@cid = @@n_cid_map.get(s.@cid)
+                               END
+                           END,
+                           s.@is_forward = FALSE,
+                           s.@is_backward = FALSE
+                       HAVING s.@detached == FALSE;
+
+               @@s_cid_map.clear();
+               @@f_cid_map.clear();
+               @@b_cid_map.clear();
+               @@n_cid_map.clear();
+           END;
+
+           // result
+           v_all = SELECT s
+                   FROM v_all:s
+                   POST-ACCUM @@cluster_size_map += (s.@cid -> 1);
+
+           FOREACH (cid, csize) IN @@cluster_size_map DO
+           @@cluster_dist_map += (csize -> 1);
+           END;
+           FOREACH (csize, number) IN @@cluster_dist_map DO
+           @@cluster_dist_heap += cluster_num(csize, number);
+           END;
+           PRINT @@cluster_dist_heap;
+
+           IF file_path != "" THEN
+               f.println("Vertex_ID","Component_ID");
+           END;
+
+           v_all = SELECT s
+                   FROM v_all:s
+                   POST-ACCUM
+                   IF result_attr != "" THEN s.setAttr(result_attr, s.@cid) END,
+                   IF file_path != "" THEN f.println(s, s.@cid) END
+                   LIMIT output_limit;
+
+           IF print_accum THEN
+               PRINT v_all[v_all.@cid];
+           END;
+       }
+       CREATE DISTRIBUTED QUERY louvain_distributed_vf(SET<STRING> v_type, SET<STRING> e_type, STRING wt_attr, INT max_iter = 10, FLOAT tolerence = 0.0001) FOR GRAPH SupplyChain {
+           TYPEDEF TUPLE <FLOAT deltaQ, FLOAT weight, VERTEX cc> move;
+           MapAccum<VERTEX, SumAccum<INT>> @@communityMap;
+           MapAccum<INT, SumAccum<INT>> @@communitySizeCount;
+           SetAccum<INT> @@communitySet;
+           SumAccum<FLOAT> @ac; #sum of the degrees of all the vertices in community C of the vertex
+           ListAccum<VERTEX> @cc; #the community center
+           SumAccum<FLOAT> @weight; # total weight incident to this vertex
+           SumAccum<FLOAT> @ccWeight; # total weight incident to the cc vertex
+           MapAccum<VERTEX,SumAccum<FLOAT>> @A; #A[c]: sum of the edge weights for the edges in community c
+           MaxAccum<move> @best_move; # highest dQ, highest -Outdegree, highest cc
+           ListAccum<VERTEX> @cm;  #community member list
+           SumAccum<FLOAT> @@m; # total edge weight
+           SumAccum<INT> @outdegree;   # helper variable for outdegree calculation
+           SumAccum<INT> @@ccChange;
+           String date;
+
+           file f1 ("/home/tigergraph/results.csv");
+           f1.println("VertexType,primaryID,communityID");
+
+           // initialize
+           Start = {v_type};
+           Start = SELECT s FROM Start:s -(e_type:e)- :t
+               ACCUM
+                   @@m += /*e.getAttr(wt_attr,"INT")**/0.5,
+                   s.@weight += /*e.getAttr(wt_attr,"INT")**/1.0,
+                   s.@ccWeight += /*e.getAttr(wt_attr,"INT")**/1.0,
+                   s.@outdegree += 1
+               POST-ACCUM
+                   IF s.@outdegree > 1 THEN s.@cc += s END;
+           PRINT Start.size() AS AllVertexCount;
+           // special @cc update in the first iteration
+           Start = SELECT t FROM Start:s -(e_type:e)- :t
+               WHERE s.@outdegree > 1 AND t.@outdegree > 1
+               ACCUM
+                   t.@best_move += move(/*e.getAttr(wt_attr,"INT")**/1.0 + @@m*t.@weight * (t.@weight - s.@weight), -s.@ccWeight, s.@cc.get(0))
+               POST-ACCUM
+                   IF getDeltaQ(t.@best_move) > 0 THEN
+                       IF -getWeight(t.@best_move) < t.@ccWeight THEN
+                           t.@cc.clear(),
+                           t.@cc += getCc(t.@best_move),
+                           t.@ccWeight = -getWeight(t.@best_move),
+                           @@ccChange += 1
+                       ELSE
+                           IF -getWeight(t.@best_move) == t.@ccWeight AND getvid(t) < getvid(getCc(t.@best_move))  THEN
+                               t.@cc.clear(),
+                               t.@cc += getCc(t.@best_move),
+                               t.@ccWeight = -getWeight(t.@best_move),
+                               @@ccChange += 1
+                           END
+                       END
+                   END;
+           PRINT @@ccChange AS InitChangeCount;
+
+           // main loop
+           WHILE @@ccChange > 0 LIMIT max_iter DO
+               // initialize for iteration
+               @@ccChange = 0;
+               Start = SELECT s FROM Start:s
+                   WHERE s.@outdegree > 1
+                   POST-ACCUM
+                       s.@ac = 0,
+                       s.@cm.clear(),
+                       s.@A.clear();
+               Start = SELECT s FROM Start:s
+                   ACCUM
+                       FOREACH v IN s.@cc DO
+                           CASE WHEN getvid(v) != -1 THEN v.@cm += s END
+                       END;
+               Start = SELECT s FROM Start:s -(e_type:e)- :t
+                   WHERE t.@outdegree > 1
+                   ACCUM s.@A += (t.@cc.get(0) -> /*e.getAttr(wt_attr,"INT")**/1.0);
+               Start = SELECT s FROM Start:s
+                   ACCUM
+                       FOREACH v IN s.@cc DO
+                           CASE WHEN getvid(v) != -1 THEN v.@ac += s.@weight END
+                       END;
+               Start = SELECT s FROM Start:s
+                   ACCUM
+                       FOREACH v IN s.@cm DO
+                           CASE WHEN getvid(v) != -1 THEN v.@ac = s.@ac END
+                       END;
+               // compute @max_dQ
+               Start = SELECT s FROM Start:s -(e_type:e)- :t
+                       WHERE t.@outdegree > 1
+                   ACCUM
+                       INT A_s = 0,
+                       IF s.@A.containsKey(s) THEN A_s = s.@A.get(s) END,
+                       s.@best_move += move(s.@A.get(t.@cc.get(0)) - A_s + 1/@@m*s.@weight*(s.@ac-t.@ac), -t.@ccWeight, t.@cc.get(0))
+                   POST-ACCUM
+                       IF getDeltaQ(s.@best_move) > 0 THEN
+                           IF -getWeight(s.@best_move) < s.@ccWeight THEN   // smallest best_move weight < current weight
+                               s.@cc.clear(),
+                               s.@cc += getCc(s.@best_move),
+                               s.@ccWeight = -getWeight(s.@best_move),
+                               @@ccChange += 1
+                           ELSE
+                               IF -getWeight(s.@best_move) == s.@ccWeight AND getvid(s.@cc.get(0)) < getvid(getCc(s.@best_move))  THEN
+                                   s.@cc.clear(),
+                                   s.@cc += getCc(s.@best_move),
+                                   s.@ccWeight = -getWeight(s.@best_move),
+                                   @@ccChange += 1
+                               END
+                           END
+                       END;
+               //PRINT @@ccChange AS IterChangeCount;
+           END;
+           // process node with outdegree = 1
+           Start = {v_type};
+           Start = SELECT s FROM Start:s -(e_type:e)- :t
+               WHERE s.@outdegree == 1 AND t.@outdegree != 1
+               ACCUM s.@cc += t.@cc.get(0);
+           //PRINT Start.size() AS VertexFollowedToCommunity;
+           Start = {v_type};
+           Start = SELECT s FROM Start:s -(e_type:e)- :t
+               WHERE s.@outdegree == 1 AND t.@outdegree == 1
+               ACCUM
+                   IF getvid(s) <= getvid(t) THEN
+                       s.@cc += s
+                   ELSE
+                       s.@cc += t
+                   END;
+           //PRINT Start.size() AS VertexFollowedToVertex;
+           // print result satistic
+           Start={v_type};
+           Start={v_type};
+           Start = SELECT s FROM Start:s
+               WHERE s.@cc.size() > 0
+               POST-ACCUM
+                   //@@communityMap += (getvid(s.@cc.get(0)) -> 1);
+                   @@communityMap += (s.@cc.get(0) -> 1);
+           PRINT @@communityMap.size() AS FinalCommunityCount;
+
+       //  print @@communityMap;
+
+
+       //     FOREACH (cid, cSize) IN @@communityMap DO
+       //         @@communitySizeCount += (cSize -> 1);
+       //     END;
+
+
+       //     PRINT @@communitySizeCount;
+
+         printSet = {models.*, item.*};
+         printSet = select s from printSet:s
+                    post-accum f1.println(s.type,s,s.@cc);
+
+         //print printSet[printSet.@cc];
+       }
+       CREATE QUERY closeness(SET<STRING> v_type, SET<STRING> e_type, STRING re_type,INT max_hops=10,
+         INT top_k=100, BOOL wf = TRUE, BOOL print_accum = True, STRING result_attr = "",
+         STRING file_path = "", BOOL display_edges = FALSE){
+         /* Compute Closeness Centrality for each VERTEX.
+         Use multi-sourse BFS.
+         Link of the paper: http://www.vldb.org/pvldb/vol8/p449-then.pdf
+         Parameters:
+         v_type: vertex types to traverse                 print_accum: print JSON output
+         e_type: edge types to traverse                   result_attr: INT attr to store results to
+         max_hops: look only this far from each vertex    file_path: file to write CSV output to
+         top_k: report only this many top scores          display_edges: output edges for visualization
+         wf: Wasserman and Faust normalization factor for multi-component graphs */
+         TYPEDEF TUPLE<VERTEX Vertex_ID, FLOAT score> VertexScore;
+         HeapAccum<VertexScore>(top_k, score DESC) @@topScores;
+         SumAccum<INT> @@currDist; #current distance
+         BitwiseOrAccum @visitNext; #use bitwise instead of setAccum
+         SumAccum<INT> @res; #Result, sum of distance
+         SumAccum<INT> @size; #get graph size
+         SumAccum<FLOAT> @score;
+         BitwiseOrAccum @seen;
+         BitwiseOrAccum @visit;
+         SumAccum<INT> @@count=1;#used to set unique ID
+         SumAccum<INT> @id; #store the unique ID
+         SetAccum<INT> @@batchSet; #used to set unique ID
+         MapAccum<INT,INT> @@map; #used to set unique ID
+         SetAccum<EDGE> @@edgeSet;
+         INT empty=0;
+         FILE f (file_path);
+         INT numVert;
+         INT batch_number;
+       # Compute closeness
+         all = {v_type};
+
+         numVert = all.size();
+         batch_number = numVert/60;
+         IF batch_number==0 THEN batch_number=1; END;
+
+         #Calculate the sum of distance to other vertex for each vertex
+         FOREACH i IN RANGE[0, batch_number-1] do
+                 Start = SELECT s FROM all:s
+                         WHERE getvid(s)%batch_number == i
+                         POST-ACCUM @@map+=(getvid(s)->0),@@batchSet+=getvid(s);
+
+                 FOREACH ver in @@batchSet DO @@map+=(ver->@@count); @@count+=1;END; #set a unique ID for each vertex, ID from 1-63
+                 Start = SELECT s FROM Start:s POST-ACCUM s.@id=@@map.get(getvid(s));
+                 Start = Select s FROM Start:s
+                         POST-ACCUM s.@seen=1<<s.@id,s.@visit=1<<s.@id; # set initial seen and visit s.@seen1 s.@seen2
+                 @@batchSet.clear();
+                 @@map.clear();
+                 @@count=0;
+
+                 WHILE (Start.size() > 0) LIMIT max_hops DO
+                       @@currDist+=1;
+                       Start = SELECT t FROM Start:s -(re_type:e)-v_type:t
+                               WHERE s.@visit&-t.@seen-1>0 and s!=t #use -t.@seen-1 to get the trverse of t.@seen
+                               ACCUM
+                                     INT c = s.@visit&-t.@seen-1,
+                                     IF c>0 THEN
+                                         t.@visitNext+=c,
+                                         t.@seen+=c
+                                     END
+                               POST-ACCUM
+                                     t.@visit=t.@visitNext,
+                                     INT r = t.@visitNext,
+                                     WHILE r>0 DO
+                                           r=r&(r-1),t.@res+=@@currDist,t.@size+=1 #count how many 1 in the number, same as setAccum,size()
+                                     END,
+                                     t.@visitNext=0;
+                 END;
+                 @@currDist=0;
+                 Start = SELECT s FROM all:s
+                         POST-ACCUM s.@seen=0,s.@visit=0;
+         END;
+
+         Start = SELECT s FROM all:s
+                   # Calculate Closeness Centrality for each vertex
+                 WHERE s.@res>0
+                 POST-ACCUM
+                           IF wf THEN s.@score = (s.@size*1.0/(numVert-1))*(s.@size*1.0/s.@res) ELSE s.@score = s.@size*1.0/s.@res*1.0 END,
+                   IF result_attr != "" THEN s.setAttr(result_attr, s.@score) END,
+                       IF print_accum THEN @@topScores += VertexScore(s, s.@score) END,
+                   IF file_path != "" THEN f.println(s, s.@score) END;
+             #test
+
+       #Output
+           IF file_path != "" THEN
+                   f.println("Vertex_ID", "Closeness");
+           END;
+
+           IF print_accum THEN
+               PRINT @@topScores AS top_scores;
+               IF display_edges THEN
+                   PRINT Start[Start.@score];
+                   Start = SELECT s
+                   FROM Start:s -(e_type:e)->:t
+                       ACCUM @@edgeSet += e;
+                   PRINT @@edgeSet;
+               END;
+           END;
+       }
+       CREATE QUERY wcc (SET<STRING> v_type, SET<STRING> e_type, INT output_limit = 100,
+        BOOL print_accum = TRUE, STRING result_attr = "", STRING file_path = "") {
+       /*
+        This query identifies the Connected Components (undirected edges). When finished, each
+        vertex is assigned an INT label = its component ID number.
+         v_type: vertex types to traverse          print_accum: print JSON output
+         e_type: edge types to traverse            result_attr: INT attr to store results to
+         file_path: file to write CSV output to    display_edges: output edges for visualization
+         output_limit: max #vertices to output (-1 = all)
+       ,*/
+
+           MinAccum<INT> @cc_id = 0;       //each vertex's tentative component id
+           MapAccum<INT, INT> @@compSizes;
+           MapAccum<INT, ListAccum<INT>> @@compGroupBySize;
+           FILE f(file_path);
+
+           Start = {v_type};
+
+           # Initialize: Label each vertex with its own internal ID
+           S = SELECT x
+               FROM Start:x
+               POST-ACCUM x.@cc_id = getvid(x)
+           ;
+
+           # Propagate smaller internal IDs until no more ID changes can be Done
+           WHILE (S.size()>0) DO
+                   S = SELECT t
+                       FROM S:s -(e_type:e)- v_type:t
+                       ACCUM t.@cc_id += s.@cc_id // If s has smaller id than t, copy the id to t
+                       HAVING t.@cc_id != t.@cc_id'
+                   ;
+           END;
+
+           IF file_path != "" THEN
+             f.println("Vertex_ID","Component_ID");
+           END;
+
+           Start = {v_type};
+           Start = SELECT s FROM Start:s
+                   POST-ACCUM
+                       IF result_attr != "" THEN s.setAttr(result_attr, s.@cc_id) END,
+                       IF print_accum THEN @@compSizes += (s.@cc_id -> 1) END,
+                       IF file_path != "" THEN f.println(s, s.@cc_id) END;
+
+           IF print_accum THEN
+               IF output_limit >= 0 THEN
+                   Start = SELECT s FROM Start:s LIMIT output_limit;
+               END;
+               FOREACH (compId,size) IN @@compSizes DO
+                   @@compGroupBySize += (size -> compId);
+               END;
+           PRINT @@compGroupBySize;
+             PRINT @@compSizes as sizes;
+             PRINT Start[Start.@cc_id];
+           END;
+       }
+       CREATE QUERY betweenness(SET<STRING> v_type, SET<STRING> e_type, STRING re_type,INT max_hops=10,
+         INT top_k=100, BOOL print_accum = True, STRING result_attr = "",
+         STRING file_path = "", BOOL display_edges = FALSE){
+         /* Compute Closeness Centrality for each VERTEX.
+         Use multi-sourse BFS.
+         Link of the paper: http://www.vldb.org/pvldb/vol8/p449-then.pdf
+         Parameters:
+         v_type: vertex types to traverse                 print_accum: print JSON output
+         e_type: edge types to traverse                   result_attr: INT attr to store results to
+         max_hops: look only this far from each vertex    file_path: file to write CSV output to
+         top_k: report only this many top scores          display_edges: output edges for visualization
+          ,*/
+         TYPEDEF TUPLE<VERTEX Vertex_ID, FLOAT score> VertexScore;
+         HeapAccum<VertexScore>(top_k, score DESC) @@topScores;
+         SumAccum<INT> @@currDist; #current distance
+         BitwiseOrAccum @visitNext; #use bitwise instead of setAccum
+         BitwiseOrAccum @seen;
+         BitwiseOrAccum @visit;
+         SumAccum<INT> @@count=1;#used to set unique ID
+         SumAccum<INT> @id; #store the unique ID
+         SetAccum<INT> @@batchSet; #used to set unique ID
+         MapAccum<INT,INT> @@map; #used to set unique ID
+         SetAccum<EDGE> @@edgeSet;
+         SumAccum<FLOAT> @delta=0;
+         MapAccum<INT,BitwiseOrAccum> @times;
+         MapAccum<INT,SumAccum<INT>> @sigma;
+         ListAccum<INT> @test;
+         INT empty=0;
+         FILE f (file_path);
+         INT numVert;
+         INT batch_number;
+
+       # Compute betweenness
+         all = {v_type};
+         numVert = all.size();
+         batch_number = numVert/60;
+         IF batch_number==0 THEN batch_number=1; END;
+
+         #Calculate the sum of distance to other vertex for each vertex
+         FOREACH i IN RANGE[0, batch_number-1] do
+                 Current = SELECT s FROM all:s
+                           WHERE getvid(s)%batch_number == i
+                           POST-ACCUM @@map+=(getvid(s)->0),@@batchSet+=getvid(s);
+
+                 FOREACH ver in @@batchSet DO @@map+=(ver->@@count); @@count+=1;END; #set a unique ID for each vertex, ID from 1-63
+                 Start = SELECT s FROM Current:s POST-ACCUM s.@id=@@map.get(getvid(s));
+                 Start = Select s FROM Current:s
+                         POST-ACCUM s.@seen=1<<s.@id,
+                                    s.@visit=s.@seen,
+                                    s.@sigma+=(0->1),
+                                    s.@times+=(0->1<<s.@visit); # set initial seen and visit
+                 @@batchSet.clear();
+                 @@map.clear();
+                 @@count=0;
+
+                 WHILE (Start.size() > 0) LIMIT max_hops DO
+
+                         @@currDist+=1;
+                         Start = SELECT t FROM Start:s -(re_type:e)-v_type:t
+                                 WHERE s.@visit&-t.@seen-1>0 and s!=t #use -t.@seen-1 to get the trverse of t.@seen
+                                 ACCUM                               #updatevisitNext
+                                       INT c = s.@visit&-t.@seen-1,
+                                       IF c>0 THEN
+                                           t.@visitNext+=c,
+                                           t.@seen+=c
+                                       END,
+                                       t.@sigma+=(@@currDist->s.@sigma.get(@@currDist-1)) #set sigma based on depth
+                                 POST-ACCUM
+                                       t.@visit=t.@visitNext,
+                                       t.@times+=(@@currDist->t.@visit),
+                                       t.@visitNext=0;
+                 END;
+                 @@currDist+=-1;
+
+                 Start = Select s from all:s WHERE s.@sigma.get(@@currDist)!=0;
+                 WHILE (Start.size()>0) LIMIT max_hops DO
+                           @@currDist+=-1;
+                           Start = SELECT t FROM Start:s -(re_type:e)-> v_type:t
+                       WHERE t.@times.get(@@currDist)&s.@times.get(@@currDist+1)!=0
+                               ACCUM
+                                        FLOAT currValue=t.@sigma.get(@@currDist)/(s.@sigma.get(@@currDist+1)*(1+s.@delta)),
+                                        INT r=t.@times.get(@@currDist)&s.@times.get(@@currDist+1),
+                                        INT plus=0,
+                                        WHILE r>0 DO
+                                               r=r&(r-1),plus=plus+1 #count how many 1 in the number, same as setAccum,size()
+                                        END,
+                                        FLOAT value = currValue*plus/2.0,
+                                        t.@delta+=value;
+
+                   Start = Select s from all:s WHERE s.@sigma.get(@@currDist)!=0;
+               END;
+               @@currDist=0;
+               Start = SELECT s FROM all:s
+                       POST-ACCUM s.@seen=0,s.@visit=0,s.@sigma.clear(),s.@times.clear();
+         END;
+
+         #PRINT all [all.@delta];
+         Start = SELECT s FROM all:s
+                   POST-ACCUM
+                           IF result_attr != "" THEN s.setAttr(result_attr, s.@delta) END,
+                           IF print_accum THEN @@topScores += VertexScore(s, s.@delta) END,
+                           IF file_path != "" THEN f.println(s, s.@delta) END;
+         #Output
+           IF file_path != "" THEN
+                   f.println("Vertex_ID", "Betweenness");
+           END;
+
+           IF print_accum THEN
+               PRINT @@topScores AS top_scores;
+               IF display_edges THEN
+                   PRINT Start[Start.@delta];
+                   Start = SELECT s
+                   FROM Start:s -(e_type:e)->:t
+                       ACCUM @@edgeSet += e;
+                   PRINT @@edgeSet;
+               END;
+           END;
+
+       }
+       CREATE QUERY pagerank (STRING v_type, STRING e_type,
+        FLOAT max_change=0.001, INT max_iter=25, FLOAT damping=0.85, INT top_k = 100,
+        BOOL print_accum = TRUE, STRING result_attr =  "", STRING file_path = "",
+        BOOL display_edges = FALSE) {
+       /*
+        Compute the pageRank score for each vertex in the GRAPH
+        In each iteration, compute a score for each vertex:
+            score = (1-damping) + damping*sum(received scores FROM its neighbors).
+        The pageRank algorithm stops when either of the following is true:
+        a) it reaches max_iter iterations;
+        b) the max score change for any vertex compared to the last iteration <= max_change.
+        v_type: vertex types to traverse          print_accum: print JSON output
+        e_type: edge types to traverse            result_attr: INT attr to store results to
+        max_iter; max #iterations                 file_path: file to write CSV output to
+        top_k: #top scores to output              display_edges: output edges for visualization
+        max_change: max allowed change between iterations to achieve convergence
+        damping: importance of traversal vs. random teleport
+
+        This query supports only taking in a single edge for the time being (8/13/2020).
+       ,*/
+           TYPEDEF TUPLE<VERTEX Vertex_ID, FLOAT score> Vertex_Score;
+           HeapAccum<Vertex_Score>(top_k, score DESC) @@topScores;
+           MaxAccum<FLOAT> @@max_diff = 9999;    # max score change in an iteration
+           SumAccum<FLOAT> @recvd_score = 0; # sum of scores each vertex receives FROM neighbors
+           SumAccum<FLOAT> @score = 1;           # initial score for every vertex is 1.
+           SetAccum<EDGE> @@edgeSet;             # list of all edges, if display is needed
+           FILE f (file_path);
+
+       # PageRank iterations
+           Start = {v_type};                     # Start with all vertices of specified type(s)
+           WHILE @@max_diff > max_change LIMIT max_iter DO
+                   @@max_diff = 0;
+                   V = SELECT s
+                       FROM Start:s -(e_type:e)-> v_type:t
+                       ACCUM t.@recvd_score += s.@score/(s.outdegree(e_type))
+                       POST-ACCUM s.@score = (1.0-damping) + damping * s.@recvd_score,
+                                  s.@recvd_score = 0,
+                                  @@max_diff += abs(s.@score - s.@score');
+           END; # END WHILE loop
+
+       # Output
+           IF file_path != "" THEN
+             f.println("Vertex_ID", "PageRank");
+           END;
+
+           V = SELECT s FROM Start:s
+               POST-ACCUM
+                   IF result_attr != "" THEN s.setAttr(result_attr, s.@score) END,
+                   IF file_path != "" THEN f.println(s, s.@score) END,
+                   IF print_accum THEN @@topScores += Vertex_Score(s, s.@score) END;
+
+           IF print_accum THEN
+               PRINT @@topScores;
+               IF display_edges THEN
+                   PRINT Start[Start.@score];
+                   Start = SELECT s
+                           FROM Start:s -(e_type:e)-> v_type:t
+                           ACCUM @@edgeSet += e;
+                  PRINT @@edgeSet;
+               END;
+           END;
+       }
+       CREATE QUERY NetBuild(vertex<BuildSchedule> input) FOR GRAPH SupplyChain {
+         // build schedule -> models -> bom -> item
+         // bom, get the required amts per part
+         // R21MAE57BX102021-07-27T00:00:00Z
+
+         //Typedef Tuple <string item, int itemQty> modelTuple;
+
+         //MapAccum<String, ListAccum<modelTuple>> @@modelItems;
+         GroupByAccum<String modelNumber, String itemNumber, String site, SumAccum<int> qtyper1, SumAccum<int> qty> @gb;
+         GroupByAccum<String modelNumber, String itemNumber, String site,SumAccum<int> qtyper, SumAccum<int> qtyonhand, SumAccum<int> qtyLeftOver, SumAccum<int> howManyCanWeBuild> @@res;
+         //MapAccum<String, int> @onHand;
+         SumAccum<int> @onHand;
+         SumAccum<String> @site;
+         SumAccum<int> @howManyCanWeBuild;
+         int orderqty = 0;
+
+         Start = {input};
+
+         getmodels = select t from Start:s-(scheduled_to_build:e)-models:t
+                     post-accum orderqty = s.order_qty;
+
+         boms = select t from getmodels:s-(model_bom:e)-BillofMaterial:t;
+
+         items = select t from boms:s-(item_in_bom:e)-item:t
+                 accum t.@site += s.site_id,
+                       t.@gb += (s.model_number, s.item_number, s.site_id -> s.quantity_per, (s.quantity_per * orderqty));
+
+         getcounts = select s from items:s-(in_warehouse_inventory:e)-warehouse:t
+                     where t.WarehouseId == s.@site
+                     accum if e.qtyonhand < 0 then
+                             //s.@onHand += (t.WarehouseId -> 0)
+                             s.@onHand = 0
+                           else
+                             s.@onHand += e.qtyonhand
+                             //s.@onHand += (t.WarehouseId -> e.qtyonhand)
+                           end
+                     post-accum foreach entry in s.@gb do
+                                  if entry.qtyper1 == 0 then
+                                    @@res += (entry.modelNumber, entry.itemNumber,
+                                              entry.site -> entry.qtyper1, s.@onHand, (s.@onHand - entry.qty),0)
+                                  else
+                                    @@res += (entry.modelNumber, entry.itemNumber,
+                                              entry.site -> entry.qtyper1, s.@onHand, (s.@onHand - entry.qty), (s.@onHand / entry.qtyper1))
+                                  end
+                                end;
+
+
+         print orderqty;
+         //print getcounts[getcounts.@onHand];
+         print @@res;
+       }
+     #+end_src
+     #+begin_src bash :tangle staging/supplychain/03-create-queries.sh
+       gsql -g SupplyChain queries.gsql
+     #+end_src
+   + Do eet
+     #+begin_src bash :tangle staging/supplychain/runall.sh
+       ./01-create-graph.sh
+       ./02-load-data.sh
+       ./03-create-queries.sh
+     #+end_src
+** DONE Synthea
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2021-11-02 Tue 12:13]
+   :END:
+   + Resources
+     + Data: GitHub
+     + Last export:
+   +
+** STARTED Real estate leasing
+   :LOGBOOK:
+   - State "STARTED"    from "DONE"       [2021-11-02 Tue 12:13]
+   - State "DONE"       from "TODO"       [2021-11-02 Tue 12:13]
+   :END:
+** STARTED LDBC Social Graph small sample size
+   :LOGBOOK:
+   - State "STARTED"    from "TODO"       [2021-11-08 Mon 10:26]
+   CLOCK: [2021-11-08 Mon 10:26]--[2021-11-08 Mon 11:59] =>  1:33
+   :END:
+   Refs:
+   + [[https://docs.tigergraph.com/v/3.2/start/gsql-102/define-the-schema][Define the Schema - TigerGraph Documentation]]
+   + [[https://ldbcouncil.org/benchmarks/snb/][LDBC Social Network Benchmark (LDBC SNB)]]
+
+*** Get the data
+    #+begin_src bash
+      wget https://s3-us-west-1.amazonaws.com/tigergraph-benchmark-dataset/LDBC/SF-1/ldbc_snb_data-sf1.tar.gz
+    #+end_src
+*** Create the schema
+    #+begin_src sql :tangle staging/ldbc-social/01-create-graph.gsql :mkdirp yes
+      //clear the current catalog.
+      // It may take a while since it restarts the subsystem services.
+      USE GLOBAL
+      DROP GRAPH ldbc_snb
+
+      # 1. Create graph
+      CREATE GRAPH ldbc_snb ()
+      USE GRAPH ldbc_snb
+
+      # 2. Create schema_change job to include all vertex/edge types
+      CREATE SCHEMA_CHANGE JOB change_schema_of_ldbc  FOR GRAPH ldbc_snb {
+        ## Post and Comment
+        ADD VERTEX Comment (PRIMARY_ID id UINT, creationDate DATETIME, locationIP STRING,
+          browserUsed STRING, content STRING, length UINT) WITH primary_id_as_attribute="TRUE";
+
+        ADD VERTEX Post (PRIMARY_ID id UINT, imageFile STRING, creationDate DATETIME,
+          locationIP STRING, browserUsed STRING, lang STRING, content STRING,
+          length UINT) WITH primary_id_as_attribute="TRUE";
+        ## organisation
+        ADD VERTEX Company (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX University (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ## place
+        ADD VERTEX City (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX Country (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX Continent (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ## etc
+        ADD  VERTEX Forum (PRIMARY_ID id UINT, title STRING, creationDate DATETIME) WITH primary_id_as_attribute="TRUE";
+        ADD  VERTEX Person (PRIMARY_ID id UINT, firstName STRING, lastName STRING, gender STRING, birthday DATETIME,
+         creationDate DATETIME, locationIP STRING, browserUsed STRING, speaks set<STRING>, email set<STRING>)
+         WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX Tag (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX TagClass (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+
+        // create edge types
+        ADD DIRECTED EDGE CONTAINER_OF (FROM Forum, TO Post) WITH REVERSE_EDGE="CONTAINER_OF_REVERSE";
+        ADD  DIRECTED EDGE HAS_CREATOR (FROM Comment|Post, TO Person) WITH REVERSE_EDGE="HAS_CREATOR_REVERSE";
+        ADD  DIRECTED EDGE HAS_INTEREST (FROM Person, TO Tag) WITH REVERSE_EDGE="HAS_INTEREST_REVERSE";
+        ADD DIRECTED EDGE HAS_MEMBER (FROM Forum, TO Person, joinDate DATETIME) WITH REVERSE_EDGE="HAS_MEMBER_REVERSE";
+        ADD DIRECTED EDGE HAS_MODERATOR (FROM Forum, TO Person) WITH REVERSE_EDGE="HAS_MODERATOR_REVERSE";
+        ADD DIRECTED EDGE HAS_TAG (FROM Comment|Post|Forum, TO Tag) WITH REVERSE_EDGE="HAS_TAG_REVERSE";
+        ADD DIRECTED EDGE HAS_TYPE (FROM Tag, TO TagClass) WITH REVERSE_EDGE="HAS_TYPE_REVERSE";
+        ADD  DIRECTED EDGE IS_LOCATED_IN (FROM Comment, TO Country
+                                        | FROM Post, TO Country
+                                        | FROM Company, TO Country
+                                        | FROM Person, TO City
+                                        | FROM University, TO City) WITH REVERSE_EDGE="IS_LOCATED_IN_REVERSE";
+        ADD DIRECTED EDGE IS_PART_OF (FROM City, TO Country
+                                     | FROM Country, TO Continent) WITH REVERSE_EDGE="IS_PART_OF_REVERSE";
+        ADD DIRECTED EDGE IS_SUBCLASS_OF (FROM TagClass, TO TagClass) WITH REVERSE_EDGE="IS_SUBCLASS_OF_REVERSE";
+        ADD UNDIRECTED EDGE KNOWS (FROM Person, TO Person, creationDate DATETIME);
+        ADD DIRECTED EDGE LIKES (FROM Person, TO Comment|Post, creationDate DATETIME) WITH REVERSE_EDGE="LIKES_REVERSE";
+        ADD DIRECTED EDGE REPLY_OF (FROM Comment, TO Comment|Post) WITH REVERSE_EDGE="REPLY_OF_REVERSE";
+        ADD DIRECTED EDGE STUDY_AT (FROM Person, TO University, classYear INT) WITH REVERSE_EDGE="STUDY_AT_REVERSE";
+        ADD DIRECTED EDGE WORK_AT (FROM Person, TO Company, workFrom INT) WITH REVERSE_EDGE="WORK_AT_REVERSE";
+      }
+
+      # 3. Run schema_change job
+      RUN SCHEMA_CHANGE JOB change_schema_of_ldbc
+
+      # 4. Drop schema_change job
+      DROP JOB change_schema_of_ldbc
+
+    #+end_src
+
+*** Load the data
+    #+begin_src sql :tangle staging/ldbc-social/02-load-data.gsql :mkdirp yes
+      USE GRAPH ldbc_snb
+      CREATE LOADING JOB load_ldbc_snb FOR GRAPH ldbc_snb {
+        DEFINE FILENAME v_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_0_0.csv";
+        DEFINE FILENAME v_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_0_0.csv";
+        DEFINE FILENAME v_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_0_0.csv";
+        DEFINE FILENAME v_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_0_0.csv";
+        DEFINE FILENAME v_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_0_0.csv";
+        DEFINE FILENAME v_forum_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_0_0.csv";
+        DEFINE FILENAME v_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/organisation_0_0.csv";
+        DEFINE FILENAME v_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tagclass_0_0.csv";
+        DEFINE FILENAME person_knows_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_knows_person_0_0.csv";
+        DEFINE FILENAME comment_replyOf_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_replyOf_post_0_0.csv";
+        DEFINE FILENAME comment_replyOf_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_replyOf_comment_0_0.csv";
+        DEFINE FILENAME post_hasCreator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_hasCreator_person_0_0.csv";
+        DEFINE FILENAME post_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_hasTag_tag_0_0.csv";
+        DEFINE FILENAME comment_hasCreator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_hasCreator_person_0_0.csv";
+        DEFINE FILENAME post_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME comment_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_hasTag_tag_0_0.csv";
+        DEFINE FILENAME comment_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME forum_containerOf_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_containerOf_post_0_0.csv";
+        DEFINE FILENAME forum_hasMember_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasMember_person_0_0.csv";
+        DEFINE FILENAME forum_hasModerator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasModerator_person_0_0.csv";
+        DEFINE FILENAME forum_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasTag_tag_0_0.csv";
+        DEFINE FILENAME organisation_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/organisation_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME person_hasInterest_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_hasInterest_tag_0_0.csv";
+        DEFINE FILENAME person_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME person_likes_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_likes_comment_0_0.csv";
+        DEFINE FILENAME person_likes_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_likes_post_0_0.csv";
+        DEFINE FILENAME person_studyAt_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_studyAt_organisation_0_0.csv";
+        DEFINE FILENAME person_workAt_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_workAt_organisation_0_0.csv";
+        DEFINE FILENAME place_isPartOf_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_isPartOf_place_0_0.csv";
+        DEFINE FILENAME tag_hasType_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_hasType_tagclass_0_0.csv";
+        DEFINE FILENAME tagclass_isSubclassOf_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tagclass_isSubclassOf_tagclass_0_0.csv";
+
+
+
+
+
+        // load vertex
+        LOAD v_comment_file
+          TO VERTEX Comment VALUES ($0, $1, $2, $3, $4, $5) USING header="true", separator="|";
+        LOAD v_post_file
+          TO VERTEX Post VALUES ($0, $1, $2, $3, $4, $5, $6, $7) USING header="true", separator="|";
+        LOAD v_organisation_file
+          TO VERTEX Company VALUES ($0, $2, $3) WHERE $1=="company",
+          TO VERTEX University VALUES ($0, $2, $3) WHERE $1=="university" USING header="true", separator="|";
+        LOAD v_place_file
+          TO VERTEX City VALUES ($0, $1, $2) WHERE $3=="city",
+          TO VERTEX Country VALUES ($0, $1, $2) WHERE $3=="country",
+          TO VERTEX Continent VALUES ($0, $1, $2) WHERE $3=="continent" USING header="true", separator="|";
+        LOAD v_forum_file
+          TO VERTEX Forum VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD v_person_file
+          TO VERTEX Person VALUES ($0, $1, $2, $3, $4, $5, $6, $7, SPLIT($8,";"), SPLIT($9,";")) USING header="true", separator="|";
+        LOAD v_tag_file
+          TO VERTEX Tag VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD v_tagclass_file
+          TO VERTEX TagClass VALUES ($0, $1, $2) USING header="true", separator="|";
+
+        // load edge
+        LOAD forum_containerOf_post_file
+          TO EDGE CONTAINER_OF VALUES ($0, $1) USING header="true", separator="|";
+        LOAD comment_hasCreator_person_file
+          TO EDGE HAS_CREATOR VALUES ($0 Comment, $1) USING header="true", separator="|";
+        LOAD post_hasCreator_person_file
+          TO EDGE HAS_CREATOR VALUES ($0 Post, $1) USING header="true", separator="|";
+        LOAD person_hasInterest_tag_file
+          TO EDGE HAS_INTEREST VALUES ($0, $1) USING header="true", separator="|";
+        LOAD forum_hasMember_person_file
+          TO EDGE HAS_MEMBER VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD forum_hasModerator_person_file
+          TO EDGE HAS_MODERATOR VALUES ($0, $1) USING header="true", separator="|";
+        LOAD comment_hasTag_tag_file
+          TO EDGE HAS_TAG VALUES ($0 Comment, $1) USING header="true", separator="|";
+        LOAD post_hasTag_tag_file
+          TO EDGE HAS_TAG VALUES ($0 Post, $1) USING header="true", separator="|";
+        LOAD forum_hasTag_tag_file
+          TO EDGE HAS_TAG VALUES ($0 Forum, $1) USING header="true", separator="|";
+        LOAD tag_hasType_tagclass_file
+          TO EDGE HAS_TYPE VALUES ($0, $1) USING header="true", separator="|";
+        LOAD organisation_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Company, $1 Country) WHERE to_int($1) < 111,
+          TO EDGE IS_LOCATED_IN VALUES ($0 University, $1 City) WHERE to_int($1) > 110 USING header="true", separator="|";
+        LOAD comment_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Comment, $1 Country) USING header="true", separator="|";
+        LOAD post_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Post, $1 Country) USING header="true", separator="|";
+        LOAD person_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Person, $1 City) USING header="true", separator="|";
+        LOAD place_isPartOf_place_file
+          TO EDGE IS_PART_OF VALUES ($0 Country, $1 Continent) WHERE to_int($0) < 111,
+          TO EDGE IS_PART_OF VALUES ($0 City, $1 Country) WHERE to_int($0) > 110 USING header="true", separator="|";
+        LOAD tagclass_isSubclassOf_tagclass_file
+          TO EDGE IS_SUBCLASS_OF VALUES ($0, $1) USING header="true", separator="|";
+        LOAD person_knows_person_file
+          TO EDGE KNOWS VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD person_likes_comment_file
+          TO EDGE LIKES VALUES ($0, $1 Comment, $2) USING header="true", separator="|";
+        LOAD person_likes_post_file
+          TO EDGE LIKES VALUES ($0, $1 Post, $2) USING header="true", separator="|";
+        LOAD comment_replyOf_comment_file
+          TO EDGE REPLY_OF VALUES ($0, $1 Comment) USING header="true", separator="|";
+        LOAD comment_replyOf_post_file
+          TO EDGE REPLY_OF VALUES ($0, $1 Post) USING header="true", separator="|";
+        LOAD person_studyAt_organisation_file
+          TO EDGE STUDY_AT VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD person_workAt_organisation_file
+          TO EDGE WORK_AT VALUES ($0, $1, $2) USING header="true", separator="|";
+      }
+
+      RUN LOADING JOB load_ldbc_snb
+
+      DROP JOB load_ldbc_snb
+    #+end_src
+* Sandbox
+  #+name: gort
+  : ohai
+  #+begin_src bash :var mygort=gort :results raw
+    echo "|$mygort|"
+  #+end_src
+
+  #+RESULTS:
+  | ohai |
+p
+  #+name: gort2
+  #+begin_src bash  :session tg-sh :results drawer replace
+    pwd
+  #+end_src
+
+  #+RESULTS: gort2
+  :results:
+  /home/tigergraph
+  :end:
