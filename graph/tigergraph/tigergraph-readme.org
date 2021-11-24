@@ -2,7 +2,7 @@
 #+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
 #+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:t
 #+options: todo:t |:t
-#+title: TigerGraph how-tos and solution sets
+#+title: TigerGraph How-Tos
 #+date: <2021-11-16 Tue>
 #+author: Gregory Grubbs
 #+email: gregory.grubbs@gmail.com
@@ -10,9 +10,24 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 27.0.91 (Org mode 9.3.6)
-#+setupfile: ~/projects/emacs/org-html-themes/org/./theme-readtheorg-local.setup
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
 # #+setupfile: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
 #+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :eval never-export
+* Literate programming
+  This section establishes the shell connections to a Kubernetes, Docker or bare metal
+  deployment of a Tigergraph installation in order to facilitate the deployment of the
+  solutions in this document
+** Get access to a shell named =tg-sh= using =tigergraph= user
+   Change =tg-tramp-path= as needed.  Protocol may be any [[https://www.gnu.org/software/tramp/tramp-emacs.html][TRAMP]] protocol, including
+   [[https://github.com/gregoryg/emacs-gregoryg/blob/master/.emacs.d/emacs-init.org#add-a-helper-script-for-kubernetes-kube-method][kube]], [[https://github.com/gregoryg/emacs-gregoryg/blob/master/.emacs.d/emacs-init.org#define-tramp-methods][docker]] and =ssh=
+
+   #+NAME: tg-tramp-path
+   | /kube:poodle@tigergraph-0: |
+   #+begin_src emacs-lisp :var mypath=tg-tramp-path[0,0] :results none
+     (message (format "%s" mypath))
+     (cd mypath)
+     (shell "tg-sh")
+   #+end_src
 * Tigergraph Download and Installation instructions
   + [[https://docs.tigergraph.com/admin/admin-guide/install-and-config/install][Detailed Instructions]]
   + Download the TigerGraph Enterprise Free Edition for Linux: https://dl.tigergraph.com/download.html
@@ -41,11 +56,12 @@
 * Using the API
   + [ ] Grab Elliot's slides!
 * Install TigerGraph 3.2+ on EKS
-
+#+options: toc:nil num:nil
 ** Documentation links
    These may come in handy but will not be needed if you just want to follow the
    instructions.
    + Docs: [[https://docs.tigergraph.com/v/3.2/admin/admin-guide/kubernetes/quickstart-with-eks][Quickstart with EKS - TigerGraph Documentation]]
+   + This document is maintained [[https://github.com/gregoryg/homelab/blob/master/graph/tigergraph/tigergraph-readme.org][here on GitHub]]
 
 ** Install your command line tools
    + Download and install the [[https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html][AWS CLI]]
