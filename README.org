@@ -1210,6 +1210,50 @@
      Now apt will accept that key's signature for all packages in that repo and only that
      repo.
 
+* Spark on Kubernetes
+  #+begin_src bash
+    helm install sparky spark-operator/spark-operator \
+         --namespace sparky \
+         --create-namespace
+  #+end_src
+* PySpark and Jupyter notebook
+  + ref: [[https://www.sicara.ai/blog/2017-05-02-get-started-pyspark-jupyter-notebook-3-minutes][Get Started with PySpark and Jupyter Notebook in 3 Minutes | Sicara]]
+** Pre-reqs
+   In addition to =jupyter= and/or =jupyterlab=
+   #+begin_src bash
+     pip install pypandoc pyspark findspark pyTigerGraph
+   #+end_src
+** Use Pyspark in Jupyter
+   #+begin_src python
+     import findspark
+     findspark.init()
+     import pyspark
+
+     import os
+     os.environ['PYSPARK_SUBMIT_ARGS'] = '--jars /opt/spark/user-jars/tg-jdbc-driver-1.2.jar pyspark-shell'
+
+     from pyspark.sql import SparkSession
+     from pyspark.sql.types import StructType, StructField
+     from pyspark.sql.types import StringType, IntegerType
+
+     spark = SparkSession.builder.appName("TigerGraphAnalysis").getOrCreate()
+   #+end_src
+** Test connection TigerGraph - read a Vertex type
+   #+begin_src python
+     jdbcDF = spark.read \
+       .format("jdbc") \
+       .option("driver", "com.tigergraph.jdbc.Driver") \
+       .option("url", "jdbc:tg:http://protomolecule.magichome:32176") \
+       .option("user", "tigergraph") \
+       .option("password", "Tigergraph") \
+       .option("graph", "Northwind") \
+       .option("dbtable", "vertex Orders") \
+       .option("limit", "10") \
+       .option("debug", "0") \
+       .load()
+
+     jdbcDF.show()
+   #+end_src
 * Graph databases
 ** Tigergraph
 *** Tigergraph Download and Installation instructions
