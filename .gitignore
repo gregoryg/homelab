@@ -1,4 +1,5 @@
 *.org.html
+**/.ipynb_checkpoints/
 .terraform/
 .terraform.lock.hcl
 *terraform.tfstate
