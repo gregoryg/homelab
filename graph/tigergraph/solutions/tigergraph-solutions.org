@@ -495,10 +495,489 @@
     #+begin_src emacs-lisp
     #+end_src
 
+** STARTED LDBC Social Graph small sample size
+   :LOGBOOK:
+   - State "STARTED"    from "TODO"       [2021-11-08 Mon 10:26]
+   CLOCK: [2021-11-08 Mon 10:26]--[2021-11-08 Mon 11:59] =>  1:33
+   :END:
+   Refs:
+   + [[https://docs.tigergraph.com/v/3.2/start/gsql-102/define-the-schema][Define the Schema - TigerGraph Documentation]]
+   + [[https://ldbcouncil.org/benchmarks/snb/][LDBC Social Network Benchmark (LDBC SNB)]]
+
+*** Get the data
+    #+begin_src bash
+      wget https://s3-us-west-1.amazonaws.com/tigergraph-benchmark-dataset/LDBC/SF-1/ldbc_snb_data-sf1.tar.gz
+    #+end_src
+*** Create the schema
+    #+begin_src sql :tangle ldbc-social/01-create-graph.gsql :mkdirp yes
+      //clear the current catalog.
+      // It may take a while since it restarts the subsystem services.
+      USE GLOBAL
+      DROP GRAPH ldbc_snb
+
+      # 1. Create graph
+      CREATE GRAPH ldbc_snb ()
+      USE GRAPH ldbc_snb
+
+      # 2. Create schema_change job to include all vertex/edge types
+      CREATE SCHEMA_CHANGE JOB change_schema_of_ldbc  FOR GRAPH ldbc_snb {
+        ## Post and Comment
+        ADD VERTEX Comment (PRIMARY_ID id UINT, creationDate DATETIME, locationIP STRING,
+          browserUsed STRING, content STRING, length UINT) WITH primary_id_as_attribute="TRUE";
+
+        ADD VERTEX Post (PRIMARY_ID id UINT, imageFile STRING, creationDate DATETIME,
+          locationIP STRING, browserUsed STRING, lang STRING, content STRING,
+          length UINT) WITH primary_id_as_attribute="TRUE";
+        ## organisation
+        ADD VERTEX Company (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX University (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ## place
+        ADD VERTEX City (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX Country (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX Continent (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ## etc
+        ADD  VERTEX Forum (PRIMARY_ID id UINT, title STRING, creationDate DATETIME) WITH primary_id_as_attribute="TRUE";
+        ADD  VERTEX Person (PRIMARY_ID id UINT, firstName STRING, lastName STRING, gender STRING, birthday DATETIME,
+         creationDate DATETIME, locationIP STRING, browserUsed STRING, speaks set<STRING>, email set<STRING>)
+         WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX Tag (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX TagClass (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+
+        // create edge types
+        ADD DIRECTED EDGE CONTAINER_OF (FROM Forum, TO Post) WITH REVERSE_EDGE="CONTAINER_OF_REVERSE";
+        ADD  DIRECTED EDGE HAS_CREATOR (FROM Comment|Post, TO Person) WITH REVERSE_EDGE="HAS_CREATOR_REVERSE";
+        ADD  DIRECTED EDGE HAS_INTEREST (FROM Person, TO Tag) WITH REVERSE_EDGE="HAS_INTEREST_REVERSE";
+        ADD DIRECTED EDGE HAS_MEMBER (FROM Forum, TO Person, joinDate DATETIME) WITH REVERSE_EDGE="HAS_MEMBER_REVERSE";
+        ADD DIRECTED EDGE HAS_MODERATOR (FROM Forum, TO Person) WITH REVERSE_EDGE="HAS_MODERATOR_REVERSE";
+        ADD DIRECTED EDGE HAS_TAG (FROM Comment|Post|Forum, TO Tag) WITH REVERSE_EDGE="HAS_TAG_REVERSE";
+        ADD DIRECTED EDGE HAS_TYPE (FROM Tag, TO TagClass) WITH REVERSE_EDGE="HAS_TYPE_REVERSE";
+        ADD  DIRECTED EDGE IS_LOCATED_IN (FROM Comment, TO Country
+                                        | FROM Post, TO Country
+                                        | FROM Company, TO Country
+                                        | FROM Person, TO City
+                                        | FROM University, TO City) WITH REVERSE_EDGE="IS_LOCATED_IN_REVERSE";
+        ADD DIRECTED EDGE IS_PART_OF (FROM City, TO Country
+                                     | FROM Country, TO Continent) WITH REVERSE_EDGE="IS_PART_OF_REVERSE";
+        ADD DIRECTED EDGE IS_SUBCLASS_OF (FROM TagClass, TO TagClass) WITH REVERSE_EDGE="IS_SUBCLASS_OF_REVERSE";
+        ADD UNDIRECTED EDGE KNOWS (FROM Person, TO Person, creationDate DATETIME);
+        ADD DIRECTED EDGE LIKES (FROM Person, TO Comment|Post, creationDate DATETIME) WITH REVERSE_EDGE="LIKES_REVERSE";
+        ADD DIRECTED EDGE REPLY_OF (FROM Comment, TO Comment|Post) WITH REVERSE_EDGE="REPLY_OF_REVERSE";
+        ADD DIRECTED EDGE STUDY_AT (FROM Person, TO University, classYear INT) WITH REVERSE_EDGE="STUDY_AT_REVERSE";
+        ADD DIRECTED EDGE WORK_AT (FROM Person, TO Company, workFrom INT) WITH REVERSE_EDGE="WORK_AT_REVERSE";
+      }
+
+      # 3. Run schema_change job
+      RUN SCHEMA_CHANGE JOB change_schema_of_ldbc
+
+      # 4. Drop schema_change job
+      DROP JOB change_schema_of_ldbc
+
+    #+end_src
+
+*** Load the data
+    #+begin_src sql :tangle ldbc-social/02-load-data.gsql :mkdirp yes
+      USE GRAPH ldbc_snb
+      CREATE LOADING JOB load_ldbc_snb FOR GRAPH ldbc_snb {
+        DEFINE FILENAME v_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_0_0.csv";
+        DEFINE FILENAME v_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_0_0.csv";
+        DEFINE FILENAME v_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_0_0.csv";
+        DEFINE FILENAME v_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_0_0.csv";
+        DEFINE FILENAME v_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_0_0.csv";
+        DEFINE FILENAME v_forum_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_0_0.csv";
+        DEFINE FILENAME v_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/organisation_0_0.csv";
+        DEFINE FILENAME v_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tagclass_0_0.csv";
+        DEFINE FILENAME person_knows_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_knows_person_0_0.csv";
+        DEFINE FILENAME comment_replyOf_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_replyOf_post_0_0.csv";
+        DEFINE FILENAME comment_replyOf_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_replyOf_comment_0_0.csv";
+        DEFINE FILENAME post_hasCreator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_hasCreator_person_0_0.csv";
+        DEFINE FILENAME post_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_hasTag_tag_0_0.csv";
+        DEFINE FILENAME comment_hasCreator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_hasCreator_person_0_0.csv";
+        DEFINE FILENAME post_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME comment_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_hasTag_tag_0_0.csv";
+        DEFINE FILENAME comment_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME forum_containerOf_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_containerOf_post_0_0.csv";
+        DEFINE FILENAME forum_hasMember_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasMember_person_0_0.csv";
+        DEFINE FILENAME forum_hasModerator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasModerator_person_0_0.csv";
+        DEFINE FILENAME forum_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasTag_tag_0_0.csv";
+        DEFINE FILENAME organisation_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/organisation_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME person_hasInterest_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_hasInterest_tag_0_0.csv";
+        DEFINE FILENAME person_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME person_likes_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_likes_comment_0_0.csv";
+        DEFINE FILENAME person_likes_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_likes_post_0_0.csv";
+        DEFINE FILENAME person_studyAt_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_studyAt_organisation_0_0.csv";
+        DEFINE FILENAME person_workAt_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_workAt_organisation_0_0.csv";
+        DEFINE FILENAME place_isPartOf_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_isPartOf_place_0_0.csv";
+        DEFINE FILENAME tag_hasType_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_hasType_tagclass_0_0.csv";
+        DEFINE FILENAME tagclass_isSubclassOf_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tagclass_isSubclassOf_tagclass_0_0.csv";
+
+
+
+
+
+        // load vertex
+        LOAD v_comment_file
+          TO VERTEX Comment VALUES ($0, $1, $2, $3, $4, $5) USING header="true", separator="|";
+        LOAD v_post_file
+          TO VERTEX Post VALUES ($0, $1, $2, $3, $4, $5, $6, $7) USING header="true", separator="|";
+        LOAD v_organisation_file
+          TO VERTEX Company VALUES ($0, $2, $3) WHERE $1=="company",
+          TO VERTEX University VALUES ($0, $2, $3) WHERE $1=="university" USING header="true", separator="|";
+        LOAD v_place_file
+          TO VERTEX City VALUES ($0, $1, $2) WHERE $3=="city",
+          TO VERTEX Country VALUES ($0, $1, $2) WHERE $3=="country",
+          TO VERTEX Continent VALUES ($0, $1, $2) WHERE $3=="continent" USING header="true", separator="|";
+        LOAD v_forum_file
+          TO VERTEX Forum VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD v_person_file
+          TO VERTEX Person VALUES ($0, $1, $2, $3, $4, $5, $6, $7, SPLIT($8,";"), SPLIT($9,";")) USING header="true", separator="|";
+        LOAD v_tag_file
+          TO VERTEX Tag VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD v_tagclass_file
+          TO VERTEX TagClass VALUES ($0, $1, $2) USING header="true", separator="|";
+
+        // load edge
+        LOAD forum_containerOf_post_file
+          TO EDGE CONTAINER_OF VALUES ($0, $1) USING header="true", separator="|";
+        LOAD comment_hasCreator_person_file
+          TO EDGE HAS_CREATOR VALUES ($0 Comment, $1) USING header="true", separator="|";
+        LOAD post_hasCreator_person_file
+          TO EDGE HAS_CREATOR VALUES ($0 Post, $1) USING header="true", separator="|";
+        LOAD person_hasInterest_tag_file
+          TO EDGE HAS_INTEREST VALUES ($0, $1) USING header="true", separator="|";
+        LOAD forum_hasMember_person_file
+          TO EDGE HAS_MEMBER VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD forum_hasModerator_person_file
+          TO EDGE HAS_MODERATOR VALUES ($0, $1) USING header="true", separator="|";
+        LOAD comment_hasTag_tag_file
+          TO EDGE HAS_TAG VALUES ($0 Comment, $1) USING header="true", separator="|";
+        LOAD post_hasTag_tag_file
+          TO EDGE HAS_TAG VALUES ($0 Post, $1) USING header="true", separator="|";
+        LOAD forum_hasTag_tag_file
+          TO EDGE HAS_TAG VALUES ($0 Forum, $1) USING header="true", separator="|";
+        LOAD tag_hasType_tagclass_file
+          TO EDGE HAS_TYPE VALUES ($0, $1) USING header="true", separator="|";
+        LOAD organisation_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Company, $1 Country) WHERE to_int($1) < 111,
+          TO EDGE IS_LOCATED_IN VALUES ($0 University, $1 City) WHERE to_int($1) > 110 USING header="true", separator="|";
+        LOAD comment_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Comment, $1 Country) USING header="true", separator="|";
+        LOAD post_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Post, $1 Country) USING header="true", separator="|";
+        LOAD person_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Person, $1 City) USING header="true", separator="|";
+        LOAD place_isPartOf_place_file
+          TO EDGE IS_PART_OF VALUES ($0 Country, $1 Continent) WHERE to_int($0) < 111,
+          TO EDGE IS_PART_OF VALUES ($0 City, $1 Country) WHERE to_int($0) > 110 USING header="true", separator="|";
+        LOAD tagclass_isSubclassOf_tagclass_file
+          TO EDGE IS_SUBCLASS_OF VALUES ($0, $1) USING header="true", separator="|";
+        LOAD person_knows_person_file
+          TO EDGE KNOWS VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD person_likes_comment_file
+          TO EDGE LIKES VALUES ($0, $1 Comment, $2) USING header="true", separator="|";
+        LOAD person_likes_post_file
+          TO EDGE LIKES VALUES ($0, $1 Post, $2) USING header="true", separator="|";
+        LOAD comment_replyOf_comment_file
+          TO EDGE REPLY_OF VALUES ($0, $1 Comment) USING header="true", separator="|";
+        LOAD comment_replyOf_post_file
+          TO EDGE REPLY_OF VALUES ($0, $1 Post) USING header="true", separator="|";
+        LOAD person_studyAt_organisation_file
+          TO EDGE STUDY_AT VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD person_workAt_organisation_file
+          TO EDGE WORK_AT VALUES ($0, $1, $2) USING header="true", separator="|";
+      }
+
+      RUN LOADING JOB load_ldbc_snb
+
+      DROP JOB load_ldbc_snb
+    #+end_src
+** Northwind
+*** Resources
+*** Create graph
+    #+begin_src sql :tangle northwind/01-create-graph.gsql :mkdirp yes
+      # -*- mode: sql; -*-
+      drop graph Northwind
+      create graph Northwind()
+      use graph Northwind
+      create schema_change job schema_change_northwind {
+        # Vertex Reps
+        ADD VERTEX Reps(PRIMARY_ID id INT, LastName STRING, FirstName STRING, Title STRING, CourtesyTitle STRING, BirthDate DATETIME, HireDate DATETIME, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, HomePhone STRING, PhoneExtension STRING, ReportsTo INT, group_id INT, is_root BOOL) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+
+        ADD VERTEX Customers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, Phone STRING, referred_by STRING, group_id INT, is_root BOOL, Type STRING DEFAULT "DIRECT") WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+
+        # Vertex Orders
+        ADD VERTEX Orders(PRIMARY_ID id INT, CustomerID STRING, EmployeeID INT, OrderDate DATETIME, RequiredDate DATETIME, ShippedDate DATETIME, ShipVia INT, Freight DOUBLE, ShipName STRING, ShipAddress STRING, ShipCity STRING, ShipRegion STRING, ShipPostalCode STRING, ShipCountry STRING, OrderAmount DOUBLE, CommissionAmount DOUBLE, fraud_score DOUBLE, ReturnedDate STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+
+        # Vertex Products
+        ADD VERTEX Products(PRIMARY_ID id INT, ProductName STRING, SupplierID INT, CategoryID INT, QuantityPerUnit STRING, UnitPrice DOUBLE, UnitsInStock INT, UnitsOnOrder INT, ReorderLevel INT, Discontinued INT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+
+        ADD VERTEX Territories(PRIMARY_ID id STRING, Description STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+        ADD VERTEX Regions(PRIMARY_ID id INT, Description STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+
+        ADD VERTEX Suppliers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, ContactTitle STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Phone STRING, Country STRING, HomePage STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
+
+        ADD DIRECTED EDGE include(FROM Orders, TO Products, Quantity INT, UnitPrice DOUBLE, Discount DOUBLE, LineTotalNoDiscount DOUBLE, LineTotal DOUBLE) WITH REVERSE_EDGE="reverse_include";
+
+        ADD DIRECTED EDGE referredby(FROM Customers, TO Customers) WITH REVERSE_EDGE="reverse_referredby";
+
+        ADD DIRECTED EDGE fulfill(FROM Reps, TO Orders) WITH REVERSE_EDGE="reverse_fulfill";
+
+        ADD UNDIRECTED EDGE place(FROM Customers, TO Orders, CustomerID STRING, OrderID INT);
+
+        ADD UNDIRECTED EDGE operate_in(FROM Reps, TO Territories);
+
+        ADD UNDIRECTED EDGE located_in(FROM Territories, TO Regions);
+
+        ADD UNDIRECTED EDGE rep_customer(FROM Reps, TO Customers);
+
+        ADD DIRECTED EDGE provide(FROM Suppliers, TO Products) WITH REVERSE_EDGE="reverse_provide";
+
+        ADD DIRECTED EDGE deliver_within(FROM Suppliers, TO Regions) WITH REVERSE_EDGE="reverse_deliver_within";
+      }
+      run schema_change job schema_change_northwind
+      drop job schema_change_northwind
+#+end_src
+*** Load data
+    #+begin_src sql :tangle northwind/02-load-data.gsql :mkdirp yes
+      # -*- mode: sql; -*-
+      use graph Northwind
+      CREATE LOADING JOB load_all_north {
+        DEFINE FILENAME categories="/home/tigergraph/mydata/northwind/data/categories.csv";
+        DEFINE FILENAME customers="/home/tigergraph/mydata/northwind/data/customers.csv";
+        DEFINE FILENAME employees="/home/tigergraph/mydata/northwind/data/employees.csv";
+        DEFINE FILENAME employee_territories="/home/tigergraph/mydata/northwind/data/employee-territories.csv";
+        DEFINE FILENAME order_details="/home/tigergraph/mydata/northwind/data/order-details.csv";
+        DEFINE FILENAME orders="/home/tigergraph/mydata/northwind/data/orders.csv";
+        DEFINE FILENAME products="/home/tigergraph/mydata/northwind/data/products.csv";
+        DEFINE FILENAME referrals="/home/tigergraph/mydata/northwind/data/referrals.csv";
+        DEFINE FILENAME regions="/home/tigergraph/mydata/northwind/data/regions.csv";
+        DEFINE FILENAME suppliers="/home/tigergraph/mydata/northwind/data/suppliers.csv";
+        DEFINE FILENAME territories="/home/tigergraph/mydata/northwind/data/territories.csv";
+
+        LOAD employees TO VERTEX Reps VALUES($"EmployeeID", $"LastName", $"FirstName", $"Title", $"TitleOfCourtesy", $"BirthDate", $"HireDate", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"HomePhone", $"Extension", $"ReportsTo", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD referrals TO EDGE referredby VALUES("$from_rep", $"to_rep") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+
+        LOAD employee_territories TO EDGE operate_in VALUES($"EmployeeID", $"TerritoryID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+        LOAD regions TO VERTEX Regions VALUES($"RegionID", $"RegionDescription") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+        LOAD territories TO VERTEX Territories VALUES($"TerritoryID", $"TerritoryDescription") USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD territories TO EDGE located_in VALUES($"TerritoryID", $"RegionID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+        LOAD customers TO VERTEX Customers VALUES($"CustomerID", $"CompanyName", $"ContactName", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"Phone", $"ReferredBy", _, _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+        LOAD suppliers TO VERTEX Suppliers VALUES($"SupplierID", $"CompanyName", $"ContactName", $"ContactTitle", $"Address", $"City", $"Region", $"PostalCode", $"Phone", $"Country", $"HomePage") USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD suppliers TO EDGE deliver_within VALUES($"SupplierID", $"Region") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+        LOAD products TO VERTEX Products VALUES($"ProductID", $"ProductName", $"SupplierID", $"CategoryID", $"QuantityPerUnit", $"UnitPrice", $"UnitsInStock", $"UnitsOnOrder", $"ReorderLevel", $"Discontinued") USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD products TO EDGE provide VALUES($"SupplierID", $"ProductID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+        LOAD order_details TO VERTEX Orders VALUES($"OrderID", _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD order_details TO EDGE include VALUES($"OrderID", $"ProductID", $"Quantity", $"UnitPrice", $"Discount", $"LineTotalNoDiscount", $"LineTotal") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+        LOAD orders TO VERTEX Orders VALUES($"OrderID", $"CustomerID", $"EmployeeID", $"OrderDate", $"RequiredDate", $"ShippedDate", $"ShipVia", $"Freight", $"ShipName", $"ShipAddress", $"ShipCity", $"ShipRegion", $"ShipPostalCode", $"ShipCountry", $"OrderAmt", $"CommissionAmt",_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD orders TO EDGE place VALUES($"CustomerID", $"OrderID", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD orders TO EDGE rep_customer VALUES($"EmployeeID", $"CustomerID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD orders TO EDGE fulfill VALUES($"EmployeeID", $"OrderID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+      }
+      run loading job load_all_north
+      drop job load_all_north
+    #+end_src
+*** Add queries
+** STARTED Real estate leasing
+   :LOGBOOK:
+   - State "STARTED"    from "DONE"       [2021-11-02 Tue 12:13]
+   - State "DONE"       from "TODO"       [2021-11-02 Tue 12:13]
+   :END:
+   - private repo
 ** TODO Social Graph
    :LOGBOOK:
    - State "DONE"       from "TODO"       [2021-11-02 Tue 12:13]
    :END:
+*** Resources
+*** Create graph
+    #+begin_src sql :tangle ldbc-social/01-create-graph.gsql :mkdirp yes
+      //clear the current catalog.
+      // It may take a while since it restarts the subsystem services.
+      USE GLOBAL
+      DROP GRAPH ldbc_snb
+
+      # 1. Create graph
+      CREATE GRAPH ldbc_snb ()
+      USE GRAPH ldbc_snb
+
+      # 2. Create schema_change job to include all vertex/edge types
+      CREATE SCHEMA_CHANGE JOB change_schema_of_ldbc  FOR GRAPH ldbc_snb {
+        ## Post and Comment
+        ADD VERTEX Comment (PRIMARY_ID id UINT, creationDate DATETIME, locationIP STRING,
+          browserUsed STRING, content STRING, length UINT) WITH primary_id_as_attribute="TRUE";
+
+        ADD VERTEX Post (PRIMARY_ID id UINT, imageFile STRING, creationDate DATETIME,
+          locationIP STRING, browserUsed STRING, lang STRING, content STRING,
+          length UINT) WITH primary_id_as_attribute="TRUE";
+        ## organisation
+        ADD VERTEX Company (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX University (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ## place
+        ADD VERTEX City (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX Country (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX Continent (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ## etc
+        ADD  VERTEX Forum (PRIMARY_ID id UINT, title STRING, creationDate DATETIME) WITH primary_id_as_attribute="TRUE";
+        ADD  VERTEX Person (PRIMARY_ID id UINT, firstName STRING, lastName STRING, gender STRING, birthday DATETIME,
+         creationDate DATETIME, locationIP STRING, browserUsed STRING, speaks set<STRING>, email set<STRING>)
+         WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX Tag (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+        ADD VERTEX TagClass (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
+
+        // create edge types
+        ADD DIRECTED EDGE CONTAINER_OF (FROM Forum, TO Post) WITH REVERSE_EDGE="CONTAINER_OF_REVERSE";
+        ADD  DIRECTED EDGE HAS_CREATOR (FROM Comment|Post, TO Person) WITH REVERSE_EDGE="HAS_CREATOR_REVERSE";
+        ADD  DIRECTED EDGE HAS_INTEREST (FROM Person, TO Tag) WITH REVERSE_EDGE="HAS_INTEREST_REVERSE";
+        ADD DIRECTED EDGE HAS_MEMBER (FROM Forum, TO Person, joinDate DATETIME) WITH REVERSE_EDGE="HAS_MEMBER_REVERSE";
+        ADD DIRECTED EDGE HAS_MODERATOR (FROM Forum, TO Person) WITH REVERSE_EDGE="HAS_MODERATOR_REVERSE";
+        ADD DIRECTED EDGE HAS_TAG (FROM Comment|Post|Forum, TO Tag) WITH REVERSE_EDGE="HAS_TAG_REVERSE";
+        ADD DIRECTED EDGE HAS_TYPE (FROM Tag, TO TagClass) WITH REVERSE_EDGE="HAS_TYPE_REVERSE";
+        ADD  DIRECTED EDGE IS_LOCATED_IN (FROM Comment, TO Country
+                                        | FROM Post, TO Country
+                                        | FROM Company, TO Country
+                                        | FROM Person, TO City
+                                        | FROM University, TO City) WITH REVERSE_EDGE="IS_LOCATED_IN_REVERSE";
+        ADD DIRECTED EDGE IS_PART_OF (FROM City, TO Country
+                                     | FROM Country, TO Continent) WITH REVERSE_EDGE="IS_PART_OF_REVERSE";
+        ADD DIRECTED EDGE IS_SUBCLASS_OF (FROM TagClass, TO TagClass) WITH REVERSE_EDGE="IS_SUBCLASS_OF_REVERSE";
+        ADD UNDIRECTED EDGE KNOWS (FROM Person, TO Person, creationDate DATETIME);
+        ADD DIRECTED EDGE LIKES (FROM Person, TO Comment|Post, creationDate DATETIME) WITH REVERSE_EDGE="LIKES_REVERSE";
+        ADD DIRECTED EDGE REPLY_OF (FROM Comment, TO Comment|Post) WITH REVERSE_EDGE="REPLY_OF_REVERSE";
+        ADD DIRECTED EDGE STUDY_AT (FROM Person, TO University, classYear INT) WITH REVERSE_EDGE="STUDY_AT_REVERSE";
+        ADD DIRECTED EDGE WORK_AT (FROM Person, TO Company, workFrom INT) WITH REVERSE_EDGE="WORK_AT_REVERSE";
+      }
+
+      # 3. Run schema_change job
+      RUN SCHEMA_CHANGE JOB change_schema_of_ldbc
+
+      # 4. Drop schema_change job
+      DROP JOB change_schema_of_ldbc
+    #+end_src
+*** Load data
+    #+begin_src sql :tangle ldbc-social/02-load-data.gsql :mkdirp yes
+      USE GRAPH ldbc_snb
+      CREATE LOADING JOB load_ldbc_snb FOR GRAPH ldbc_snb {
+        DEFINE FILENAME v_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_0_0.csv";
+        DEFINE FILENAME v_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_0_0.csv";
+        DEFINE FILENAME v_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_0_0.csv";
+        DEFINE FILENAME v_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_0_0.csv";
+        DEFINE FILENAME v_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_0_0.csv";
+        DEFINE FILENAME v_forum_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_0_0.csv";
+        DEFINE FILENAME v_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/organisation_0_0.csv";
+        DEFINE FILENAME v_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tagclass_0_0.csv";
+        DEFINE FILENAME person_knows_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_knows_person_0_0.csv";
+        DEFINE FILENAME comment_replyOf_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_replyOf_post_0_0.csv";
+        DEFINE FILENAME comment_replyOf_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_replyOf_comment_0_0.csv";
+        DEFINE FILENAME post_hasCreator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_hasCreator_person_0_0.csv";
+        DEFINE FILENAME post_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_hasTag_tag_0_0.csv";
+        DEFINE FILENAME comment_hasCreator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_hasCreator_person_0_0.csv";
+        DEFINE FILENAME post_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME comment_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_hasTag_tag_0_0.csv";
+        DEFINE FILENAME comment_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME forum_containerOf_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_containerOf_post_0_0.csv";
+        DEFINE FILENAME forum_hasMember_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasMember_person_0_0.csv";
+        DEFINE FILENAME forum_hasModerator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasModerator_person_0_0.csv";
+        DEFINE FILENAME forum_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasTag_tag_0_0.csv";
+        DEFINE FILENAME organisation_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/organisation_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME person_hasInterest_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_hasInterest_tag_0_0.csv";
+        DEFINE FILENAME person_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME person_likes_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_likes_comment_0_0.csv";
+        DEFINE FILENAME person_likes_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_likes_post_0_0.csv";
+        DEFINE FILENAME person_studyAt_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_studyAt_organisation_0_0.csv";
+        DEFINE FILENAME person_workAt_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_workAt_organisation_0_0.csv";
+        DEFINE FILENAME place_isPartOf_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_isPartOf_place_0_0.csv";
+        DEFINE FILENAME tag_hasType_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_hasType_tagclass_0_0.csv";
+        DEFINE FILENAME tagclass_isSubclassOf_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tagclass_isSubclassOf_tagclass_0_0.csv";
+
+
+
+
+
+        // load vertex
+        LOAD v_comment_file
+          TO VERTEX Comment VALUES ($0, $1, $2, $3, $4, $5) USING header="true", separator="|";
+        LOAD v_post_file
+          TO VERTEX Post VALUES ($0, $1, $2, $3, $4, $5, $6, $7) USING header="true", separator="|";
+        LOAD v_organisation_file
+          TO VERTEX Company VALUES ($0, $2, $3) WHERE $1=="company",
+          TO VERTEX University VALUES ($0, $2, $3) WHERE $1=="university" USING header="true", separator="|";
+        LOAD v_place_file
+          TO VERTEX City VALUES ($0, $1, $2) WHERE $3=="city",
+          TO VERTEX Country VALUES ($0, $1, $2) WHERE $3=="country",
+          TO VERTEX Continent VALUES ($0, $1, $2) WHERE $3=="continent" USING header="true", separator="|";
+        LOAD v_forum_file
+          TO VERTEX Forum VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD v_person_file
+          TO VERTEX Person VALUES ($0, $1, $2, $3, $4, $5, $6, $7, SPLIT($8,";"), SPLIT($9,";")) USING header="true", separator="|";
+        LOAD v_tag_file
+          TO VERTEX Tag VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD v_tagclass_file
+          TO VERTEX TagClass VALUES ($0, $1, $2) USING header="true", separator="|";
+
+        // load edge
+        LOAD forum_containerOf_post_file
+          TO EDGE CONTAINER_OF VALUES ($0, $1) USING header="true", separator="|";
+        LOAD comment_hasCreator_person_file
+          TO EDGE HAS_CREATOR VALUES ($0 Comment, $1) USING header="true", separator="|";
+        LOAD post_hasCreator_person_file
+          TO EDGE HAS_CREATOR VALUES ($0 Post, $1) USING header="true", separator="|";
+        LOAD person_hasInterest_tag_file
+          TO EDGE HAS_INTEREST VALUES ($0, $1) USING header="true", separator="|";
+        LOAD forum_hasMember_person_file
+          TO EDGE HAS_MEMBER VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD forum_hasModerator_person_file
+          TO EDGE HAS_MODERATOR VALUES ($0, $1) USING header="true", separator="|";
+        LOAD comment_hasTag_tag_file
+          TO EDGE HAS_TAG VALUES ($0 Comment, $1) USING header="true", separator="|";
+        LOAD post_hasTag_tag_file
+          TO EDGE HAS_TAG VALUES ($0 Post, $1) USING header="true", separator="|";
+        LOAD forum_hasTag_tag_file
+          TO EDGE HAS_TAG VALUES ($0 Forum, $1) USING header="true", separator="|";
+        LOAD tag_hasType_tagclass_file
+          TO EDGE HAS_TYPE VALUES ($0, $1) USING header="true", separator="|";
+        LOAD organisation_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Company, $1 Country) WHERE to_int($1) < 111,
+          TO EDGE IS_LOCATED_IN VALUES ($0 University, $1 City) WHERE to_int($1) > 110 USING header="true", separator="|";
+        LOAD comment_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Comment, $1 Country) USING header="true", separator="|";
+        LOAD post_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Post, $1 Country) USING header="true", separator="|";
+        LOAD person_isLocatedIn_place_file
+          TO EDGE IS_LOCATED_IN VALUES ($0 Person, $1 City) USING header="true", separator="|";
+        LOAD place_isPartOf_place_file
+          TO EDGE IS_PART_OF VALUES ($0 Country, $1 Continent) WHERE to_int($0) < 111,
+          TO EDGE IS_PART_OF VALUES ($0 City, $1 Country) WHERE to_int($0) > 110 USING header="true", separator="|";
+        LOAD tagclass_isSubclassOf_tagclass_file
+          TO EDGE IS_SUBCLASS_OF VALUES ($0, $1) USING header="true", separator="|";
+        LOAD person_knows_person_file
+          TO EDGE KNOWS VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD person_likes_comment_file
+          TO EDGE LIKES VALUES ($0, $1 Comment, $2) USING header="true", separator="|";
+        LOAD person_likes_post_file
+          TO EDGE LIKES VALUES ($0, $1 Post, $2) USING header="true", separator="|";
+        LOAD comment_replyOf_comment_file
+          TO EDGE REPLY_OF VALUES ($0, $1 Comment) USING header="true", separator="|";
+        LOAD comment_replyOf_post_file
+          TO EDGE REPLY_OF VALUES ($0, $1 Post) USING header="true", separator="|";
+        LOAD person_studyAt_organisation_file
+          TO EDGE STUDY_AT VALUES ($0, $1, $2) USING header="true", separator="|";
+        LOAD person_workAt_organisation_file
+          TO EDGE WORK_AT VALUES ($0, $1, $2) USING header="true", separator="|";
+      }
+
+      RUN LOADING JOB load_ldbc_snb
+
+      DROP JOB load_ldbc_snb
+    #+end_src
+*** Add queries
+
 ** STARTED Supply Chain
    :LOGBOOK:
    - State "STARTED"    from "TODO"       [2021-10-11 Mon 19:47]
@@ -1309,299 +1788,3 @@
      + Data: GitHub
      + Last export:
    +
-** STARTED Real estate leasing
-   :LOGBOOK:
-   - State "STARTED"    from "DONE"       [2021-11-02 Tue 12:13]
-   - State "DONE"       from "TODO"       [2021-11-02 Tue 12:13]
-   :END:
-   - private repo
-** STARTED LDBC Social Graph small sample size
-   :LOGBOOK:
-   - State "STARTED"    from "TODO"       [2021-11-08 Mon 10:26]
-   CLOCK: [2021-11-08 Mon 10:26]--[2021-11-08 Mon 11:59] =>  1:33
-   :END:
-   Refs:
-   + [[https://docs.tigergraph.com/v/3.2/start/gsql-102/define-the-schema][Define the Schema - TigerGraph Documentation]]
-   + [[https://ldbcouncil.org/benchmarks/snb/][LDBC Social Network Benchmark (LDBC SNB)]]
-
-*** Get the data
-    #+begin_src bash
-      wget https://s3-us-west-1.amazonaws.com/tigergraph-benchmark-dataset/LDBC/SF-1/ldbc_snb_data-sf1.tar.gz
-    #+end_src
-*** Create the schema
-    #+begin_src sql :tangle ldbc-social/01-create-graph.gsql :mkdirp yes
-      //clear the current catalog.
-      // It may take a while since it restarts the subsystem services.
-      USE GLOBAL
-      DROP GRAPH ldbc_snb
-
-      # 1. Create graph
-      CREATE GRAPH ldbc_snb ()
-      USE GRAPH ldbc_snb
-
-      # 2. Create schema_change job to include all vertex/edge types
-      CREATE SCHEMA_CHANGE JOB change_schema_of_ldbc  FOR GRAPH ldbc_snb {
-        ## Post and Comment
-        ADD VERTEX Comment (PRIMARY_ID id UINT, creationDate DATETIME, locationIP STRING,
-          browserUsed STRING, content STRING, length UINT) WITH primary_id_as_attribute="TRUE";
-
-        ADD VERTEX Post (PRIMARY_ID id UINT, imageFile STRING, creationDate DATETIME,
-          locationIP STRING, browserUsed STRING, lang STRING, content STRING,
-          length UINT) WITH primary_id_as_attribute="TRUE";
-        ## organisation
-        ADD VERTEX Company (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
-        ADD VERTEX University (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
-        ## place
-        ADD VERTEX City (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
-        ADD VERTEX Country (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
-        ADD VERTEX Continent (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
-        ## etc
-        ADD  VERTEX Forum (PRIMARY_ID id UINT, title STRING, creationDate DATETIME) WITH primary_id_as_attribute="TRUE";
-        ADD  VERTEX Person (PRIMARY_ID id UINT, firstName STRING, lastName STRING, gender STRING, birthday DATETIME,
-         creationDate DATETIME, locationIP STRING, browserUsed STRING, speaks set<STRING>, email set<STRING>)
-         WITH primary_id_as_attribute="TRUE";
-        ADD VERTEX Tag (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
-        ADD VERTEX TagClass (PRIMARY_ID id UINT, name STRING, url STRING) WITH primary_id_as_attribute="TRUE";
-
-        // create edge types
-        ADD DIRECTED EDGE CONTAINER_OF (FROM Forum, TO Post) WITH REVERSE_EDGE="CONTAINER_OF_REVERSE";
-        ADD  DIRECTED EDGE HAS_CREATOR (FROM Comment|Post, TO Person) WITH REVERSE_EDGE="HAS_CREATOR_REVERSE";
-        ADD  DIRECTED EDGE HAS_INTEREST (FROM Person, TO Tag) WITH REVERSE_EDGE="HAS_INTEREST_REVERSE";
-        ADD DIRECTED EDGE HAS_MEMBER (FROM Forum, TO Person, joinDate DATETIME) WITH REVERSE_EDGE="HAS_MEMBER_REVERSE";
-        ADD DIRECTED EDGE HAS_MODERATOR (FROM Forum, TO Person) WITH REVERSE_EDGE="HAS_MODERATOR_REVERSE";
-        ADD DIRECTED EDGE HAS_TAG (FROM Comment|Post|Forum, TO Tag) WITH REVERSE_EDGE="HAS_TAG_REVERSE";
-        ADD DIRECTED EDGE HAS_TYPE (FROM Tag, TO TagClass) WITH REVERSE_EDGE="HAS_TYPE_REVERSE";
-        ADD  DIRECTED EDGE IS_LOCATED_IN (FROM Comment, TO Country
-                                        | FROM Post, TO Country
-                                        | FROM Company, TO Country
-                                        | FROM Person, TO City
-                                        | FROM University, TO City) WITH REVERSE_EDGE="IS_LOCATED_IN_REVERSE";
-        ADD DIRECTED EDGE IS_PART_OF (FROM City, TO Country
-                                     | FROM Country, TO Continent) WITH REVERSE_EDGE="IS_PART_OF_REVERSE";
-        ADD DIRECTED EDGE IS_SUBCLASS_OF (FROM TagClass, TO TagClass) WITH REVERSE_EDGE="IS_SUBCLASS_OF_REVERSE";
-        ADD UNDIRECTED EDGE KNOWS (FROM Person, TO Person, creationDate DATETIME);
-        ADD DIRECTED EDGE LIKES (FROM Person, TO Comment|Post, creationDate DATETIME) WITH REVERSE_EDGE="LIKES_REVERSE";
-        ADD DIRECTED EDGE REPLY_OF (FROM Comment, TO Comment|Post) WITH REVERSE_EDGE="REPLY_OF_REVERSE";
-        ADD DIRECTED EDGE STUDY_AT (FROM Person, TO University, classYear INT) WITH REVERSE_EDGE="STUDY_AT_REVERSE";
-        ADD DIRECTED EDGE WORK_AT (FROM Person, TO Company, workFrom INT) WITH REVERSE_EDGE="WORK_AT_REVERSE";
-      }
-
-      # 3. Run schema_change job
-      RUN SCHEMA_CHANGE JOB change_schema_of_ldbc
-
-      # 4. Drop schema_change job
-      DROP JOB change_schema_of_ldbc
-
-    #+end_src
-
-*** Load the data
-    #+begin_src sql :tangle ldbc-social/02-load-data.gsql :mkdirp yes
-      USE GRAPH ldbc_snb
-      CREATE LOADING JOB load_ldbc_snb FOR GRAPH ldbc_snb {
-        DEFINE FILENAME v_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_0_0.csv";
-        DEFINE FILENAME v_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_0_0.csv";
-        DEFINE FILENAME v_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_0_0.csv";
-        DEFINE FILENAME v_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_0_0.csv";
-        DEFINE FILENAME v_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_0_0.csv";
-        DEFINE FILENAME v_forum_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_0_0.csv";
-        DEFINE FILENAME v_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/organisation_0_0.csv";
-        DEFINE FILENAME v_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tagclass_0_0.csv";
-        DEFINE FILENAME person_knows_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_knows_person_0_0.csv";
-        DEFINE FILENAME comment_replyOf_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_replyOf_post_0_0.csv";
-        DEFINE FILENAME comment_replyOf_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_replyOf_comment_0_0.csv";
-        DEFINE FILENAME post_hasCreator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_hasCreator_person_0_0.csv";
-        DEFINE FILENAME post_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_hasTag_tag_0_0.csv";
-        DEFINE FILENAME comment_hasCreator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_hasCreator_person_0_0.csv";
-        DEFINE FILENAME post_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_isLocatedIn_place_0_0.csv";
-        DEFINE FILENAME comment_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_hasTag_tag_0_0.csv";
-        DEFINE FILENAME comment_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_isLocatedIn_place_0_0.csv";
-        DEFINE FILENAME forum_containerOf_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_containerOf_post_0_0.csv";
-        DEFINE FILENAME forum_hasMember_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasMember_person_0_0.csv";
-        DEFINE FILENAME forum_hasModerator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasModerator_person_0_0.csv";
-        DEFINE FILENAME forum_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasTag_tag_0_0.csv";
-        DEFINE FILENAME organisation_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/organisation_isLocatedIn_place_0_0.csv";
-        DEFINE FILENAME person_hasInterest_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_hasInterest_tag_0_0.csv";
-        DEFINE FILENAME person_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_isLocatedIn_place_0_0.csv";
-        DEFINE FILENAME person_likes_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_likes_comment_0_0.csv";
-        DEFINE FILENAME person_likes_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_likes_post_0_0.csv";
-        DEFINE FILENAME person_studyAt_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_studyAt_organisation_0_0.csv";
-        DEFINE FILENAME person_workAt_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_workAt_organisation_0_0.csv";
-        DEFINE FILENAME place_isPartOf_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_isPartOf_place_0_0.csv";
-        DEFINE FILENAME tag_hasType_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_hasType_tagclass_0_0.csv";
-        DEFINE FILENAME tagclass_isSubclassOf_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tagclass_isSubclassOf_tagclass_0_0.csv";
-
-
-
-
-
-        // load vertex
-        LOAD v_comment_file
-          TO VERTEX Comment VALUES ($0, $1, $2, $3, $4, $5) USING header="true", separator="|";
-        LOAD v_post_file
-          TO VERTEX Post VALUES ($0, $1, $2, $3, $4, $5, $6, $7) USING header="true", separator="|";
-        LOAD v_organisation_file
-          TO VERTEX Company VALUES ($0, $2, $3) WHERE $1=="company",
-          TO VERTEX University VALUES ($0, $2, $3) WHERE $1=="university" USING header="true", separator="|";
-        LOAD v_place_file
-          TO VERTEX City VALUES ($0, $1, $2) WHERE $3=="city",
-          TO VERTEX Country VALUES ($0, $1, $2) WHERE $3=="country",
-          TO VERTEX Continent VALUES ($0, $1, $2) WHERE $3=="continent" USING header="true", separator="|";
-        LOAD v_forum_file
-          TO VERTEX Forum VALUES ($0, $1, $2) USING header="true", separator="|";
-        LOAD v_person_file
-          TO VERTEX Person VALUES ($0, $1, $2, $3, $4, $5, $6, $7, SPLIT($8,";"), SPLIT($9,";")) USING header="true", separator="|";
-        LOAD v_tag_file
-          TO VERTEX Tag VALUES ($0, $1, $2) USING header="true", separator="|";
-        LOAD v_tagclass_file
-          TO VERTEX TagClass VALUES ($0, $1, $2) USING header="true", separator="|";
-
-        // load edge
-        LOAD forum_containerOf_post_file
-          TO EDGE CONTAINER_OF VALUES ($0, $1) USING header="true", separator="|";
-        LOAD comment_hasCreator_person_file
-          TO EDGE HAS_CREATOR VALUES ($0 Comment, $1) USING header="true", separator="|";
-        LOAD post_hasCreator_person_file
-          TO EDGE HAS_CREATOR VALUES ($0 Post, $1) USING header="true", separator="|";
-        LOAD person_hasInterest_tag_file
-          TO EDGE HAS_INTEREST VALUES ($0, $1) USING header="true", separator="|";
-        LOAD forum_hasMember_person_file
-          TO EDGE HAS_MEMBER VALUES ($0, $1, $2) USING header="true", separator="|";
-        LOAD forum_hasModerator_person_file
-          TO EDGE HAS_MODERATOR VALUES ($0, $1) USING header="true", separator="|";
-        LOAD comment_hasTag_tag_file
-          TO EDGE HAS_TAG VALUES ($0 Comment, $1) USING header="true", separator="|";
-        LOAD post_hasTag_tag_file
-          TO EDGE HAS_TAG VALUES ($0 Post, $1) USING header="true", separator="|";
-        LOAD forum_hasTag_tag_file
-          TO EDGE HAS_TAG VALUES ($0 Forum, $1) USING header="true", separator="|";
-        LOAD tag_hasType_tagclass_file
-          TO EDGE HAS_TYPE VALUES ($0, $1) USING header="true", separator="|";
-        LOAD organisation_isLocatedIn_place_file
-          TO EDGE IS_LOCATED_IN VALUES ($0 Company, $1 Country) WHERE to_int($1) < 111,
-          TO EDGE IS_LOCATED_IN VALUES ($0 University, $1 City) WHERE to_int($1) > 110 USING header="true", separator="|";
-        LOAD comment_isLocatedIn_place_file
-          TO EDGE IS_LOCATED_IN VALUES ($0 Comment, $1 Country) USING header="true", separator="|";
-        LOAD post_isLocatedIn_place_file
-          TO EDGE IS_LOCATED_IN VALUES ($0 Post, $1 Country) USING header="true", separator="|";
-        LOAD person_isLocatedIn_place_file
-          TO EDGE IS_LOCATED_IN VALUES ($0 Person, $1 City) USING header="true", separator="|";
-        LOAD place_isPartOf_place_file
-          TO EDGE IS_PART_OF VALUES ($0 Country, $1 Continent) WHERE to_int($0) < 111,
-          TO EDGE IS_PART_OF VALUES ($0 City, $1 Country) WHERE to_int($0) > 110 USING header="true", separator="|";
-        LOAD tagclass_isSubclassOf_tagclass_file
-          TO EDGE IS_SUBCLASS_OF VALUES ($0, $1) USING header="true", separator="|";
-        LOAD person_knows_person_file
-          TO EDGE KNOWS VALUES ($0, $1, $2) USING header="true", separator="|";
-        LOAD person_likes_comment_file
-          TO EDGE LIKES VALUES ($0, $1 Comment, $2) USING header="true", separator="|";
-        LOAD person_likes_post_file
-          TO EDGE LIKES VALUES ($0, $1 Post, $2) USING header="true", separator="|";
-        LOAD comment_replyOf_comment_file
-          TO EDGE REPLY_OF VALUES ($0, $1 Comment) USING header="true", separator="|";
-        LOAD comment_replyOf_post_file
-          TO EDGE REPLY_OF VALUES ($0, $1 Post) USING header="true", separator="|";
-        LOAD person_studyAt_organisation_file
-          TO EDGE STUDY_AT VALUES ($0, $1, $2) USING header="true", separator="|";
-        LOAD person_workAt_organisation_file
-          TO EDGE WORK_AT VALUES ($0, $1, $2) USING header="true", separator="|";
-      }
-
-      RUN LOADING JOB load_ldbc_snb
-
-      DROP JOB load_ldbc_snb
-    #+end_src
-** Northwind
-*** Resources
-*** Create graph
-    #+begin_src sql :tangle northwind/01-create-graph.gsql :mkdirp yes
-      # -*- mode: sql; -*-
-      drop graph Northwind
-      create graph Northwind()
-      use graph Northwind
-      create schema_change job schema_change_northwind {
-        # Vertex Reps
-        ADD VERTEX Reps(PRIMARY_ID id INT, LastName STRING, FirstName STRING, Title STRING, CourtesyTitle STRING, BirthDate DATETIME, HireDate DATETIME, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, HomePhone STRING, PhoneExtension STRING, ReportsTo INT, group_id INT, is_root BOOL) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
-
-        ADD VERTEX Customers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, Phone STRING, referred_by STRING, group_id INT, is_root BOOL, Type STRING DEFAULT "DIRECT") WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
-
-        # Vertex Orders
-        ADD VERTEX Orders(PRIMARY_ID id INT, CustomerID STRING, EmployeeID INT, OrderDate DATETIME, RequiredDate DATETIME, ShippedDate DATETIME, ShipVia INT, Freight DOUBLE, ShipName STRING, ShipAddress STRING, ShipCity STRING, ShipRegion STRING, ShipPostalCode STRING, ShipCountry STRING, OrderAmount DOUBLE, CommissionAmount DOUBLE, fraud_score DOUBLE, ReturnedDate STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
-
-        # Vertex Products
-        ADD VERTEX Products(PRIMARY_ID id INT, ProductName STRING, SupplierID INT, CategoryID INT, QuantityPerUnit STRING, UnitPrice DOUBLE, UnitsInStock INT, UnitsOnOrder INT, ReorderLevel INT, Discontinued INT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
-
-        ADD VERTEX Territories(PRIMARY_ID id STRING, Description STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
-
-        ADD VERTEX Regions(PRIMARY_ID id INT, Description STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
-
-        ADD VERTEX Suppliers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, ContactTitle STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Phone STRING, Country STRING, HomePage STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
-
-        ADD DIRECTED EDGE include(FROM Orders, TO Products, Quantity INT, UnitPrice DOUBLE, Discount DOUBLE, LineTotalNoDiscount DOUBLE, LineTotal DOUBLE) WITH REVERSE_EDGE="reverse_include";
-
-        ADD DIRECTED EDGE referredby(FROM Customers, TO Customers) WITH REVERSE_EDGE="reverse_referredby";
-
-        ADD DIRECTED EDGE fulfill(FROM Reps, TO Orders) WITH REVERSE_EDGE="reverse_fulfill";
-
-        ADD UNDIRECTED EDGE place(FROM Customers, TO Orders, CustomerID STRING, OrderID INT);
-
-        ADD UNDIRECTED EDGE operate_in(FROM Reps, TO Territories);
-
-        ADD UNDIRECTED EDGE located_in(FROM Territories, TO Regions);
-
-        ADD UNDIRECTED EDGE rep_customer(FROM Reps, TO Customers);
-
-        ADD DIRECTED EDGE provide(FROM Suppliers, TO Products) WITH REVERSE_EDGE="reverse_provide";
-
-        ADD DIRECTED EDGE deliver_within(FROM Suppliers, TO Regions) WITH REVERSE_EDGE="reverse_deliver_within";
-      }
-      run schema_change job schema_change_northwind
-      drop job schema_change_northwind
-#+end_src
-*** Load data
-    #+begin_src sql :tangle northwind/02-load-data.gsql :mkdirp yes
-      # -*- mode: sql; -*-
-      use graph Northwind
-      CREATE LOADING JOB load_all_north {
-        DEFINE FILENAME categories="/home/tigergraph/mydata/northwind/data/categories.csv";
-        DEFINE FILENAME customers="/home/tigergraph/mydata/northwind/data/customers.csv";
-        DEFINE FILENAME employees="/home/tigergraph/mydata/northwind/data/employees.csv";
-        DEFINE FILENAME employee_territories="/home/tigergraph/mydata/northwind/data/employee-territories.csv";
-        DEFINE FILENAME order_details="/home/tigergraph/mydata/northwind/data/order-details.csv";
-        DEFINE FILENAME orders="/home/tigergraph/mydata/northwind/data/orders.csv";
-        DEFINE FILENAME products="/home/tigergraph/mydata/northwind/data/products.csv";
-        DEFINE FILENAME referrals="/home/tigergraph/mydata/northwind/data/referrals.csv";
-        DEFINE FILENAME regions="/home/tigergraph/mydata/northwind/data/regions.csv";
-        DEFINE FILENAME suppliers="/home/tigergraph/mydata/northwind/data/suppliers.csv";
-        DEFINE FILENAME territories="/home/tigergraph/mydata/northwind/data/territories.csv";
-
-        LOAD employees TO VERTEX Reps VALUES($"EmployeeID", $"LastName", $"FirstName", $"Title", $"TitleOfCourtesy", $"BirthDate", $"HireDate", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"HomePhone", $"Extension", $"ReportsTo", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD referrals TO EDGE referredby VALUES("$from_rep", $"to_rep") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-
-        LOAD employee_territories TO EDGE operate_in VALUES($"EmployeeID", $"TerritoryID") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD regions TO VERTEX Regions VALUES($"RegionID", $"RegionDescription") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD territories TO VERTEX Territories VALUES($"TerritoryID", $"TerritoryDescription") USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD territories TO EDGE located_in VALUES($"TerritoryID", $"RegionID") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD customers TO VERTEX Customers VALUES($"CustomerID", $"CompanyName", $"ContactName", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"Phone", $"ReferredBy", _, _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD suppliers TO VERTEX Suppliers VALUES($"SupplierID", $"CompanyName", $"ContactName", $"ContactTitle", $"Address", $"City", $"Region", $"PostalCode", $"Phone", $"Country", $"HomePage") USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD suppliers TO EDGE deliver_within VALUES($"SupplierID", $"Region") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD products TO VERTEX Products VALUES($"ProductID", $"ProductName", $"SupplierID", $"CategoryID", $"QuantityPerUnit", $"UnitPrice", $"UnitsInStock", $"UnitsOnOrder", $"ReorderLevel", $"Discontinued") USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD products TO EDGE provide VALUES($"SupplierID", $"ProductID") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD order_details TO VERTEX Orders VALUES($"OrderID", _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD order_details TO EDGE include VALUES($"OrderID", $"ProductID", $"Quantity", $"UnitPrice", $"Discount", $"LineTotalNoDiscount", $"LineTotal") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD orders TO VERTEX Orders VALUES($"OrderID", $"CustomerID", $"EmployeeID", $"OrderDate", $"RequiredDate", $"ShippedDate", $"ShipVia", $"Freight", $"ShipName", $"ShipAddress", $"ShipCity", $"ShipRegion", $"ShipPostalCode", $"ShipCountry", $"OrderAmt", $"CommissionAmt",_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD orders TO EDGE place VALUES($"CustomerID", $"OrderID", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD orders TO EDGE rep_customer VALUES($"EmployeeID", $"CustomerID") USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD orders TO EDGE fulfill VALUES($"EmployeeID", $"OrderID") USING SEPARATOR=",", HEADER="true", EOL="\n";
-      }
-      run loading job load_all_north
-      drop job load_all_north
-    #+end_src
-*** Add queries
