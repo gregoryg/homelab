@@ -1,0 +1,14 @@
+* Setting variables needed by =terraform apply=
+  To avoid checking in sensitive info, use environment variables
+
+  Set them in the shell session using the credentials file
+
+  At apply time, run one of the following 2 commands
+  #+begin_src bash
+    # terraform plan -var rancher-token="${rancher_user}:${rancher_pass}" -var rancher-url="${rancher_url}" -out plan.out
+    terraform apply -varfile my.tfvars -var rancher-token="${rancher_user}:${rancher_pass}" -var rancher-url="${rancher_url}" -auto-approve
+  #+end_src
+** TODO Improve credentials passing
+   Doc shows existing environment variables that are used by the provider
+   + [[https://registry.terraform.io/providers/rancher/rancher2/latest/docs#argument-reference]]
+     + RANCHER_URL, RANCHER_TOKEN_KEY

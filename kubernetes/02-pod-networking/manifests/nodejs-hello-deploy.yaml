@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: nodejs-hello
+  name: nodejs-hello
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodejs-hello
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nodejs-hello
+    spec:
+      containers:
+      - image: heroku/nodejs-hello-world
+        name: nodejs-hello-world
+      - image: gregoryg/sh-net-utils
+        name: utils
+        command: ["sleep"]
+        args: ["1d"]
