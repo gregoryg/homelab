@@ -18,6 +18,7 @@
   This README is a literate programming document.  When this document is loaded in Emacs
   with Org Mode, it can generate scripts and configuration for the documented steps.
 
+  For some interesting examples --  including getting into complexities of chaining multiple code blocks, see [[http://www.howardism.org/Technical/Emacs/literate-programming-tutorial.html][Introduction to Literate Programming]] by Howard Abrams
 
 ** Set up shell session
    This starts up or resuses a shell session named =homelab-sh= for interactive use.  Some
