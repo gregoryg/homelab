@@ -42,261 +42,268 @@
 *** Graph creation
 
      #+begin_src sql :tangle custexp/custexp-graph.gsql :mkdirp yes
-     create graph CustExp()
+       USE GLOBAL
+       DROP GRAPH CustExp
 
-     use graph CustExp
+       create graph CustExp()
 
-     create schema_change job custexp_schema for graph CustExp {
+       use graph CustExp
 
-            ADD VERTEX Account(PRIMARY_ID Account_id STRING,
-                                  Name STRING,
-                                  Parentid STRING,
-                                  BillingStreet STRING,
-                                  BillingCity STRING,
-                                  BillingState STRING,
-                                  BillingPostalCode STRING,
-                                  BillingCountry STRING,
-                                  Phone STRING,
-                                  Website STRING,
-                                  Industry STRING,
-                                  AnnualRevenue FLOAT,
-                                  NumberofEmployees INT,
-                                  Description STRING,
-                                  AccountOwnerid STRING,
-                                  CreatedDate DATETIME,
-                                  CreatedByid STRING,
-                                  LastModifiedDate DATETIME,
-                                  LastModifiedByid STRING,
-                                  LastActivityDate DATETIME,
-                                  AccountSource STRING)
-                                  WITH STATS="OUTDEGREE_BY_EDGETYPE",
-                                  PRIMARY_ID_AS_ATTRIBUTE="false";
+       create schema_change job custexp_schema for graph CustExp {
 
-            ADD VERTEX Campaign(PRIMARY_ID Campaign_id STRING,
-                                   Name STRING,
-                                   Parentid STRING,
-                                   Campaign_Type STRING,
-                                   Status STRING,
-                                   StartDate DATETIME,
-                                   EndDate DATETIME,
-                                   BudgetedCost FLOAT,
-                                   ActualCost FLOAT,
-                                   IsActive BOOL,
-                                   Description STRING,
-                                   Number_Of_Leads INT,
-                                   Number_Of_Converted_Leads INT,
-                                   Number_Of_Responses INT,
-                                   Number_Of_Opportunities INT,
-                                   Number_Of_Won_Opportunities INT,
-                                   Amount_All_Opportunities FLOAT,
-                                   Amount_Won_Opportunities FLOAT,
-                                   Hierarchy_Number_Of_Leads INT,
-                                   Hierarchy_Number_Of_Converted_Leads INT,
-                                   Hierarchy_Number_Of_Contacts INT,
-                                   Hierarchy_Number_Of_Responses INT,
-                                   Hierarchy_Number_Of_Opportunities INT,
-                                   Hierarchy_Number_Of_Won_Opportunities INT,
-                                   Hierarchy_Amount_Won_Opportunities FLOAT,
-                                   Hierarchy_Amount_All_Opportunities FLOAT,
-                                   Hierarchy_Budgeted_Cost FLOAT,
-                                   Hierarchy_Actual_Cost FLOAT,
-                                   Campaign_Owner_id STRING,
-                                   CreatedDate DATETIME,
-                                   LastModifiedDate DATETIME,
-                                   LastModifiedByid STRING)
-                          WITH STATS="OUTDEGREE_BY_EDGETYPE",
-                          PRIMARY_ID_AS_ATTRIBUTE="false";
+              ADD VERTEX Account(PRIMARY_ID Account_id STRING,
+                                    Name STRING,
+                                    Parentid STRING,
+                                    BillingStreet STRING,
+                                    BillingCity STRING,
+                                    BillingState STRING,
+                                    BillingPostalCode STRING,
+                                    BillingCountry STRING,
+                                    Phone STRING,
+                                    Website STRING,
+                                    Industry STRING,
+                                    AnnualRevenue FLOAT,
+                                    NumberofEmployees INT,
+                                    Description STRING,
+                                    AccountOwnerid STRING,
+                                    CreatedDate DATETIME,
+                                    CreatedByid STRING,
+                                    LastModifiedDate DATETIME,
+                                    LastModifiedByid STRING,
+                                    LastActivityDate DATETIME,
+                                    AccountSource STRING)
+                                    WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                                    PRIMARY_ID_AS_ATTRIBUTE="false";
 
-            ADD VERTEX Contact(PRIMARY_ID Contact_id STRING,
-                                  FirstName STRING,
-                                  LastName STRING,
-                                  Phone STRING,
-                                  Email STRING,
-                                  Title STRING,
-                                  Department STRING,
-                                  LeadSource STRING,
-                                  Description STRING,
-                                  Contact_Ownerid STRING,
-                                  Has_Opted_Out_Of_Email BOOL,
-                                  DoNotCall BOOL,
-                                  CreatedDate DATETIME,
-                                  CreatedByid STRING,
-                                  LastModifiedDate DATETIME,
-                                  LastModifiedByid STRING,
-                                  Free_Trial_Start_date DATETIME,
-                                  Free_Trial_Status STRING,
-                                  Signed_Up_For_Free_Trial_On DATETIME,
-                                  Dev_edition_Date_Signed_Up DATETIME,
-                                  Employee_Band STRING,
-                                  Original_Lead_Source STRING)
-                          WITH STATS="OUTDEGREE_BY_EDGETYPE",
-                          PRIMARY_ID_AS_ATTRIBUTE="false";
-
-            ADD VERTEX Lead(PRIMARY_ID Lead_id STRING,
-                               FirstName STRING,
-                               LastName STRING,
-                               Title STRING,
-                               Company STRING,
-                               City STRING,
-                               State STRING,
-                               LeadSource STRING,
-                               Status STRING,
-                               Industry STRING,
-                               Ownerid STRING,
-                               HasOptedOutOfEmail BOOL,
-                               IsConverted BOOL,
-                               ConvertedDate DATETIME,
-                               ConvertedAccountId STRING,
-                               ConvertedContactId STRING,
-                               ConvertedOpportunityId STRING,
-                               IsUnreadByOwner BOOL,
-                               CreatedDate DATETIME,
-                               CreatedById STRING,
-                               LastModifiedDate DATETIME,
-                               LastModifiedById STRING,
-                               LastActivityDate DATETIME,
-                               DoNotCall BOOL,
-                               LastTransferDate DATETIME,
-                               Free_Trial_License_Key__c STRING,
-                               Free_Trial_Start_Date__c DATETIME,
-                               Signed_up_for_free_trial_on__c DATETIME,
-                               Agree_to_FT_LicenseAgreement__c BOOL,
-                               Free_Trial_Project_Notes__c STRING,
-                               Free_Trial_Follow_Up_Notes__c STRING,
-                               Started_Test_Drive__c BOOL,
-                               Free_Trial_Status__c STRING,
-                               LinkedIn_Profile__c STRING,
-                               Dev_Edition_Agree_to_License_Agreement__c BOOL,
-                               Dev_Edition_Date_Signed_Up__c DATETIME,
-                               Free_Trial_Renewed_Date__c DATETIME,
-                               Goals_of_Developer_Edition__c STRING,
-                               Goal_of_Developer_Edition_Other__c STRING,
-                               Employee_Band__c STRING,
-                               Are_you_familar_with_Graph_db__c STRING,
-                               Competitor_Notes__c STRING,
-                               Use_Graph_Score__c STRING,
-                               What_s_your_interest_in_TigerGraph__c STRING,
-                               Interest_Notes__c STRING,
-                               Interest_Score__c STRING,
-                               What_capabilities_are_you_looking_for__c STRING,
-                               Do_you_have_a_timeline__c STRING,
-                               Contacts_Role__c STRING,
-                               Title_Rank__c STRING,
-                               Timeline_Score__c INT,
-                               Role_Score__c INT,
-                               Title_Score__c INT,
-                               How_do_you_want_to_deploy_o__c STRING,
-                               SQL_SCORE__c INT,
-                               Original_Lead_Source__c STRING,
-                               Event_Notes_L__c STRING,
-                               DiscoverOrg_EmployeeID__c STRING,
-                               DiscoverOrg_CompanyID__c STRING)
-                      WITH STATS="OUTDEGREE_BY_EDGETYPE",
-                      PRIMARY_ID_AS_ATTRIBUTE="false";
-
-             ADD VERTEX CampaignMember(PRIMARY_ID CampaignMemberid STRING,
-                                           IsDeleted BOOL,
-                                           CampaignId STRING,
-                                           LeadId STRING,
-                                           ContactId STRING,
-                                           Status STRING,
-                                           HasResponded BOOL,
-                                           IsPrimary BOOL,
-                                           CreatedDate DATETIME,
-                                           CreatedById STRING,
-                                           LastModifiedDate DATETIME,
-                                           LastModifiedById STRING,
-                                           SystemModstamp STRING,
-                                           FirstRespondedDate DATETIME)
+              ADD VERTEX Campaign(PRIMARY_ID Campaign_id STRING,
+                                     Name STRING,
+                                     Parentid STRING,
+                                     Campaign_Type STRING,
+                                     Status STRING,
+                                     StartDate DATETIME,
+                                     EndDate DATETIME,
+                                     BudgetedCost FLOAT,
+                                     ActualCost FLOAT,
+                                     IsActive BOOL,
+                                     Description STRING,
+                                     Number_Of_Leads INT,
+                                     Number_Of_Converted_Leads INT,
+                                     Number_Of_Responses INT,
+                                     Number_Of_Opportunities INT,
+                                     Number_Of_Won_Opportunities INT,
+                                     Amount_All_Opportunities FLOAT,
+                                     Amount_Won_Opportunities FLOAT,
+                                     Hierarchy_Number_Of_Leads INT,
+                                     Hierarchy_Number_Of_Converted_Leads INT,
+                                     Hierarchy_Number_Of_Contacts INT,
+                                     Hierarchy_Number_Of_Responses INT,
+                                     Hierarchy_Number_Of_Opportunities INT,
+                                     Hierarchy_Number_Of_Won_Opportunities INT,
+                                     Hierarchy_Amount_Won_Opportunities FLOAT,
+                                     Hierarchy_Amount_All_Opportunities FLOAT,
+                                     Hierarchy_Budgeted_Cost FLOAT,
+                                     Hierarchy_Actual_Cost FLOAT,
+                                     Campaign_Owner_id STRING,
+                                     CreatedDate DATETIME,
+                                     LastModifiedDate DATETIME,
+                                     LastModifiedByid STRING)
                             WITH STATS="OUTDEGREE_BY_EDGETYPE",
                             PRIMARY_ID_AS_ATTRIBUTE="false";
 
-             ADD VERTEX Opportunity(PRIMARY_ID Opportunity_id STRING,
-                                       IsDeleted BOOL,
-                                       AccountID STRING,
-                                       IsPrivate BOOL,
-                                       Name STRING,
-                                       Description STRING,
-                                       StageName STRING,
-                                       StageSortOrder INT,
-                                       Amount FLOAT,
-                                       Probability FLOAT,
-                                       ExpectedRevenue FLOAT,
-                                       CloseDate DATETIME,
-                                       Opportunity_Type STRING,
-                                       NextStep STRING,
-                                       LeadSource STRING,
-                                       IsClosed BOOL,
-                                       IsWon BOOL,
-                                       ForecastCategory STRING,
-                                       ForecastCategoryName STRING,
-                                       CampaignId STRING,
-                                       HasOpportunityLineItem BOOL,
-                                       Pricebook2Id STRING,
-                                       Ownerid STRING,
-                                       CreatedDate DATETIME,
-                                       CreatedById STRING,
-                                       LastModified DATETIME,
-                                       LastModifiedById STRING,
-                                       SystemModstamp STRING,
-                                       LastActivityDate DATETIME,
-                                       LastStageChangeDate DATETIME,
-                                       FiscalYear STRING,
-                                       FiscalQuarter STRING,
-                                       Budget_Confirmed__c BOOL,
-                                       Discovery_Completed__c BOOL,
-                                       ROI_Analysis_Completed__c BOOL,
-                                       Referral_Partner_Company__c STRING,
-                                       Stage_Moved_to_POC__c DATETIME,
-                                       Are_you_familiar_with_Graph_db_O__c STRING,
-                                       Competitor_Notes_O__c STRING,
-                                       Contacts_Role_o__c STRING,
-                                       Do_you_have_a_timeline__c STRING,
-                                       How_do_you_want_to_deploy_o__c STRING,
-                                       Interest_Notes_o__c STRING,
-                                       Interest_Score_o__c INT,
-                                       Role_Score_o__c INT,
-                                       SQL_SCORE_o__c INT,
-                                       Timeline_Score_o__c INT,
-                                       Title_Rank__c STRING,
-                                       Title_Score_o__c INT,
-                                       Use_Graph_Score_o__c INT)
+              ADD VERTEX Contact(PRIMARY_ID Contact_id STRING,
+                                    FirstName STRING,
+                                    LastName STRING,
+                                    Phone STRING,
+                                    Email STRING,
+                                    Title STRING,
+                                    Department STRING,
+                                    LeadSource STRING,
+                                    Description STRING,
+                                    Contact_Ownerid STRING,
+                                    Has_Opted_Out_Of_Email BOOL,
+                                    DoNotCall BOOL,
+                                    CreatedDate DATETIME,
+                                    CreatedByid STRING,
+                                    LastModifiedDate DATETIME,
+                                    LastModifiedByid STRING,
+                                    Free_Trial_Start_date DATETIME,
+                                    Free_Trial_Status STRING,
+                                    Signed_Up_For_Free_Trial_On DATETIME,
+                                    Dev_edition_Date_Signed_Up DATETIME,
+                                    Employee_Band STRING,
+                                    Original_Lead_Source STRING)
+                            WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                            PRIMARY_ID_AS_ATTRIBUTE="false";
+
+              ADD VERTEX Lead(PRIMARY_ID Lead_id STRING,
+                                 FirstName STRING,
+                                 LastName STRING,
+                                 Title STRING,
+                                 Company STRING,
+                                 City STRING,
+                                 State STRING,
+                                 LeadSource STRING,
+                                 Status STRING,
+                                 Industry STRING,
+                                 Ownerid STRING,
+                                 HasOptedOutOfEmail BOOL,
+                                 IsConverted BOOL,
+                                 ConvertedDate DATETIME,
+                                 ConvertedAccountId STRING,
+                                 ConvertedContactId STRING,
+                                 ConvertedOpportunityId STRING,
+                                 IsUnreadByOwner BOOL,
+                                 CreatedDate DATETIME,
+                                 CreatedById STRING,
+                                 LastModifiedDate DATETIME,
+                                 LastModifiedById STRING,
+                                 LastActivityDate DATETIME,
+                                 DoNotCall BOOL,
+                                 LastTransferDate DATETIME,
+                                 Free_Trial_License_Key__c STRING,
+                                 Free_Trial_Start_Date__c DATETIME,
+                                 Signed_up_for_free_trial_on__c DATETIME,
+                                 Agree_to_FT_LicenseAgreement__c BOOL,
+                                 Free_Trial_Project_Notes__c STRING,
+                                 Free_Trial_Follow_Up_Notes__c STRING,
+                                 Started_Test_Drive__c BOOL,
+                                 Free_Trial_Status__c STRING,
+                                 LinkedIn_Profile__c STRING,
+                                 Dev_Edition_Agree_to_License_Agreement__c BOOL,
+                                 Dev_Edition_Date_Signed_Up__c DATETIME,
+                                 Free_Trial_Renewed_Date__c DATETIME,
+                                 Goals_of_Developer_Edition__c STRING,
+                                 Goal_of_Developer_Edition_Other__c STRING,
+                                 Employee_Band__c STRING,
+                                 Are_you_familar_with_Graph_db__c STRING,
+                                 Competitor_Notes__c STRING,
+                                 Use_Graph_Score__c STRING,
+                                 What_s_your_interest_in_TigerGraph__c STRING,
+                                 Interest_Notes__c STRING,
+                                 Interest_Score__c STRING,
+                                 What_capabilities_are_you_looking_for__c STRING,
+                                 Do_you_have_a_timeline__c STRING,
+                                 Contacts_Role__c STRING,
+                                 Title_Rank__c STRING,
+                                 Timeline_Score__c INT,
+                                 Role_Score__c INT,
+                                 Title_Score__c INT,
+                                 How_do_you_want_to_deploy_o__c STRING,
+                                 SQL_SCORE__c INT,
+                                 Original_Lead_Source__c STRING,
+                                 Event_Notes_L__c STRING,
+                                 DiscoverOrg_EmployeeID__c STRING,
+                                 DiscoverOrg_CompanyID__c STRING)
+                        WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                        PRIMARY_ID_AS_ATTRIBUTE="false";
+
+               ADD VERTEX CampaignMember(PRIMARY_ID CampaignMemberid STRING,
+                                             IsDeleted BOOL,
+                                             CampaignId STRING,
+                                             LeadId STRING,
+                                             ContactId STRING,
+                                             Status STRING,
+                                             HasResponded BOOL,
+                                             IsPrimary BOOL,
+                                             CreatedDate DATETIME,
+                                             CreatedById STRING,
+                                             LastModifiedDate DATETIME,
+                                             LastModifiedById STRING,
+                                             SystemModstamp STRING,
+                                             FirstRespondedDate DATETIME)
                               WITH STATS="OUTDEGREE_BY_EDGETYPE",
                               PRIMARY_ID_AS_ATTRIBUTE="false";
 
-               ADD VERTEX Industry(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+               ADD VERTEX Opportunity(PRIMARY_ID Opportunity_id STRING,
+                                         IsDeleted BOOL,
+                                         AccountID STRING,
+                                         IsPrivate BOOL,
+                                         Name STRING,
+                                         Description STRING,
+                                         StageName STRING,
+                                         StageSortOrder INT,
+                                         Amount FLOAT,
+                                         Probability FLOAT,
+                                         ExpectedRevenue FLOAT,
+                                         CloseDate DATETIME,
+                                         Opportunity_Type STRING,
+                                         NextStep STRING,
+                                         LeadSource STRING,
+                                         IsClosed BOOL,
+                                         IsWon BOOL,
+                                         ForecastCategory STRING,
+                                         ForecastCategoryName STRING,
+                                         CampaignId STRING,
+                                         HasOpportunityLineItem BOOL,
+                                         Pricebook2Id STRING,
+                                         Ownerid STRING,
+                                         CreatedDate DATETIME,
+                                         CreatedById STRING,
+                                         LastModified DATETIME,
+                                         LastModifiedById STRING,
+                                         SystemModstamp STRING,
+                                         LastActivityDate DATETIME,
+                                         LastStageChangeDate DATETIME,
+                                         FiscalYear STRING,
+                                         FiscalQuarter STRING,
+                                         Budget_Confirmed__c BOOL,
+                                         Discovery_Completed__c BOOL,
+                                         ROI_Analysis_Completed__c BOOL,
+                                         Referral_Partner_Company__c STRING,
+                                         Stage_Moved_to_POC__c DATETIME,
+                                         Are_you_familiar_with_Graph_db_O__c STRING,
+                                         Competitor_Notes_O__c STRING,
+                                         Contacts_Role_o__c STRING,
+                                         Do_you_have_a_timeline__c STRING,
+                                         How_do_you_want_to_deploy_o__c STRING,
+                                         Interest_Notes_o__c STRING,
+                                         Interest_Score_o__c INT,
+                                         Role_Score_o__c INT,
+                                         SQL_SCORE_o__c INT,
+                                         Timeline_Score_o__c INT,
+                                         Title_Rank__c STRING,
+                                         Title_Score_o__c INT,
+                                         Use_Graph_Score_o__c INT)
+                                WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                                PRIMARY_ID_AS_ATTRIBUTE="false";
 
-               ADD VERTEX LeadSource(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+                 ADD VERTEX Industry(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
 
-               ADD DIRECTED EDGE belongs_to(FROM Contact, TO Account) WITH REVERSE_EDGE="reverse_belongs_to";
+                 ADD VERTEX LeadSource(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
 
-               ADD DIRECTED EDGE converted(FROM Lead, TO Contact) WITH REVERSE_EDGE="reverse_converted";
+                 ADD DIRECTED EDGE belongs_to(FROM Contact, TO Account) WITH REVERSE_EDGE="reverse_belongs_to";
 
-               ADD DIRECTED EDGE is_active_as(FROM Lead, TO CampaignMember) WITH REVERSE_EDGE="reverse_is_active_as";
+                 ADD DIRECTED EDGE converted(FROM Lead, TO Contact) WITH REVERSE_EDGE="reverse_converted";
 
-               ADD DIRECTED EDGE is_part_of(FROM CampaignMember, TO Campaign) WITH REVERSE_EDGE="reverse_is_part_of";
+                 ADD DIRECTED EDGE is_active_as(FROM Lead, TO CampaignMember) WITH REVERSE_EDGE="reverse_is_active_as";
 
-               ADD DIRECTED EDGE Has_Role(FROM Contact, TO Opportunity, role STRING, id STRING) WITH REVERSE_EDGE="reverse_Has_Role";
+                 ADD DIRECTED EDGE is_part_of(FROM CampaignMember, TO Campaign) WITH REVERSE_EDGE="reverse_is_part_of";
 
-               ADD DIRECTED EDGE Has(FROM Account, TO Opportunity) WITH REVERSE_EDGE="reverse_Has";
+                 ADD DIRECTED EDGE Has_Role(FROM Contact, TO Opportunity, role STRING, id STRING) WITH REVERSE_EDGE="reverse_Has_Role";
 
-               ADD DIRECTED EDGE Is_Driven_By(FROM Opportunity, TO Campaign) WITH REVERSE_EDGE="reverse_Is_Driven_By";
+                 ADD DIRECTED EDGE Has(FROM Account, TO Opportunity) WITH REVERSE_EDGE="reverse_Has";
 
-               ADD DIRECTED EDGE is_connected_to(FROM Contact, TO CampaignMember) WITH REVERSE_EDGE="reverse_is_connected_to";
+                 ADD DIRECTED EDGE Is_Driven_By(FROM Opportunity, TO Campaign) WITH REVERSE_EDGE="reverse_Is_Driven_By";
 
-               ADD DIRECTED EDGE belongs_to_industry(FROM Account, TO Industry) WITH REVERSE_EDGE="reverse_belongs_to_industry";
+                 ADD DIRECTED EDGE is_connected_to(FROM Contact, TO CampaignMember) WITH REVERSE_EDGE="reverse_is_connected_to";
 
-               ADD DIRECTED EDGE created_by(FROM Account, TO LeadSource) WITH REVERSE_EDGE="reverse_created_by";
+                 ADD DIRECTED EDGE belongs_to_industry(FROM Account, TO Industry) WITH REVERSE_EDGE="reverse_belongs_to_industry";
 
-               ADD DIRECTED EDGE is_from(FROM Contact, TO LeadSource) WITH REVERSE_EDGE="reverse_is_from";
+                 ADD DIRECTED EDGE created_by(FROM Account, TO LeadSource) WITH REVERSE_EDGE="reverse_created_by";
 
-               ADD DIRECTED EDGE comes_from(FROM LeadSource, TO Lead) WITH REVERSE_EDGE="reverse_comes_from";
+                 ADD DIRECTED EDGE is_from(FROM Contact, TO LeadSource) WITH REVERSE_EDGE="reverse_is_from";
 
-               ADD DIRECTED EDGE comes_from_the(FROM Lead, TO Industry) WITH REVERSE_EDGE="reverse_comes_from_the";
+                 ADD DIRECTED EDGE comes_from(FROM LeadSource, TO Lead) WITH REVERSE_EDGE="reverse_comes_from";
 
-               ADD DIRECTED EDGE is_for_the(FROM Opportunity, TO Industry) WITH REVERSE_EDGE="reverse_is_for_the";
+                 ADD DIRECTED EDGE comes_from_the(FROM Lead, TO Industry) WITH REVERSE_EDGE="reverse_comes_from_the";
 
-     }
+                 ADD DIRECTED EDGE is_for_the(FROM Opportunity, TO Industry) WITH REVERSE_EDGE="reverse_is_for_the";
+
+       }
+
+       run schema_change job custexp_schema
+
+       drop job custexp_schema
     #+end_src
      #+begin_src bash :tangle custexp/01-create-graph.sh
        gsql custexp-graph.gsql
@@ -305,14 +312,17 @@
 
 *** data loading
      #+begin_src sql :tangle custexp/loading-job.gsql
+       use graph CustExp
+       drop job load_job_custexp
+
        CREATE LOADING JOB load_job_custexp FOR GRAPH CustExp {
-         DEFINE FILENAME Lead="/home/tigergraph/mydata/custexp/Lead.csv";
-         DEFINE FILENAME OpportunityContactRole="/home/tigergraph/mydata/custexp/OpportunityContactRole.csv";
-         DEFINE FILENAME Campaign="/home/tigergraph/mydata/custexp/Campaign.csv";
-         DEFINE FILENAME CampaignMember="/home/tigergraph/mydata/custexp/CampaignMember.csv";
-         DEFINE FILENAME Opportunity="/home/tigergraph/mydata/custexp/Opportunity.csv";
-         DEFINE FILENAME Account="/home/tigergraph/mydata/custexp/Account.csv";
-         DEFINE FILENAME Contact="/home/tigergraph/mydata/custexp/Contact.csv";
+         DEFINE FILENAME Lead="m1:/home/tigergraph/mydata/custexp/data/Lead.csv";
+         DEFINE FILENAME OpportunityContactRole="m1:/home/tigergraph/mydata/custexp/data/OpportunityContactRole.csv";
+         DEFINE FILENAME Campaign="m1:/home/tigergraph/mydata/custexp/data/Campaign.csv";
+         DEFINE FILENAME CampaignMember="m1:/home/tigergraph/mydata/custexp/data/CampaignMember.csv";
+         DEFINE FILENAME Opportunity="m1:/home/tigergraph/mydata/custexp/data/Opportunity.csv";
+         DEFINE FILENAME Account="m1:/home/tigergraph/mydata/custexp/data/Account.csv";
+         DEFINE FILENAME Contact="m1:/home/tigergraph/mydata/custexp/data/Contact.csv";
 
          LOAD Lead TO VERTEX Lead VALUES($0, $4, $5, _, $9, $11, $12, $24, $25, $26, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $43, $44, $46, $64, $65, $66, $67, $68, $69, $70, $71, $74, $57, $76, $77, $88, $89, $90, $91, $92, $93, $94, $95, $96, $97, $98, $99, $100, $101, $102, $103, $104, $105, $107, $109, $111, $112) USING SEPARATOR=",", HEADER="true", EOL="\n";
 
@@ -350,6 +360,10 @@
          LOAD Contact TO EDGE belongs_to VALUES($0, $2) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
          LOAD Contact TO EDGE is_from VALUES($0, $19) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
        }
+
+       run loading job load_job_custexp
+
+       drop job load_job_custexp
      #+end_src
 
     #+begin_src bash :tangle custexp/02-load-data.sh
@@ -358,7 +372,9 @@
     #+end_src
 *** Queries
       #+begin_src sql :tangle custexp/queries.gsql
-        CREATE QUERY CustomerJourney(vertex<Contact> customer, set<string> campaignTypes, datetime startTime, datetime endTime) FOR GRAPH CustExp {
+        USE GRAPH CustExp
+
+        CREATE DISTRIBUTED QUERY CustomerJourney(vertex<Contact> customer, set<string> campaignTypes, datetime startTime, datetime endTime) FOR GRAPH CustExp {
         /*
           Sample input:
                 Contact: Sam-Eisenberg
@@ -382,7 +398,7 @@
                              c.@camDesc = t.Description;
             print campaign as Campaign;
         }
-        CREATE QUERY SimilarCustomers(VERTEX<Contact> sourceCustomer, set<string> campaignTypes, INT topK) FOR GRAPH CustExp {
+        CREATE DISTRIBUTED QUERY SimilarCustomers(VERTEX<Contact> sourceCustomer, set<string> campaignTypes, INT topK) FOR GRAPH CustExp {
         /*
           This query calculates the Jaccard Similarity between a given customer (of type Contact) and
           every other customers (or Contacts) who share similar campaigns (of type Campaign).
@@ -448,7 +464,7 @@
                 //PRINT B;
                   PRINT B[B.FirstName, B.LastName, B.@similarity];
         }
-        CREATE QUERY CustJourney_Subgraph(vertex<Contact> customer, vertex<Opportunity> opportunity) FOR GRAPH CustExp {
+        CREATE DISTRIBUTED QUERY CustJourney_Subgraph(vertex<Contact> customer, vertex<Opportunity> opportunity) FOR GRAPH CustExp {
         /*
           Sample input:
               Contact: Sam-Eisenberg
@@ -692,6 +708,7 @@
     #+end_src
 ** Northwind
 *** Resources
+    + data:
 *** Create graph
     #+begin_src sql :tangle northwind/01-create-graph.gsql :mkdirp yes
       # -*- mode: sql; -*-
@@ -742,17 +759,17 @@
       # -*- mode: sql; -*-
       use graph Northwind
       CREATE LOADING JOB load_all_north {
-        DEFINE FILENAME categories="/home/tigergraph/mydata/northwind/data/categories.csv";
-        DEFINE FILENAME customers="/home/tigergraph/mydata/northwind/data/customers.csv";
-        DEFINE FILENAME employees="/home/tigergraph/mydata/northwind/data/employees.csv";
-        DEFINE FILENAME employee_territories="/home/tigergraph/mydata/northwind/data/employee-territories.csv";
-        DEFINE FILENAME order_details="/home/tigergraph/mydata/northwind/data/order-details.csv";
-        DEFINE FILENAME orders="/home/tigergraph/mydata/northwind/data/orders.csv";
-        DEFINE FILENAME products="/home/tigergraph/mydata/northwind/data/products.csv";
-        DEFINE FILENAME referrals="/home/tigergraph/mydata/northwind/data/referrals.csv";
-        DEFINE FILENAME regions="/home/tigergraph/mydata/northwind/data/regions.csv";
-        DEFINE FILENAME suppliers="/home/tigergraph/mydata/northwind/data/suppliers.csv";
-        DEFINE FILENAME territories="/home/tigergraph/mydata/northwind/data/territories.csv";
+        DEFINE FILENAME categories="m1:/home/tigergraph/mydata/northwind/data/categories.csv";
+        DEFINE FILENAME customers="m1:/home/tigergraph/mydata/northwind/data/customers.csv";
+        DEFINE FILENAME employees="m1:/home/tigergraph/mydata/northwind/data/employees.csv";
+        DEFINE FILENAME employee_territories="m1:/home/tigergraph/mydata/northwind/data/employee-territories.csv";
+        DEFINE FILENAME order_details="m1:/home/tigergraph/mydata/northwind/data/order-details.csv";
+        DEFINE FILENAME orders="m1:/home/tigergraph/mydata/northwind/data/orders.csv";
+        DEFINE FILENAME products="m1:/home/tigergraph/mydata/northwind/data/products.csv";
+        DEFINE FILENAME referrals="m1:/home/tigergraph/mydata/northwind/data/referrals.csv";
+        DEFINE FILENAME regions="m1:/home/tigergraph/mydata/northwind/data/regions.csv";
+        DEFINE FILENAME suppliers="m1:/home/tigergraph/mydata/northwind/data/suppliers.csv";
+        DEFINE FILENAME territories="m1:/home/tigergraph/mydata/northwind/data/territories.csv";
 
         LOAD employees TO VERTEX Reps VALUES($"EmployeeID", $"LastName", $"FirstName", $"Title", $"TitleOfCourtesy", $"BirthDate", $"HireDate", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"HomePhone", $"Extension", $"ReportsTo", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
         LOAD referrals TO EDGE referredby VALUES("$from_rep", $"to_rep") USING SEPARATOR=",", HEADER="true", EOL="\n";
@@ -1788,3 +1805,814 @@
      + Data: GitHub
      + Last export:
    +
+** Fraud and Anti-Money Laundering Detection
+   + ref: https://www.tigergraph.com/starterkits/
+   + Data set: s3://gjgeksbackup/antifraud-cloud_data.tar.gz
+*** Resources
+*** Create the graph
+    #+begin_src sql :tangle antifraud/01-create-graph.gsql :mkdirp yes
+      USE GLOBAL
+      DROP GRAPH AntiFraud
+
+      CREATE GRAPH AntiFraud()
+
+      USE GRAPH AntiFraud
+      CREATE SCHEMA_CHANGE JOB schema_change_job_shmedley FOR GRAPH AntiFraud {
+            ADD VERTEX Transaction(PRIMARY_ID id STRING, ts UINT, amount FLOAT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+            ADD VERTEX User(PRIMARY_ID id STRING, signupEpoch UINT, mobile STRING, trust_score FLOAT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+            ADD VERTEX Device_Token(PRIMARY_ID id STRING, is_banned BOOL, os_name STRING, os_version STRING, model STRING, carrier STRING, is_rooted BOOL, is_emulator BOOL, device_name STRING, trust_score FLOAT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+            ADD VERTEX Payment_Instrument(PRIMARY_ID id STRING, token_handle STRING, token_type STRING, card_issuing_country_iso2 STRING, card_issuing_bank STRING, card_bin STRING, trust_score FLOAT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+            ADD DIRECTED EDGE User_Transfer_Transaction(FROM User, TO Transaction) WITH REVERSE_EDGE="User_Transfer_Transaction_Rev";
+            ADD DIRECTED EDGE User_Recieve_Transaction(FROM User, TO Transaction) WITH REVERSE_EDGE="User_Recieve_Transaction_Rev";
+            ADD UNDIRECTED EDGE User_to_Device(FROM User, TO Device_Token);
+            ADD UNDIRECTED EDGE User_to_Payment(FROM User, TO Payment_Instrument);
+            ADD DIRECTED EDGE User_Refer_User(FROM User, TO User) WITH REVERSE_EDGE="User_Referred_By_User";
+            }
+      RUN SCHEMA_CHANGE JOB schema_change_job_shmedley
+      DROP JOB schema_change_job_shmedley
+    #+end_src
+
+*** Load data
+    #+begin_src sql :tangle antifraud/02-load-data.gsql :mkdirp yes
+      USE GRAPH AntiFraud
+      CREATE LOADING JOB load_job_antifraud FOR GRAPH AntiFraud {
+        DEFINE FILENAME client="m1:/home/tigergraph/mydata/antifraud/data/client.csv";
+        DEFINE FILENAME mytransaction="m1:/home/tigergraph/mydata/antifraud/data/transaction.csv";
+        DEFINE FILENAME device="m1:/home/tigergraph/mydata/antifraud/data/device.csv";
+        DEFINE FILENAME userDevice="m1:/home/tigergraph/mydata/antifraud/data/userDevice.csv";
+        DEFINE FILENAME payment="m1:/home/tigergraph/mydata/antifraud/data/payment.csv";
+        DEFINE FILENAME referral="m1:/home/tigergraph/mydata/antifraud/data/client_referral.csv";
+        DEFINE FILENAME document="m1:/home/tigergraph/mydata/antifraud/data/document.csv";
+
+        LOAD client TO VERTEX User VALUES($0, $1, $2, $3) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+
+        LOAD mytransaction TO VERTEX Transaction VALUES($0, $4, $3) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+        LOAD mytransaction TO EDGE User_Recieve_Transaction VALUES($1, $0) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+        LOAD mytransaction TO EDGE User_Transfer_Transaction VALUES($2, $0) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+
+        LOAD device TO VERTEX Device_Token VALUES($0, $1, $2, $3, $4, $5, $6, $7, $8, $10) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+        LOAD userDevice TO EDGE User_to_Device VALUES($0, $1) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+
+        LOAD payment TO VERTEX Payment_Instrument VALUES($1, $2, $3, _, $5, $7, $10) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+        LOAD payment TO EDGE User_to_Payment VALUES($0, $1) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+
+        LOAD referral TO EDGE User_Refer_User VALUES($1, $0) USING SEPARATOR="\t", HEADER="true", EOL="\n";
+          }
+
+        RUN LOADING JOB load_job_antifraud
+        DROP JOB load_job_antifraud
+    #+end_src
+*** Install query functions
+    #+begin_src c++ :tangle antifraud/ExprFunctions.hpp
+      /******************************************************************************
+       ,* Copyright (c) 2015-2016, TigerGraph Inc.
+       ,* All rights reserved.
+       ,* Project: TigerGraph Query Language
+       ,* udf.hpp: a library of user defined functions used in queries.
+       ,*
+       ,* - This library should only define functions that will be used in
+       ,*   TigerGraph Query scripts. Other logics, such as structs and helper
+       ,*   functions that will not be directly called in the GQuery scripts,
+       ,*   must be put into "ExprUtil.hpp" under the same directory where
+       ,*   this file is located.
+       ,*
+       ,* - Supported type of return value and parameters
+       ,*     - int
+       ,*     - float
+       ,*     - double
+       ,*     - bool
+       ,*     - string (don't use std::string)
+       ,*     - accumulators
+       ,*
+       ,* - Function names are case sensitive, unique, and can't be conflict with
+       ,*   built-in math functions and reserve keywords.
+       ,*
+       ,* - Please don't remove necessary codes in this file
+       ,*
+       ,* - A backup of this file can be retrieved at
+       ,*     <tigergraph_root_path>/dev_<backup_time>/gdk/gsql/src/QueryUdf/ExprFunctions.hpp
+       ,*   after upgrading the system.
+       ,*
+       ,******************************************************************************/
+
+      #ifndef EXPRFUNCTIONS_HPP_
+      #define EXPRFUNCTIONS_HPP_
+
+      #include <stdlib.h>
+      #include <stdio.h>
+      #include <string>
+      #include <gle/engine/cpplib/headers.hpp>
+
+      /**     XXX Warning!! Put self-defined struct in ExprUtil.hpp **
+       ,*  No user defined struct, helper functions (that will not be directly called
+       ,*  in the GQuery scripts) etc. are allowed in this file. This file only
+       ,*  contains user-defined expression function's signature and body.
+       ,*  Please put user defined structs, helper functions etc. in ExprUtil.hpp
+       ,*/
+      #include "ExprUtil.hpp"
+
+      namespace UDIMPL {
+        typedef std::string string; //XXX DON'T REMOVE
+
+        /****** BIULT-IN FUNCTIONS **************/
+        /****** XXX DON'T REMOVE ****************/
+        inline int str_to_int (string str) {
+          return atoi(str.c_str());
+        }
+
+        inline int float_to_int (float val) {
+          return (int) val;
+        }
+
+        inline string to_string (double val) {
+          char result[200];
+          sprintf(result, "%g", val);
+          return string(result);
+        }
+
+        inline void getVertexesFromEdge(SetAccum<EDGE>& edgeSet, SetAccum<VERTEX>& res) {
+          for (auto it = edgeSet.data_.begin(); it != edgeSet.data_.end(); ++it) {
+            res += it->srcVid;
+            res += it->tgtVid;
+          }
+        }
+
+        template<typename EdgeTuple>
+          inline bool PathContainsV(ListAccum<EdgeTuple>& pathAccum, VERTEX v) {
+            std::vector<EdgeTuple>& path = pathAccum.data_;
+            for (uint32_t i = 0; i < path.size(); ++i) {
+              if (v == path[i].v) {
+                return true;
+              }
+            }
+            return false;
+          }
+
+      }
+
+
+      /****************************************/
+
+      #endif /* EXPRFUNCTIONS_HPP_ */
+    #+end_src
+*** Add queries
+    #+begin_src sql :tangle antifraud/03-queries.gsql :mkdirp yes
+      USE GRAPH AntiFraud
+      CREATE OR REPLACE QUERY circleDetection (vertex<User> srcId)  FOR GRAPH AntiFraud {
+      /*
+        This is an anti-money laundering query. It detects money flow circle from a starting user.
+
+        Start from a user, find all the transaction paths originated from the input user
+        and eventually come back to the user. The path length is limited from 3 to 6.
+
+        Sample input
+        User: any integer between 1 and 500.
+      ,*/
+        Typedef tuple<EDGE e, VERTEX v, double amount, int ts> EdgeTuple;
+        MinAccum<int> @minLeftDist = GSQL_INT_MAX;
+        MinAccum<int> @minRightDist = GSQL_INT_MAX;
+        MinAccum<int> @@minSrcSendTime = GSQL_INT_MAX;
+        MaxAccum<int> @@maxSrcReceiveTime = 0;
+
+        OrAccum @isValid = false;//flag used to record valid vertices in the subgraph
+
+        int stepLowLimit = 3;
+        int stepHighLimit = 6;
+
+        int halfStep;
+        int step;
+        //The following are used for aggregation on src
+        SumAccum<int> @validTransNum = 0;
+        SumAccum<int> @validTransSum = 0;
+        MaxAccum<int> @maxRank = 0;
+        ListAccum<ListAccum<EdgeTuple>> @edgeTupleList;
+        ListAccum<ListAccum<EdgeTuple>> @newEdgeTupleList;
+        ListAccum<ListAccum<EdgeTuple>> @@circleEdgeTuples;
+        OrAccum @receiveNewPath = false;
+
+        //The following is used for printing edges and vertices
+        SetAccum<vertex> @@vSet;
+        ListAccum<ListAccum<Edge>> @@circlePaths;
+
+        //starting from input User vertex
+        Seed = {srcId};
+
+        //oneStep to find out the src's minSendTime and maxReceiveTime, initialize the distance info for srcId
+        Seed = SELECT src
+            FROM Seed:src - ((User_Transfer_Transaction|User_Recieve_Transaction):e) -> Transaction:tgt
+            ACCUM
+              CASE WHEN e.type == "User_Transfer_Transaction"
+                   THEN @@minSrcSendTime += tgt.ts
+              ELSE
+                @@maxSrcReceiveTime += tgt.ts
+              END
+            Post-ACCUM
+              src.@minLeftDist = 0,
+              src.@minRightDist = 0,
+              src.@isValid = true
+            //make sure that it has a loop, if @@maxSrcRecievTime < @@minSrcSendTime, then there is no loop
+            //Because, if @@maxSrcRecievTime < @@minSrcSendTime, all the valid money it receives are before it sends out money
+            HAVING @@maxSrcReceiveTime >= @@minSrcSendTime
+            ;
+
+        //PRINT epoch_to_datetime(@@maxSrcReceiveTime), epoch_to_datetime(@@minSrcSendTime), startTime, endTime;
+        #Now start the bidirectional search of loops for srcId
+        # 1) First bidirecitonal search for the potential subgraph for all loops of srcId
+        # 2) Then one directional search to valid each path inside the subgraph using path filters, i.e. time increase along the path
+
+        //set X as Seed
+        X (_) = Seed;//X is used to do positive direction traversal
+        Y (_) = Seed;//Y is used to do negative direction traversal
+
+        # In order to do bidirectional search, we separate search into two steps,
+        # i) search for half of totoal steps, only touch unmark vertices,
+        #  i.e. positive directional search only touch positive unmarked vertices,
+        #       negative search only touch negative unmarked vertices
+        # ii) After the first half search, the following search only happens for marked vertices,
+        #  i.e. positive directional search only touch negative marked and positive unmarked vertices
+        #       negative search only touch negative positive marked and negative unmarked vertices
+        # if one of touched vertex fulfil the condition that positive distance + negative distance < stepHighLimit, it is a valid vertex
+        //First search for half of total steps
+        halfStep = (stepHighLimit + 1)/2;
+        step = 0;
+        WHILE step <= halfStep AND X.size() + Y.size() > 0
+        DO
+          IF X.size() > 0
+          THEN
+            //from User to Transaction
+            X = SELECT tgt
+              FROM X:src - (User_Transfer_Transaction:e) -> Transaction:tgt
+              WHERE
+                //tgt ts must be bigger than minSrcSendTime
+                //so that all paths has increasing time
+                tgt.ts >= @@minSrcSendTime
+                AND src.@minLeftDist < GSQL_INT_MAX
+                AND tgt.@minLeftDist == GSQL_INT_MAX
+              ACCUM
+                tgt.@minLeftDist += src.@minLeftDist + 1
+              POST-ACCUM
+                CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                       AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+                     THEN
+                       tgt.@isValid = true
+                END
+              ;
+             //from Transaction to User
+            X = SELECT tgt
+              FROM X:src - (User_Recieve_Transaction_Rev:e) -> User:tgt
+              WHERE src.@minLeftDist < GSQL_INT_MAX
+                //only when tgt is not left visited, update the distance info
+                AND tgt.@minLeftDist == GSQL_INT_MAX
+              ACCUM
+                tgt.@minLeftDist += src.@minLeftDist + 1
+              POST-ACCUM
+                CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                          AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+                     THEN
+                       tgt.@isValid = true
+                END
+              HAVING tgt != srcId
+            ;
+          END;
+
+          IF Y.size() > 0
+          THEN
+            Y = SELECT tgt
+              FROM Y:src - (User_Recieve_Transaction:e) -> Transaction:tgt
+              WHERE
+                tgt.ts <= @@maxSrcReceiveTime
+                AND src.@minRightDist < GSQL_INT_MAX
+                AND tgt.@minRightDist == GSQL_INT_MAX
+              ACCUM
+                tgt.@minRightDist += src.@minRightDist + 1
+              POST-ACCUM
+                CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX
+                       AND tgt.@minRightDist < GSQL_INT_MAX
+                       AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+                     THEN
+                       tgt.@isValid = true
+                END
+              ;
+            //from Transaction to User
+            Y = SELECT tgt
+               FROM Y:src - (User_Transfer_Transaction_Rev:e) -> User:tgt
+               WHERE src.@minRightDist < GSQL_INT_MAX
+                 //only when tgt is not left visited, update the distance info
+                 AND tgt.@minRightDist == GSQL_INT_MAX
+               ACCUM
+                 tgt.@minRightDist += src.@minRightDist + 1
+               POST-ACCUM
+                 CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                           AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+                      THEN
+                        tgt.@isValid = true
+                 END
+               HAVING tgt != srcId
+            ;
+          END;
+          step = step + 1;
+        END;
+        # start the last half of search, only touch marked vertices
+        WHILE step <= stepHighLimit AND X.size() + Y.size() > 0
+        DO
+          IF X.size() > 0
+          THEN
+            //from User to Transaction
+            X = SELECT tgt
+              FROM X:src - (User_Transfer_Transaction:e) -> Transaction:tgt
+              WHERE tgt.@minRightDist < GSQL_INT_MAX//tgt must be touched in the above the negative search
+                AND tgt.ts >= @@minSrcSendTime
+                AND src.@minLeftDist < GSQL_INT_MAX
+                AND tgt.@minLeftDist == GSQL_INT_MAX
+              ACCUM
+                tgt.@minLeftDist += src.@minLeftDist + 1
+              POST-ACCUM
+                CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                       AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+                     THEN
+                       tgt.@isValid = true
+                END
+              ;
+             //from Transaction to User
+            X = SELECT tgt
+              FROM X:src - (User_Recieve_Transaction_Rev:e) -> User:tgt
+              WHERE tgt.@minRightDist < GSQL_INT_MAX//tgt must be touched in the above the negative search
+                AND src.@minLeftDist < GSQL_INT_MAX
+                //only when tgt is not left visited, update the distance info
+                AND tgt.@minLeftDist == GSQL_INT_MAX
+              ACCUM
+                tgt.@minLeftDist += src.@minLeftDist + 1
+              POST-ACCUM
+                CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                          AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+                     THEN
+                       tgt.@isValid = true
+                END
+              HAVING tgt != srcId
+            ;
+          END;
+
+          IF Y.size() > 0
+          THEN
+            Y = SELECT tgt
+              FROM Y:src - (User_Recieve_Transaction:e) -> Transaction:tgt
+              WHERE tgt.@minLeftDist < GSQL_INT_MAX//tgt must be touched in the above positive search
+                AND tgt.ts <= @@maxSrcReceiveTime
+                AND src.@minRightDist < GSQL_INT_MAX
+                AND tgt.@minRightDist == GSQL_INT_MAX
+              ACCUM
+                tgt.@minRightDist += src.@minRightDist + 1
+              POST-ACCUM
+                CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX
+                       AND tgt.@minRightDist < GSQL_INT_MAX
+                       AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+                     THEN
+                       tgt.@isValid = true
+                END
+              ;
+            //from Transaction to User
+            Y = SELECT tgt
+              FROM Y:src - (User_Transfer_Transaction_Rev:e) -> User:tgt
+              WHERE tgt.@minLeftDist < GSQL_INT_MAX//tgt must be touched in the above positive search
+                AND src.@minRightDist < GSQL_INT_MAX
+                //only when tgt is not left visited, update the distance info
+                AND tgt.@minRightDist == GSQL_INT_MAX
+              ACCUM
+                tgt.@minRightDist += src.@minRightDist + 1
+              POST-ACCUM
+                CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                          AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+                     THEN
+                       tgt.@isValid = true
+                END
+              HAVING tgt != srcId
+              ;
+          END;
+          step = step + 1;
+        END;
+
+        #start valid path traversal and circle detection
+        step = 0;
+        //reset X as Seed
+        X = Seed;
+        WHILE step <= stepHighLimit
+        DO
+          //from User to Transaction
+          X = SELECT tgt
+            FROM X:src - (User_Transfer_Transaction:e) -> Transaction:tgt
+            WHERE tgt.@isValid == true
+            ACCUM
+              int ts = tgt.ts,
+              CASE
+                //if X is Seed, then only send edge over
+                WHEN src.@edgeTupleList.size() == 0
+                  THEN tgt.@newEdgeTupleList += [EdgeTuple(e, src, tgt.amount, ts)]
+                ELSE
+                  FOREACH path in src.@edgeTupleList
+                  DO
+                    tgt.@newEdgeTupleList += path + [EdgeTuple(e, src, tgt.amount, ts)]
+                  END
+              END,
+              //reset receiveNewPath as false
+              tgt.@receiveNewPath = false
+            POST-ACCUM
+              CASE
+                WHEN tgt.@newEdgeTupleList.size() > 0
+                THEN
+                  tgt.@edgeTupleList = tgt.@newEdgeTupleList,
+                  tgt.@receiveNewPath = true,
+                  tgt.@newEdgeTupleList.clear()
+              END
+            HAVING tgt.@receiveNewPath == true
+          ;
+
+          //from Transaction to User
+          X = SELECT tgt
+            FROM X:src - (User_Recieve_Transaction_Rev:e) -> User:tgt
+            WHERE tgt.@isValid == true
+            ACCUM
+              FOREACH path in src.@edgeTupleList
+              DO
+                CASE WHEN tgt == srcId OR (NOT PathContainsV(path, tgt))
+                     THEN
+                       tgt.@newEdgeTupleList += path + [EdgeTuple(e, src, src.amount, src.ts)]
+                END
+              END,
+              //reset receiveNewPath as false
+              tgt.@receiveNewPath = false
+            POST-ACCUM
+              CASE
+                WHEN tgt.@newEdgeTupleList.size() > 0
+                THEN
+                  CASE
+                    //if it backs to start point, there is a valid circle
+                    WHEN tgt == srcId
+                      THEN
+                        //step + 1 gives the current updated step
+                        //it is the number of User -> User steps for current paths (there maybe multiple paths but all of them should have the same length)
+                        CASE WHEN step + 1 >= stepLowLimit
+                             THEN @@circleEdgeTuples += tgt.@newEdgeTupleList
+                        END
+                    //else, overwrite the old @edgeTupleList, since the old one is already used
+                    ELSE tgt.@edgeTupleList = tgt.@newEdgeTupleList
+                  END,
+                  tgt.@receiveNewPath = true,
+                  tgt.@newEdgeTupleList.clear()
+              END
+            HAVING tgt.@receiveNewPath == true and tgt != srcId
+          ;
+
+          step = step + 1;
+        END;
+        //printJSON only if it is directly called or else return @@circleEdgeTuples directly
+        //use the drainRatio to filter out invalid paths
+        //store all valid vertices into @@vSet and all paths into @@circlePaths
+        PRINT @@circleEdgeTuples;
+      }
+       CREATE OR REPLACE QUERY SameRecieverSender(vertex<Transaction> transaction) FOR GRAPH AntiFraud {
+      /*
+       This query is used to find out whether a user conduct fradulent transaction for themselves
+       via fake accounts.
+
+       Given an input transaction, return true when its reciever and sender are connected via
+       Device_Token and Payment_Instrument within 4 steps.
+
+        Sample input
+        transaction: any integer between 1 and 1000.
+      ,*/
+        OrAccum<bool> @fromReciever, @fromSender;
+        OrAccum<bool> @@isSame;
+
+        SetAccum<edge> @@edgeSet;
+
+        Start (ANY) = {transaction};
+
+        // get the sender and reciever
+        Start = SELECT t FROM Start:s-((User_Recieve_Transaction_Rev|User_Transfer_Transaction_Rev):e)-:t
+                ACCUM
+                  // mark the sender and reciver according to the edge type
+                  case when e.type == "User_Recieve_Transaction_Rev" then
+                    t.@fromReciever += true
+                  else
+                    t.@fromSender += true
+                  end
+                  ,@@edgeSet += e
+        ;
+
+        // traverse for 4 steps, or the paths of sender and reciever meets each other
+        WHILE Start.size() > 0 AND @@isSame == false LIMIT 4 DO
+          Start = SELECT t FROM Start:s-((User_to_Device|User_to_Payment):e)-:t
+                  // do not traverse the vertexes that were visited
+                  WHERE t.@fromReciever == false AND t.@fromSender == false
+                  ACCUM t.@fromReciever += s.@fromReciever,
+                        t.@fromSender += s.@fromSender
+                        ,@@edgeSet += e
+                  POST-ACCUM
+                    // when two paths meets in the middle
+                    CASE WHEN t.@fromReciever == true AND t.@fromSender THEN
+                      @@isSame += true
+                    END
+          ;
+        END;
+
+        // output the result
+        PRINT @@isSame;
+        PRINT @@edgeSet;
+      }
+      CREATE OR REPLACE QUERY MultiTransaction (VERTEx<Transaction> transaction) FOR GRAPH AntiFraud{
+      /*
+       This query is motivated by detecting money laundering activities between two groups. Given
+       a transaction, it finds the network of users related to the sender, and finds the network
+       of users related to the receiver. Then, it finds all transactions among the two networks.
+
+       Intuitively this query can help data analysts to visualize the money laundering activities,
+       since it can visualize the transactions between the sender and receiver groups, and the
+       transaction patterns within each network.
+
+        1) Start from an input transaction, find its sender and reciever
+        2) Start from the sender, via Device_Token and Payment_Instrument edges find users within 4 steps.
+        3) Start from the reciever, via Device_Token and Payment_Instrument edges find users within 4 steps.
+        4) Record transactions cross the sender and receiver groups.
+
+        Sample input
+        transaction: any integer between 1 and 500.
+      ,*/
+
+        //declare flags to indicate a user is a sender or a receiver
+        OrAccum<bool> @fromReciever, @fromSender;
+
+        //declare set to store sender/receiver in sender/receiver group.
+        SetAccum<VERTEX> @@recieverSet, @@senderSet;
+        SetAccum<EDGE> @@edgeSet;
+
+        //assign the input transaction to the "Start" variable, which is a SET.
+        Start (ANY) = {transaction};
+
+        // find the sender and reciever of the input transaction. Mark them.
+        // Now, Start becomes {sender, receiver} set.
+        Start = SELECT t FROM Start:s-((User_Recieve_Transaction_Rev|User_Transfer_Transaction_Rev):e)-:t
+                ACCUM
+                  // mark different groups according to edge type
+                  case when e.type == "User_Recieve_Transaction_Rev" then
+                    t.@fromReciever += true,
+                    @@recieverSet += t
+                  else
+                    t.@fromSender += true,
+                    @@senderSet += t
+                  end,
+                    @@edgeSet += e;
+
+        //via the User_to_Device, User_to_Payment edge types, traverse 4 steps and
+        //put sender reacheable users to the sender set, and reciever reachable
+        //users to the receiver set
+        WHILE Start.size() > 0 LIMIT 4 DO
+          Start = SELECT t FROM Start:s-((User_to_Device|User_to_Payment):e)-:t
+                  WHERE t.@fromReciever == false AND t.@fromSender == false
+                  ACCUM
+                    t.@fromReciever += s.@fromReciever,
+                    t.@fromSender += s.@fromSender,
+                    @@edgeSet += e
+                  POST-ACCUM
+                    CASE WHEN t.type == "User" AND t.@fromSender == true THEN
+                        @@senderSet += t
+                    WHEN t.@fromReciever == true then
+                        @@recieverSet += t
+                    END
+                  HAVING t.@fromReciever OR t.@fromSender;
+        END;
+
+        // from the reciever set mark the transactions 1-step related to its group member
+        Start = {@@recieverSet};
+        Start = SELECT t FROM Start:s-((User_Recieve_Transaction|User_Transfer_Transaction):e)-:t
+                WHERE t != transaction
+                ACCUM
+                   t.@fromReciever += s.@fromReciever,
+                   @@edgeSet += e;
+
+        // from the sender set, find transactions 1-step related to its group member.
+        // Record those transactions 1-step related to both a sender member and a receiver memeber.
+        Start = {@@senderSet};
+        Start = SELECT t FROM Start:s-((User_Recieve_Transaction|User_Transfer_Transaction):e)-:t
+                WHERE t != transaction
+                ACCUM
+                   t.@fromSender += s.@fromSender,
+                   @@edgeSet += e
+                HAVING t.@fromReciever AND t.@fromSender;
+
+        //print cross sender and receiver group transactions.
+        print Start;
+        //print within sender and receiver subgraph
+        print @@edgeSet;
+      }
+      CREATE OR REPLACE QUERY fraudConnectivity (VERTEX<User> inputUser, FLOAT trustScore) FOR GRAPH AntiFraud {
+      /*
+        This query finds all connect users/payment cards/device that has low credit score.
+
+        Starting with a user X find all other users connected to
+        X through device token, payment instrument connected via transactions in 3 steps
+
+        Sample input
+        User: any integer between 1 and 500
+        trustScore: any float number (e.g. 0.1)
+      ,*/
+
+        OrAccum<bool> @visited;
+        SumAccum<int> @@result;
+        SetAccum<edge> @@visResult;
+
+        Start (_) = {inputUser};
+
+        // keep traverse for 3 steps
+        WHILE Start.size()>0 limit 3 DO
+          Start = SELECT t
+               FROM Start:s-(:e)-:t
+               // sample clause for better visualization result
+               SAMPLE 15 EDGE WHEN s.outdegree() >= 20
+               WHERE t.@visited == false AND t != inputUser
+               ACCUM
+                 @@visResult += e
+               POST-ACCUM
+                 CASE WHEN t.trust_score < trustScore THEN
+                   @@result += 1
+                 END,
+                 t.@visited += true
+
+          ;
+        END;
+
+        print @@result;
+        print @@visResult;
+      }
+      CREATE OR REPLACE QUERY InvitedUserBehavior (VERTEX<User> inputUser) FOR GRAPH AntiFraud {
+      /*
+       This query is motivated to detect those fradulent users who conduct activities to earn
+       referral bonus. How do we do that?
+
+       Given an input user, this query traverses the graph, finds out how many two-hop users that
+       are indirectely invited by the input user. That is, the users invited by the input user's
+       invitees. It also calculates the transferred total money from the one-hop invitees.
+       Finally, the traversed subgraph is returned. Intuitively, if it's a fradulent user, we
+       can tell from the money transferred from their direct invitees; and their indirect invitees
+       should be small or zero.
+
+      Sample input
+        inputUser: 5354357 | 30746939 | 23189347
+      ,*/
+        //declare some variables to store aggregates.
+        SumAccum<int> @@invitedPersonNum;
+        SumAccum<float> @@totalAmountSent;
+        SetAccum<edge> @@visRes;
+
+        //assign the input user to the "start" variable, which is a SET.
+        start = {inputUser};
+
+        //one-step traversal. From the start set, via the User_Refer_User edge,
+        //find all the invitees of the input user; store them into the "users" variable.
+        //Put all touched edges into a variable for visualization purpose.
+        users = SELECT t
+                FROM start:s-(User_Refer_User:e)-:t
+            ACCUM @@visRes += e;
+
+        //Aggregate the amounts of all transactions conducted by the one-hop invitees into
+        //variable @@totalAmountSent. Also, store the traversed edges into variable  @@visRes.
+        trans = SELECT t
+                FROM users:s-((User_Transfer_Transaction):e)-:t
+                ACCUM
+                  @@totalAmountSent += t.amount,
+                  @@visRes += e;
+
+        //Second-hop traversal. Find users invited by the one-hop invitees.
+        //store their count in @@invitedPersonNum. And record the traversed edges into @@visRes.
+        users = SELECT t
+                FROM users:s-(User_Refer_User:e)-:t
+                WHERE t != inputUser
+                ACCUM @@visRes += e
+                  POST-ACCUM @@invitedPersonNum += 1;
+        //return 2-hop invitees count, total transfered money by 1-hop and 2-hop invitees,
+        //and the subgraph.
+        PRINT @@invitedPersonNum, @@totalAmountSent, @@visRes;
+      }
+      CREATE OR REPLACE QUERY TransferredAmount (vertex<User> sender, dateTime startDate=to_dateTime("2000/12/31"), dateTime endDate=to_dateTime("2020/12/31")) for GRAPH AntiFraud{
+      /**
+        This query answer the question that given a user, find out how much money has been transferred out from
+        her connected users within a date range.
+
+        1) Start from an user, find all other users connected via Device_Tokent or Payment_Instrument within 4 steps.
+        2) Then start from all the connected users, find transferred transactions between input start date and end date.
+        3) Calculate total transfered money amount of the transcations collected in step 2)
+
+        Sample input
+        User : any random integer between 1 and 500
+        endDate : 2000-12-31 00:00:00
+        startDate : 2020-12-31 00:00:00
+      ,*/
+        SumAccum<float> @@transAmount;
+        OrAccum<bool> @visited;
+        // the iteration number
+        int iterNum = 0;
+        SetAccum<edge> @@edgeSet;
+
+        Start (ANY) = {sender};
+
+        // from the input user, go 4 steps with a while loop to find her connected users.
+        WHILE (Start.size() > 0) limit 4 DO
+          Start = select t from Start:s-((User_to_Device|User_to_Payment):e)-:t
+                  where t.@visited == false AND (t.type != "User" OR t != sender)
+                  ACCUM
+                    @@edgeSet += e
+                  POST-ACCUM
+                    t.@visited += true
+          ;
+
+          // collect the transferred money number for the users found in 2nd and 4th iteration
+          case when iterNum%2 == 1 then
+            tmp = select s from Start:s-(User_Transfer_Transaction:e)-:t
+                  where epoch_to_datetime(t.ts) < endDate AND epoch_to_datetime(t.ts) > startDate
+                  accum @@transAmount += t.amount,
+                        @@edgeSet += e;
+          end;
+          iterNum = iterNum + 1;
+        END;
+
+        print @@transAmount;
+        print @@edgeSet;
+      }
+      CREATE OR REPLACE QUERY RepeatedUser (vertex<User> reciever) for GRAPH AntiFraud {
+      /**
+       Given a money receiver, this query is to disover whether there exists relationships among
+       those people who have sent money to this receiver.
+
+        1) Start from a reciever find all her receiving money transactions.
+        2) Find all the senders from the transactions collected in step 1)
+        3) Start from the senders in step 2), go as far as 8 steps from each sender,
+           find all the senders that are connected to other senders by a path made of
+           Device_Token, Payment_Instrument, and Users.
+        4) Output all the transactions started by the senders found in step 3) and recieved by the input user.
+
+        Sample input
+        reciever: Recommend to use 1223 as input. Or, try integer between 1 and 500.
+      ,*/
+
+        SumAccum<int> @msgRcv;
+        OrAccum<bool> @isS, @isRepeated;
+        MaxAccum<vertex> @max;
+        MinAccum<vertex> @min;
+        SetAccum<vertex> @@linkedJoint;
+
+        SetAccum<edge> @@edgeSet;
+
+        Start (ANY) = {reciever};
+
+        // get all transactions the receiver get money from.
+        transactions = select t from Start:s-(User_Recieve_Transaction:e)-:t
+                ACCUM @@edgeSet += e
+                post-accum t.@isS += true;
+
+        // get all senders related to the above transactions.
+        Start = select t from transactions:s-(User_Transfer_Transaction_Rev:e)-:t
+                ACCUM @@edgeSet += e
+                post-accum t.@msgRcv += 1,
+                           t.@isS += true,
+                           t.@max = t,
+                           t.@min = t;
+
+        // Traverse 8 step from the senders. min/max is used to find joint node
+        WHILE (Start.size() > 0) limit 8 DO
+          Start = select t from Start:s-((User_to_Device|User_to_Payment):e)-:t
+                  WHERE t.@msgRcv == 0
+                  ACCUM
+                    t.@msgRcv += 1,
+                    t.@min += s.@min,
+                    t.@max += s.@max
+                  POST-ACCUM
+                    // when received message from different source
+                    CASE WHEN t.@msgRcv > 1 AND t.@min != t.@max THEN
+                      @@linkedJoint += t
+                    END
+          ;
+        END;
+
+        Start = {@@linkedJoint};
+
+        // trace back to the source senders from the vertexes that joint multiple paths
+        WHILE (Start.size() > 0) DO
+          Start = select t from Start:s-((User_to_Device|User_to_Payment):e)-:t
+                  WHERE t.@msgRcv != 0
+                  ACCUM @@edgeSet += e
+                  POST-ACCUM
+                    s.@msgRcv = 0,
+                    CASE WHEN t.@isS THEN
+                      t.@isRepeated += true
+                    END;
+        END;
+        // get the transactions to output
+        transactions = select s from transactions:s-(User_Transfer_Transaction_Rev:e)-:t
+                where t.@isRepeated == true
+                accum @@edgeSet += e
+        ;
+
+        print transactions [transactions.amount];
+        print @@edgeSet;
+      }
+      set exit_on_error = "true"
+    #+end_src
