@@ -41,7 +41,7 @@
      + GraphStudio export of TGCloud graph: [[file:/data/data-files/graph-data/cust-360/cust-attribution.tar.gz]]
 *** Graph creation
 
-     #+begin_src sql :tangle custexp/custexp-graph.gsql :mkdirp yes
+     #+begin_src sql :tangle custexp/01-create-graph.gsql :mkdirp yes
        USE GLOBAL
        DROP GRAPH CustExp
 
@@ -305,13 +305,8 @@
 
        drop job custexp_schema
     #+end_src
-     #+begin_src bash :tangle custexp/01-create-graph.sh
-       gsql custexp-graph.gsql
-       gsql -g CustExp run schema_change job custexp_schema
-     #+end_src
-
 *** data loading
-     #+begin_src sql :tangle custexp/loading-job.gsql
+     #+begin_src sql :tangle custexp/02-load-data.gsql
        use graph CustExp
        drop job load_job_custexp
 
@@ -366,15 +361,11 @@
        drop job load_job_custexp
      #+end_src
 
-    #+begin_src bash :tangle custexp/02-load-data.sh
-      gsql -g CustExp loading-job.gsql
-      gsql -g CustExp 'run loading job load_job_custexp'
-    #+end_src
 *** Queries
-      #+begin_src sql :tangle custexp/queries.gsql
+      #+begin_src sql :tangle custexp/03-create-queries.gsql
         USE GRAPH CustExp
 
-        CREATE DISTRIBUTED QUERY CustomerJourney(vertex<Contact> customer, set<string> campaignTypes, datetime startTime, datetime endTime) FOR GRAPH CustExp {
+        CREATE QUERY CustomerJourney(vertex<Contact> customer, set<string> campaignTypes, datetime startTime, datetime endTime) FOR GRAPH CustExp {
         /*
           Sample input:
                 Contact: Sam-Eisenberg
@@ -398,7 +389,7 @@
                              c.@camDesc = t.Description;
             print campaign as Campaign;
         }
-        CREATE DISTRIBUTED QUERY SimilarCustomers(VERTEX<Contact> sourceCustomer, set<string> campaignTypes, INT topK) FOR GRAPH CustExp {
+        CREATE QUERY SimilarCustomers(VERTEX<Contact> sourceCustomer, set<string> campaignTypes, INT topK) FOR GRAPH CustExp {
         /*
           This query calculates the Jaccard Similarity between a given customer (of type Contact) and
           every other customers (or Contacts) who share similar campaigns (of type Campaign).
@@ -497,15 +488,6 @@
 
             print @@displaySet;
         }
-     #+end_src
-     #+begin_src bash :tangle custexp/03-create-queries.sh
-       gsql -g CustExp queries.gsql
-     #+end_src
-*** runall script
-     #+begin_src bash :tangle custexp/runall.sh
-       ./01-create-graph.sh
-       ./02-load-data.sh
-       ./03-create-queries.sh
      #+end_src
 *** Install on current TigerGraph cluster
     #+begin_src emacs-lisp
@@ -1805,7 +1787,10 @@
      + Data: GitHub
      + Last export:
    +
-** Fraud and Anti-Money Laundering Detection
+** DONE Fraud and Anti-Money Laundering Detection
+   :LOGBOOK:
+   - State "DONE"       from              [2021-12-03 Fri 15:33]
+   :END:
    + ref: https://www.tigergraph.com/starterkits/
    + Data set: s3://gjgeksbackup/antifraud-cloud_data.tar.gz
 *** Resources
