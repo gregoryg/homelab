@@ -26,9 +26,17 @@
     + make import file names explicit
   + Literate programming to create all scripts - orgmode
   + Make nothing at the Global level
-  + Deploy for data loading to =mydata= directory, located directly under =AppRoot=
+  + Deploy for data loading to =mydata= directory, located directly under =DataRoot=
     directory on node =m1=.  The reason is that when a Docker or Kubernetes container is
     restarted, data anywhere else may be lost.
+    + Command to find =DataRoot=
+      #+begin_src bash
+        gadmin config get System.DataRoot
+        # Alternative using full dump of config
+        gadmin config dump | jq -r '.System.DataRoot'
+      #+end_src
+  + Use TRAMP from this file to transfer solutions scripts and possibly grab data.
+
 
 * Solutions
 ** DONE CustExp / Customer 360 / Customer Attribution SFDC
@@ -44,7 +52,7 @@
      + GraphStudio export of TGCloud graph: [[file:/data/data-files/graph-data/cust-360/cust-attribution.tar.gz]]
 *** Graph creation
 
-     #+begin_src sql :tangle custexp/01-create-graph.gsql :mkdirp yes
+     #+begin_src sql :tangle solutions/custexp/01-create-graph.gsql :mkdirp yes
        USE GLOBAL
        DROP GRAPH CustExp
 
@@ -309,7 +317,7 @@
        drop job custexp_schema
     #+end_src
 *** data loading
-     #+begin_src sql :tangle custexp/02-load-data.gsql
+     #+begin_src sql :tangle solutions/custexp/02-load-data.gsql
        use graph CustExp
        drop job load_job_custexp
 
@@ -365,7 +373,7 @@
      #+end_src
 
 *** Queries
-      #+begin_src sql :tangle custexp/03-create-queries.gsql
+      #+begin_src sql :tangle solutions/custexp/03-create-queries.gsql
         USE GRAPH CustExp
 
         CREATE QUERY CustomerJourney(vertex<Contact> customer, set<string> campaignTypes, datetime startTime, datetime endTime) FOR GRAPH CustExp {
@@ -510,7 +518,7 @@
       wget https://s3-us-west-1.amazonaws.com/tigergraph-benchmark-dataset/LDBC/SF-1/ldbc_snb_data-sf1.tar.gz
     #+end_src
 *** Create the schema
-    #+begin_src sql :tangle ldbc-social/01-create-graph.gsql :mkdirp yes
+    #+begin_src sql :tangle solutions/ldbc-social/01-create-graph.gsql :mkdirp yes
       //clear the current catalog.
       // It may take a while since it restarts the subsystem services.
       USE GLOBAL
@@ -576,7 +584,7 @@
     #+end_src
 
 *** Load the data
-    #+begin_src sql :tangle ldbc-social/02-load-data.gsql :mkdirp yes
+    #+begin_src sql :tangle solutions/ldbc-social/02-load-data.gsql :mkdirp yes
       USE GRAPH ldbc_snb
       CREATE LOADING JOB load_ldbc_snb FOR GRAPH ldbc_snb {
         DEFINE FILENAME v_person_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_0_0.csv";
@@ -695,7 +703,7 @@
 *** Resources
     + data:
 *** Create graph
-    #+begin_src sql :tangle northwind/01-create-graph.gsql :mkdirp yes
+    #+begin_src sql :tangle solutions/northwind/01-create-graph.gsql :mkdirp yes
       # -*- mode: sql; -*-
       drop graph Northwind
       create graph Northwind()
@@ -740,7 +748,7 @@
       drop job schema_change_northwind
 #+end_src
 *** Load data
-    #+begin_src sql :tangle northwind/02-load-data.gsql :mkdirp yes
+    #+begin_src sql :tangle solutions/northwind/02-load-data.gsql :mkdirp yes
       # -*- mode: sql; -*-
       use graph Northwind
       CREATE LOADING JOB load_all_north {
@@ -799,7 +807,7 @@
    :END:
 *** Resources
 *** Create graph
-    #+begin_src sql :tangle ldbc-social/01-create-graph.gsql :mkdirp yes
+    #+begin_src sql :tangle solutions/ldbc-social/01-create-graph.gsql :mkdirp yes
       //clear the current catalog.
       // It may take a while since it restarts the subsystem services.
       USE GLOBAL
@@ -863,7 +871,7 @@
       DROP JOB change_schema_of_ldbc
     #+end_src
 *** Load data
-    #+begin_src sql :tangle ldbc-social/02-load-data.gsql :mkdirp yes
+    #+begin_src sql :tangle solutions/ldbc-social/02-load-data.gsql :mkdirp yes
       USE GRAPH ldbc_snb
       CREATE LOADING JOB load_ldbc_snb FOR GRAPH ldbc_snb {
         DEFINE FILENAME v_person_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_0_0.csv";
@@ -979,7 +987,7 @@
       DROP JOB load_ldbc_snb
     #+end_src
 *** Add queries
-    #+begin_src sql :tangle ldbc-social/03-create-queries.gsql
+    #+begin_src sql :tangle solutions/ldbc-social/03-create-queries.gsql
     #+end_src
 ** STARTED Supply Chain
    :LOGBOOK:
@@ -990,7 +998,7 @@
      + data - [[file:/data/data-files/graph-data/cust-360/custattribution_sfdc-data.tar.gz]]
      + GraphStudio export of TGCloud graph: [[file:/data/data-files/graph-data/cust-360/cust-attribution.tar.gz]]
 *** Graph creation
-     #+begin_src sql :tangle supplychain/01-create-graph.gsql :mkdirp yes
+     #+begin_src sql :tangle solutions/supplychain/01-create-graph.gsql :mkdirp yes
        USE GLOBAL
        DROP GRAPH SupplyChain
 
@@ -1015,7 +1023,7 @@
        DROP JOB schema_change_job_RwBCZV
      #+end_src
 *** Load data
-    #+begin_src sql :tangle supplychain/02-load-data.gsql
+    #+begin_src sql :tangle solutions/supplychain/02-load-data.gsql
       set exit_on_error = "false"
       USE GRAPH SupplyChain
       CREATE LOADING JOB load_job_supplychain FOR GRAPH SupplyChain {
@@ -1053,7 +1061,7 @@
       set exit_on_error = "true"
     #+end_src
 *** Queries
-    #+begin_src sql :tangle supplychain/queries.gsql
+    #+begin_src sql :tangle solutions/supplychain/queries.gsql
       set exit_on_error = "true"
       CREATE QUERY scc (SET<STRING> v_type, SET<STRING> e_type, SET<STRING> rev_e_type,
         INT top_k_dist, INT output_limit, INT max_iter = 500, INT iter_wcc = 5, BOOL print_accum = TRUE, STRING result_attr= "", STRING file_path=""){ //INT iter_end_trim = 3
@@ -1773,11 +1781,11 @@
         print @@res;
       }
     #+end_src
-    #+begin_src bash :tangle supplychain/03-create-queries.sh
+    #+begin_src bash :tangle solutions/supplychain/03-create-queries.sh
       gsql -g SupplyChain queries.gsql
     #+end_src
   + Do eet
-    #+begin_src bash :tangle supplychain/runall.sh
+    #+begin_src bash :tangle solutions/supplychain/runall.sh
       ./01-create-graph.sh
       ./02-load-data.sh
       ./03-create-queries.sh
@@ -1798,7 +1806,7 @@
    + Data set: s3://gjgeksbackup/antifraud-cloud_data.tar.gz
 *** Resources
 *** Create the graph
-    #+begin_src sql :tangle antifraud/01-create-graph.gsql :mkdirp yes
+    #+begin_src sql :tangle solutions/antifraud/01-create-graph.gsql :mkdirp yes
       USE GLOBAL
       DROP GRAPH AntiFraud
 
@@ -1821,7 +1829,7 @@
     #+end_src
 
 *** Load data
-    #+begin_src sql :tangle antifraud/02-load-data.gsql :mkdirp yes
+    #+begin_src sql :tangle solutions/antifraud/02-load-data.gsql :mkdirp yes
       USE GRAPH AntiFraud
       CREATE LOADING JOB load_job_antifraud FOR GRAPH AntiFraud {
         DEFINE FILENAME client="m1:/home/tigergraph/mydata/antifraud/data/client.csv";
@@ -1851,7 +1859,7 @@
         DROP JOB load_job_antifraud
     #+end_src
 *** Install query functions
-    #+begin_src c++ :tangle antifraud/ExprFunctions.hpp
+    #+begin_src c++ :tangle solutions/antifraud/ExprFunctions.hpp
       /******************************************************************************
        ,* Copyright (c) 2015-2016, TigerGraph Inc.
        ,* All rights reserved.
@@ -1944,7 +1952,7 @@
       #endif /* EXPRFUNCTIONS_HPP_ */
     #+end_src
 *** Add queries
-    #+begin_src sql :tangle antifraud/03-queries.gsql :mkdirp yes
+    #+begin_src sql :tangle solutions/antifraud/03-queries.gsql :mkdirp yes
       USE GRAPH AntiFraud
       CREATE OR REPLACE QUERY circleDetection (vertex<User> srcId)  FOR GRAPH AntiFraud {
       /*
@@ -2604,3 +2612,50 @@
       }
       set exit_on_error = "true"
     #+end_src
+* Transfer Solutions to TigerGraph server
+  First set up all the parameters needed to access the TG server (usually the =m1= node)
+
+  We will use a TRAMP URI which can support any relevant protocol: =ssh=, =docker=,
+  =kube=.  In the case of a bastion host, use the multi-hop TRAMP syntax.
+
+  The user name (=tigergraph= by default) is encoded into the TRAMP URI for =ssh= and
+  =docker= methods.  For =kube=, the Kubernetes namespace is specified instead, and the
+  correct user will be used by the image used for Kubernetes.
+
+  Examples of TRAMP URIs:
+  + /ssh:tigergraph@localhost:
+  + /ssh:centos@gcp-bastion.34.106.15.242.nip.io|ssh:tigergraph@gg-tg-0:  # multi-hop
+  + /docker:tigergraph@tigergraph:
+  + /kube:tigergraph@tigergraph-0:  # in this case, use <namespace>@<pod-name>
+
+** Configuration
+   Just set TRAMP URI and subdir
+  #+NAME: xfer-params
+  | Param  | Value                      | Notes                                              |
+  |--------+----------------------------+----------------------------------------------------|
+  | TRAMP  | /kube:poodle@tigergraph-0: |                                                    |
+  | subdir | mydata/                    | Subdir under DataRoot, typically ~/tigergraph/data |
+
+
+  #+begin_src emacs-lisp :var uri=xfer-params[2,1]
+    (message uri)
+    (cd uri)
+    ;; (shell-command "gadmin config get System.DataRoot")
+    ;; (call-process-shell-command "")
+    (shell "xfer-sh")
+  #+end_src
+
+  #+NAME: data-root
+  #+begin_src bash :session xfer-sh
+    gadmin config get System.DataRoot
+  #+end_src
+** Copy it all by evaluating this Elisp code block
+  Copy everything in the local =solutions= directory to the solutions path,
+  creating subdirs as necessary
+  #+begin_src emacs-lisp :var uri=xfer-params[2,1] :var dataroot=data-root  :var subdir=xfer-params[3,1] :results value replace
+    (copy-directory "solutions" (concat uri dataroot "/" subdir) nil t t)
+    (concat "Copied solutions to " uri dataroot "/" subdir)
+  #+end_src
+
+  #+RESULTS:
+  : Copied solutions to /kube:poodle@tigergraph-0:/home/tigergraph/tigergraph/data/mydata/

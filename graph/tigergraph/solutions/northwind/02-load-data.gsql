@@ -1,17 +1,17 @@
 # -*- mode: sql; -*-
 use graph Northwind
 CREATE LOADING JOB load_all_north {
-  DEFINE FILENAME categories="m1:/home/tigergraph/mydata/northwind/data/categories.csv";
-  DEFINE FILENAME customers="m1:/home/tigergraph/mydata/northwind/data/customers.csv";
-  DEFINE FILENAME employees="m1:/home/tigergraph/mydata/northwind/data/employees.csv";
-  DEFINE FILENAME employee_territories="m1:/home/tigergraph/mydata/northwind/data/employee-territories.csv";
-  DEFINE FILENAME order_details="m1:/home/tigergraph/mydata/northwind/data/order-details.csv";
-  DEFINE FILENAME orders="m1:/home/tigergraph/mydata/northwind/data/orders.csv";
-  DEFINE FILENAME products="m1:/home/tigergraph/mydata/northwind/data/products.csv";
-  DEFINE FILENAME referrals="m1:/home/tigergraph/mydata/northwind/data/referrals.csv";
-  DEFINE FILENAME regions="m1:/home/tigergraph/mydata/northwind/data/regions.csv";
-  DEFINE FILENAME suppliers="m1:/home/tigergraph/mydata/northwind/data/suppliers.csv";
-  DEFINE FILENAME territories="m1:/home/tigergraph/mydata/northwind/data/territories.csv";
+  DEFINE FILENAME categories="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/categories.csv";
+  DEFINE FILENAME customers="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/customers.csv";
+  DEFINE FILENAME employees="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/employees.csv";
+  DEFINE FILENAME employee_territories="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/employee-territories.csv";
+  DEFINE FILENAME order_details="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/order-details.csv";
+  DEFINE FILENAME orders="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/orders.csv";
+  DEFINE FILENAME products="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/products.csv";
+  DEFINE FILENAME referrals="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/referrals.csv";
+  DEFINE FILENAME regions="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/regions.csv";
+  DEFINE FILENAME suppliers="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/suppliers.csv";
+  DEFINE FILENAME territories="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/territories.csv";
 
   LOAD employees TO VERTEX Reps VALUES($"EmployeeID", $"LastName", $"FirstName", $"Title", $"TitleOfCourtesy", $"BirthDate", $"HireDate", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"HomePhone", $"Extension", $"ReportsTo", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
   LOAD referrals TO EDGE referredby VALUES("$from_rep", $"to_rep") USING SEPARATOR=",", HEADER="true", EOL="\n";
