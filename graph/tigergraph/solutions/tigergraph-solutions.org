@@ -1014,7 +1014,7 @@
        RUN SCHEMA_CHANGE JOB schema_change_job_RwBCZV
        DROP JOB schema_change_job_RwBCZV
      #+end_src
-** Load data
+*** Load data
     #+begin_src sql :tangle supplychain/02-load-data.gsql
       set exit_on_error = "false"
       USE GRAPH SupplyChain
@@ -1052,7 +1052,7 @@
       DROP JOB load_job_supplychain
       set exit_on_error = "true"
     #+end_src
-** Queries
+*** Queries
     #+begin_src sql :tangle supplychain/queries.gsql
       set exit_on_error = "true"
       CREATE QUERY scc (SET<STRING> v_type, SET<STRING> e_type, SET<STRING> rev_e_type,
