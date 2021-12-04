@@ -1,0 +1,22 @@
+USE GLOBAL
+DROP GRAPH SupplyChain
+
+CREATE GRAPH SupplyChain()
+USE GRAPH SupplyChain
+CREATE SCHEMA_CHANGE JOB schema_change_job_RwBCZV FOR GRAPH SupplyChain {
+  ADD VERTEX models(PRIMARY_ID ModelNumber STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+  ADD VERTEX warehouse(PRIMARY_ID WarehouseId STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+  ADD VERTEX BillofMaterial(PRIMARY_ID id STRING, item_number STRING, model_number STRING, model_year STRING, model_name STRING, parent_item_number STRING, level_in_bom STRING, site_id STRING, quantity_per INT, cost FLOAT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+  ADD VERTEX BuildSchedule(PRIMARY_ID id STRING, item_number STRING, order_number STRING, order_duedate DATETIME, warehouse STRING, open_qty INT, order_qty INT, deviation_qty INT, received_qty INT, load_date DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+  ADD VERTEX item(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
+  ADD UNDIRECTED EDGE part_of(FROM BillofMaterial, TO BillofMaterial);
+  ADD UNDIRECTED EDGE build_plan(FROM BuildSchedule, TO warehouse);
+  ADD UNDIRECTED EDGE scheduled_to_build(FROM BuildSchedule, TO models);
+  ADD UNDIRECTED EDGE model_bom(FROM BillofMaterial, TO models);
+  ADD UNDIRECTED EDGE item_in_bom(FROM BillofMaterial, TO item);
+  ADD UNDIRECTED EDGE in_warehouse_inventory(FROM item, TO warehouse, qtyonhand INT);
+  ADD UNDIRECTED EDGE used_by(FROM models, TO item);
+  ADD UNDIRECTED EDGE at_risk_used_by(FROM models, TO item, SITEID STRING, ORDERMONTH STRING, DEMAND FLOAT, BOMQTY FLOAT, REQUIREDPARTQTY FLOAT);
+}
+RUN SCHEMA_CHANGE JOB schema_change_job_RwBCZV
+DROP JOB schema_change_job_RwBCZV

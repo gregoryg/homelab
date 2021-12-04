@@ -1,0 +1,262 @@
+USE GLOBAL
+DROP GRAPH CustExp
+
+create graph CustExp()
+
+use graph CustExp
+
+create schema_change job custexp_schema for graph CustExp {
+
+       ADD VERTEX Account(PRIMARY_ID Account_id STRING,
+                             Name STRING,
+                             Parentid STRING,
+                             BillingStreet STRING,
+                             BillingCity STRING,
+                             BillingState STRING,
+                             BillingPostalCode STRING,
+                             BillingCountry STRING,
+                             Phone STRING,
+                             Website STRING,
+                             Industry STRING,
+                             AnnualRevenue FLOAT,
+                             NumberofEmployees INT,
+                             Description STRING,
+                             AccountOwnerid STRING,
+                             CreatedDate DATETIME,
+                             CreatedByid STRING,
+                             LastModifiedDate DATETIME,
+                             LastModifiedByid STRING,
+                             LastActivityDate DATETIME,
+                             AccountSource STRING)
+                             WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                             PRIMARY_ID_AS_ATTRIBUTE="false";
+
+       ADD VERTEX Campaign(PRIMARY_ID Campaign_id STRING,
+                              Name STRING,
+                              Parentid STRING,
+                              Campaign_Type STRING,
+                              Status STRING,
+                              StartDate DATETIME,
+                              EndDate DATETIME,
+                              BudgetedCost FLOAT,
+                              ActualCost FLOAT,
+                              IsActive BOOL,
+                              Description STRING,
+                              Number_Of_Leads INT,
+                              Number_Of_Converted_Leads INT,
+                              Number_Of_Responses INT,
+                              Number_Of_Opportunities INT,
+                              Number_Of_Won_Opportunities INT,
+                              Amount_All_Opportunities FLOAT,
+                              Amount_Won_Opportunities FLOAT,
+                              Hierarchy_Number_Of_Leads INT,
+                              Hierarchy_Number_Of_Converted_Leads INT,
+                              Hierarchy_Number_Of_Contacts INT,
+                              Hierarchy_Number_Of_Responses INT,
+                              Hierarchy_Number_Of_Opportunities INT,
+                              Hierarchy_Number_Of_Won_Opportunities INT,
+                              Hierarchy_Amount_Won_Opportunities FLOAT,
+                              Hierarchy_Amount_All_Opportunities FLOAT,
+                              Hierarchy_Budgeted_Cost FLOAT,
+                              Hierarchy_Actual_Cost FLOAT,
+                              Campaign_Owner_id STRING,
+                              CreatedDate DATETIME,
+                              LastModifiedDate DATETIME,
+                              LastModifiedByid STRING)
+                     WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                     PRIMARY_ID_AS_ATTRIBUTE="false";
+
+       ADD VERTEX Contact(PRIMARY_ID Contact_id STRING,
+                             FirstName STRING,
+                             LastName STRING,
+                             Phone STRING,
+                             Email STRING,
+                             Title STRING,
+                             Department STRING,
+                             LeadSource STRING,
+                             Description STRING,
+                             Contact_Ownerid STRING,
+                             Has_Opted_Out_Of_Email BOOL,
+                             DoNotCall BOOL,
+                             CreatedDate DATETIME,
+                             CreatedByid STRING,
+                             LastModifiedDate DATETIME,
+                             LastModifiedByid STRING,
+                             Free_Trial_Start_date DATETIME,
+                             Free_Trial_Status STRING,
+                             Signed_Up_For_Free_Trial_On DATETIME,
+                             Dev_edition_Date_Signed_Up DATETIME,
+                             Employee_Band STRING,
+                             Original_Lead_Source STRING)
+                     WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                     PRIMARY_ID_AS_ATTRIBUTE="false";
+
+       ADD VERTEX Lead(PRIMARY_ID Lead_id STRING,
+                          FirstName STRING,
+                          LastName STRING,
+                          Title STRING,
+                          Company STRING,
+                          City STRING,
+                          State STRING,
+                          LeadSource STRING,
+                          Status STRING,
+                          Industry STRING,
+                          Ownerid STRING,
+                          HasOptedOutOfEmail BOOL,
+                          IsConverted BOOL,
+                          ConvertedDate DATETIME,
+                          ConvertedAccountId STRING,
+                          ConvertedContactId STRING,
+                          ConvertedOpportunityId STRING,
+                          IsUnreadByOwner BOOL,
+                          CreatedDate DATETIME,
+                          CreatedById STRING,
+                          LastModifiedDate DATETIME,
+                          LastModifiedById STRING,
+                          LastActivityDate DATETIME,
+                          DoNotCall BOOL,
+                          LastTransferDate DATETIME,
+                          Free_Trial_License_Key__c STRING,
+                          Free_Trial_Start_Date__c DATETIME,
+                          Signed_up_for_free_trial_on__c DATETIME,
+                          Agree_to_FT_LicenseAgreement__c BOOL,
+                          Free_Trial_Project_Notes__c STRING,
+                          Free_Trial_Follow_Up_Notes__c STRING,
+                          Started_Test_Drive__c BOOL,
+                          Free_Trial_Status__c STRING,
+                          LinkedIn_Profile__c STRING,
+                          Dev_Edition_Agree_to_License_Agreement__c BOOL,
+                          Dev_Edition_Date_Signed_Up__c DATETIME,
+                          Free_Trial_Renewed_Date__c DATETIME,
+                          Goals_of_Developer_Edition__c STRING,
+                          Goal_of_Developer_Edition_Other__c STRING,
+                          Employee_Band__c STRING,
+                          Are_you_familar_with_Graph_db__c STRING,
+                          Competitor_Notes__c STRING,
+                          Use_Graph_Score__c STRING,
+                          What_s_your_interest_in_TigerGraph__c STRING,
+                          Interest_Notes__c STRING,
+                          Interest_Score__c STRING,
+                          What_capabilities_are_you_looking_for__c STRING,
+                          Do_you_have_a_timeline__c STRING,
+                          Contacts_Role__c STRING,
+                          Title_Rank__c STRING,
+                          Timeline_Score__c INT,
+                          Role_Score__c INT,
+                          Title_Score__c INT,
+                          How_do_you_want_to_deploy_o__c STRING,
+                          SQL_SCORE__c INT,
+                          Original_Lead_Source__c STRING,
+                          Event_Notes_L__c STRING,
+                          DiscoverOrg_EmployeeID__c STRING,
+                          DiscoverOrg_CompanyID__c STRING)
+                 WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                 PRIMARY_ID_AS_ATTRIBUTE="false";
+
+        ADD VERTEX CampaignMember(PRIMARY_ID CampaignMemberid STRING,
+                                      IsDeleted BOOL,
+                                      CampaignId STRING,
+                                      LeadId STRING,
+                                      ContactId STRING,
+                                      Status STRING,
+                                      HasResponded BOOL,
+                                      IsPrimary BOOL,
+                                      CreatedDate DATETIME,
+                                      CreatedById STRING,
+                                      LastModifiedDate DATETIME,
+                                      LastModifiedById STRING,
+                                      SystemModstamp STRING,
+                                      FirstRespondedDate DATETIME)
+                       WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                       PRIMARY_ID_AS_ATTRIBUTE="false";
+
+        ADD VERTEX Opportunity(PRIMARY_ID Opportunity_id STRING,
+                                  IsDeleted BOOL,
+                                  AccountID STRING,
+                                  IsPrivate BOOL,
+                                  Name STRING,
+                                  Description STRING,
+                                  StageName STRING,
+                                  StageSortOrder INT,
+                                  Amount FLOAT,
+                                  Probability FLOAT,
+                                  ExpectedRevenue FLOAT,
+                                  CloseDate DATETIME,
+                                  Opportunity_Type STRING,
+                                  NextStep STRING,
+                                  LeadSource STRING,
+                                  IsClosed BOOL,
+                                  IsWon BOOL,
+                                  ForecastCategory STRING,
+                                  ForecastCategoryName STRING,
+                                  CampaignId STRING,
+                                  HasOpportunityLineItem BOOL,
+                                  Pricebook2Id STRING,
+                                  Ownerid STRING,
+                                  CreatedDate DATETIME,
+                                  CreatedById STRING,
+                                  LastModified DATETIME,
+                                  LastModifiedById STRING,
+                                  SystemModstamp STRING,
+                                  LastActivityDate DATETIME,
+                                  LastStageChangeDate DATETIME,
+                                  FiscalYear STRING,
+                                  FiscalQuarter STRING,
+                                  Budget_Confirmed__c BOOL,
+                                  Discovery_Completed__c BOOL,
+                                  ROI_Analysis_Completed__c BOOL,
+                                  Referral_Partner_Company__c STRING,
+                                  Stage_Moved_to_POC__c DATETIME,
+                                  Are_you_familiar_with_Graph_db_O__c STRING,
+                                  Competitor_Notes_O__c STRING,
+                                  Contacts_Role_o__c STRING,
+                                  Do_you_have_a_timeline__c STRING,
+                                  How_do_you_want_to_deploy_o__c STRING,
+                                  Interest_Notes_o__c STRING,
+                                  Interest_Score_o__c INT,
+                                  Role_Score_o__c INT,
+                                  SQL_SCORE_o__c INT,
+                                  Timeline_Score_o__c INT,
+                                  Title_Rank__c STRING,
+                                  Title_Score_o__c INT,
+                                  Use_Graph_Score_o__c INT)
+                         WITH STATS="OUTDEGREE_BY_EDGETYPE",
+                         PRIMARY_ID_AS_ATTRIBUTE="false";
+
+          ADD VERTEX Industry(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+
+          ADD VERTEX LeadSource(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+
+          ADD DIRECTED EDGE belongs_to(FROM Contact, TO Account) WITH REVERSE_EDGE="reverse_belongs_to";
+
+          ADD DIRECTED EDGE converted(FROM Lead, TO Contact) WITH REVERSE_EDGE="reverse_converted";
+
+          ADD DIRECTED EDGE is_active_as(FROM Lead, TO CampaignMember) WITH REVERSE_EDGE="reverse_is_active_as";
+
+          ADD DIRECTED EDGE is_part_of(FROM CampaignMember, TO Campaign) WITH REVERSE_EDGE="reverse_is_part_of";
+
+          ADD DIRECTED EDGE Has_Role(FROM Contact, TO Opportunity, role STRING, id STRING) WITH REVERSE_EDGE="reverse_Has_Role";
+
+          ADD DIRECTED EDGE Has(FROM Account, TO Opportunity) WITH REVERSE_EDGE="reverse_Has";
+
+          ADD DIRECTED EDGE Is_Driven_By(FROM Opportunity, TO Campaign) WITH REVERSE_EDGE="reverse_Is_Driven_By";
+
+          ADD DIRECTED EDGE is_connected_to(FROM Contact, TO CampaignMember) WITH REVERSE_EDGE="reverse_is_connected_to";
+
+          ADD DIRECTED EDGE belongs_to_industry(FROM Account, TO Industry) WITH REVERSE_EDGE="reverse_belongs_to_industry";
+
+          ADD DIRECTED EDGE created_by(FROM Account, TO LeadSource) WITH REVERSE_EDGE="reverse_created_by";
+
+          ADD DIRECTED EDGE is_from(FROM Contact, TO LeadSource) WITH REVERSE_EDGE="reverse_is_from";
+
+          ADD DIRECTED EDGE comes_from(FROM LeadSource, TO Lead) WITH REVERSE_EDGE="reverse_comes_from";
+
+          ADD DIRECTED EDGE comes_from_the(FROM Lead, TO Industry) WITH REVERSE_EDGE="reverse_comes_from_the";
+
+          ADD DIRECTED EDGE is_for_the(FROM Opportunity, TO Industry) WITH REVERSE_EDGE="reverse_is_for_the";
+
+}
+
+run schema_change job custexp_schema
+
+drop job custexp_schema

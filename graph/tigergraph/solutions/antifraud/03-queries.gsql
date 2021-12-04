@@ -1,0 +1,658 @@
+USE GRAPH AntiFraud
+CREATE OR REPLACE QUERY circleDetection (vertex<User> srcId)  FOR GRAPH AntiFraud {
+/*
+  This is an anti-money laundering query. It detects money flow circle from a starting user.
+
+  Start from a user, find all the transaction paths originated from the input user
+  and eventually come back to the user. The path length is limited from 3 to 6.
+
+  Sample input
+  User: any integer between 1 and 500.
+*/
+  Typedef tuple<EDGE e, VERTEX v, double amount, int ts> EdgeTuple;
+  MinAccum<int> @minLeftDist = GSQL_INT_MAX;
+  MinAccum<int> @minRightDist = GSQL_INT_MAX;
+  MinAccum<int> @@minSrcSendTime = GSQL_INT_MAX;
+  MaxAccum<int> @@maxSrcReceiveTime = 0;
+
+  OrAccum @isValid = false;//flag used to record valid vertices in the subgraph
+
+  int stepLowLimit = 3;
+  int stepHighLimit = 6;
+
+  int halfStep;
+  int step;
+  //The following are used for aggregation on src
+  SumAccum<int> @validTransNum = 0;
+  SumAccum<int> @validTransSum = 0;
+  MaxAccum<int> @maxRank = 0;
+  ListAccum<ListAccum<EdgeTuple>> @edgeTupleList;
+  ListAccum<ListAccum<EdgeTuple>> @newEdgeTupleList;
+  ListAccum<ListAccum<EdgeTuple>> @@circleEdgeTuples;
+  OrAccum @receiveNewPath = false;
+
+  //The following is used for printing edges and vertices
+  SetAccum<vertex> @@vSet;
+  ListAccum<ListAccum<Edge>> @@circlePaths;
+
+  //starting from input User vertex
+  Seed = {srcId};
+
+  //oneStep to find out the src's minSendTime and maxReceiveTime, initialize the distance info for srcId
+  Seed = SELECT src
+      FROM Seed:src - ((User_Transfer_Transaction|User_Recieve_Transaction):e) -> Transaction:tgt
+      ACCUM
+        CASE WHEN e.type == "User_Transfer_Transaction"
+             THEN @@minSrcSendTime += tgt.ts
+        ELSE
+          @@maxSrcReceiveTime += tgt.ts
+        END
+      Post-ACCUM
+        src.@minLeftDist = 0,
+        src.@minRightDist = 0,
+        src.@isValid = true
+      //make sure that it has a loop, if @@maxSrcRecievTime < @@minSrcSendTime, then there is no loop
+      //Because, if @@maxSrcRecievTime < @@minSrcSendTime, all the valid money it receives are before it sends out money
+      HAVING @@maxSrcReceiveTime >= @@minSrcSendTime
+      ;
+
+  //PRINT epoch_to_datetime(@@maxSrcReceiveTime), epoch_to_datetime(@@minSrcSendTime), startTime, endTime;
+  #Now start the bidirectional search of loops for srcId
+  # 1) First bidirecitonal search for the potential subgraph for all loops of srcId
+  # 2) Then one directional search to valid each path inside the subgraph using path filters, i.e. time increase along the path
+
+  //set X as Seed
+  X (_) = Seed;//X is used to do positive direction traversal
+  Y (_) = Seed;//Y is used to do negative direction traversal
+
+  # In order to do bidirectional search, we separate search into two steps,
+  # i) search for half of totoal steps, only touch unmark vertices,
+  #  i.e. positive directional search only touch positive unmarked vertices,
+  #       negative search only touch negative unmarked vertices
+  # ii) After the first half search, the following search only happens for marked vertices,
+  #  i.e. positive directional search only touch negative marked and positive unmarked vertices
+  #       negative search only touch negative positive marked and negative unmarked vertices
+  # if one of touched vertex fulfil the condition that positive distance + negative distance < stepHighLimit, it is a valid vertex
+  //First search for half of total steps
+  halfStep = (stepHighLimit + 1)/2;
+  step = 0;
+  WHILE step <= halfStep AND X.size() + Y.size() > 0
+  DO
+    IF X.size() > 0
+    THEN
+      //from User to Transaction
+      X = SELECT tgt
+        FROM X:src - (User_Transfer_Transaction:e) -> Transaction:tgt
+        WHERE
+          //tgt ts must be bigger than minSrcSendTime
+          //so that all paths has increasing time
+          tgt.ts >= @@minSrcSendTime
+          AND src.@minLeftDist < GSQL_INT_MAX
+          AND tgt.@minLeftDist == GSQL_INT_MAX
+        ACCUM
+          tgt.@minLeftDist += src.@minLeftDist + 1
+        POST-ACCUM
+          CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                 AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+               THEN
+                 tgt.@isValid = true
+          END
+        ;
+       //from Transaction to User
+      X = SELECT tgt
+        FROM X:src - (User_Recieve_Transaction_Rev:e) -> User:tgt
+        WHERE src.@minLeftDist < GSQL_INT_MAX
+          //only when tgt is not left visited, update the distance info
+          AND tgt.@minLeftDist == GSQL_INT_MAX
+        ACCUM
+          tgt.@minLeftDist += src.@minLeftDist + 1
+        POST-ACCUM
+          CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                    AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+               THEN
+                 tgt.@isValid = true
+          END
+        HAVING tgt != srcId
+      ;
+    END;
+
+    IF Y.size() > 0
+    THEN
+      Y = SELECT tgt
+        FROM Y:src - (User_Recieve_Transaction:e) -> Transaction:tgt
+        WHERE
+          tgt.ts <= @@maxSrcReceiveTime
+          AND src.@minRightDist < GSQL_INT_MAX
+          AND tgt.@minRightDist == GSQL_INT_MAX
+        ACCUM
+          tgt.@minRightDist += src.@minRightDist + 1
+        POST-ACCUM
+          CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX
+                 AND tgt.@minRightDist < GSQL_INT_MAX
+                 AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+               THEN
+                 tgt.@isValid = true
+          END
+        ;
+      //from Transaction to User
+      Y = SELECT tgt
+         FROM Y:src - (User_Transfer_Transaction_Rev:e) -> User:tgt
+         WHERE src.@minRightDist < GSQL_INT_MAX
+           //only when tgt is not left visited, update the distance info
+           AND tgt.@minRightDist == GSQL_INT_MAX
+         ACCUM
+           tgt.@minRightDist += src.@minRightDist + 1
+         POST-ACCUM
+           CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                     AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+                THEN
+                  tgt.@isValid = true
+           END
+         HAVING tgt != srcId
+      ;
+    END;
+    step = step + 1;
+  END;
+  # start the last half of search, only touch marked vertices
+  WHILE step <= stepHighLimit AND X.size() + Y.size() > 0
+  DO
+    IF X.size() > 0
+    THEN
+      //from User to Transaction
+      X = SELECT tgt
+        FROM X:src - (User_Transfer_Transaction:e) -> Transaction:tgt
+        WHERE tgt.@minRightDist < GSQL_INT_MAX//tgt must be touched in the above the negative search
+          AND tgt.ts >= @@minSrcSendTime
+          AND src.@minLeftDist < GSQL_INT_MAX
+          AND tgt.@minLeftDist == GSQL_INT_MAX
+        ACCUM
+          tgt.@minLeftDist += src.@minLeftDist + 1
+        POST-ACCUM
+          CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                 AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+               THEN
+                 tgt.@isValid = true
+          END
+        ;
+       //from Transaction to User
+      X = SELECT tgt
+        FROM X:src - (User_Recieve_Transaction_Rev:e) -> User:tgt
+        WHERE tgt.@minRightDist < GSQL_INT_MAX//tgt must be touched in the above the negative search
+          AND src.@minLeftDist < GSQL_INT_MAX
+          //only when tgt is not left visited, update the distance info
+          AND tgt.@minLeftDist == GSQL_INT_MAX
+        ACCUM
+          tgt.@minLeftDist += src.@minLeftDist + 1
+        POST-ACCUM
+          CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                    AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+               THEN
+                 tgt.@isValid = true
+          END
+        HAVING tgt != srcId
+      ;
+    END;
+
+    IF Y.size() > 0
+    THEN
+      Y = SELECT tgt
+        FROM Y:src - (User_Recieve_Transaction:e) -> Transaction:tgt
+        WHERE tgt.@minLeftDist < GSQL_INT_MAX//tgt must be touched in the above positive search
+          AND tgt.ts <= @@maxSrcReceiveTime
+          AND src.@minRightDist < GSQL_INT_MAX
+          AND tgt.@minRightDist == GSQL_INT_MAX
+        ACCUM
+          tgt.@minRightDist += src.@minRightDist + 1
+        POST-ACCUM
+          CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX
+                 AND tgt.@minRightDist < GSQL_INT_MAX
+                 AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+               THEN
+                 tgt.@isValid = true
+          END
+        ;
+      //from Transaction to User
+      Y = SELECT tgt
+        FROM Y:src - (User_Transfer_Transaction_Rev:e) -> User:tgt
+        WHERE tgt.@minLeftDist < GSQL_INT_MAX//tgt must be touched in the above positive search
+          AND src.@minRightDist < GSQL_INT_MAX
+          //only when tgt is not left visited, update the distance info
+          AND tgt.@minRightDist == GSQL_INT_MAX
+        ACCUM
+          tgt.@minRightDist += src.@minRightDist + 1
+        POST-ACCUM
+          CASE WHEN tgt.@minLeftDist < GSQL_INT_MAX and tgt.@minRightDist < GSQL_INT_MAX
+                    AND tgt.@minLeftDist + tgt.@minRightDist <= 2 * stepHighLimit
+               THEN
+                 tgt.@isValid = true
+          END
+        HAVING tgt != srcId
+        ;
+    END;
+    step = step + 1;
+  END;
+
+  #start valid path traversal and circle detection
+  step = 0;
+  //reset X as Seed
+  X = Seed;
+  WHILE step <= stepHighLimit
+  DO
+    //from User to Transaction
+    X = SELECT tgt
+      FROM X:src - (User_Transfer_Transaction:e) -> Transaction:tgt
+      WHERE tgt.@isValid == true
+      ACCUM
+        int ts = tgt.ts,
+        CASE
+          //if X is Seed, then only send edge over
+          WHEN src.@edgeTupleList.size() == 0
+            THEN tgt.@newEdgeTupleList += [EdgeTuple(e, src, tgt.amount, ts)]
+          ELSE
+            FOREACH path in src.@edgeTupleList
+            DO
+              tgt.@newEdgeTupleList += path + [EdgeTuple(e, src, tgt.amount, ts)]
+            END
+        END,
+        //reset receiveNewPath as false
+        tgt.@receiveNewPath = false
+      POST-ACCUM
+        CASE
+          WHEN tgt.@newEdgeTupleList.size() > 0
+          THEN
+            tgt.@edgeTupleList = tgt.@newEdgeTupleList,
+            tgt.@receiveNewPath = true,
+            tgt.@newEdgeTupleList.clear()
+        END
+      HAVING tgt.@receiveNewPath == true
+    ;
+
+    //from Transaction to User
+    X = SELECT tgt
+      FROM X:src - (User_Recieve_Transaction_Rev:e) -> User:tgt
+      WHERE tgt.@isValid == true
+      ACCUM
+        FOREACH path in src.@edgeTupleList
+        DO
+          CASE WHEN tgt == srcId OR (NOT PathContainsV(path, tgt))
+               THEN
+                 tgt.@newEdgeTupleList += path + [EdgeTuple(e, src, src.amount, src.ts)]
+          END
+        END,
+        //reset receiveNewPath as false
+        tgt.@receiveNewPath = false
+      POST-ACCUM
+        CASE
+          WHEN tgt.@newEdgeTupleList.size() > 0
+          THEN
+            CASE
+              //if it backs to start point, there is a valid circle
+              WHEN tgt == srcId
+                THEN
+                  //step + 1 gives the current updated step
+                  //it is the number of User -> User steps for current paths (there maybe multiple paths but all of them should have the same length)
+                  CASE WHEN step + 1 >= stepLowLimit
+                       THEN @@circleEdgeTuples += tgt.@newEdgeTupleList
+                  END
+              //else, overwrite the old @edgeTupleList, since the old one is already used
+              ELSE tgt.@edgeTupleList = tgt.@newEdgeTupleList
+            END,
+            tgt.@receiveNewPath = true,
+            tgt.@newEdgeTupleList.clear()
+        END
+      HAVING tgt.@receiveNewPath == true and tgt != srcId
+    ;
+
+    step = step + 1;
+  END;
+  //printJSON only if it is directly called or else return @@circleEdgeTuples directly
+  //use the drainRatio to filter out invalid paths
+  //store all valid vertices into @@vSet and all paths into @@circlePaths
+  PRINT @@circleEdgeTuples;
+}
+ CREATE OR REPLACE QUERY SameRecieverSender(vertex<Transaction> transaction) FOR GRAPH AntiFraud {
+/*
+ This query is used to find out whether a user conduct fradulent transaction for themselves
+ via fake accounts.
+
+ Given an input transaction, return true when its reciever and sender are connected via
+ Device_Token and Payment_Instrument within 4 steps.
+
+  Sample input
+  transaction: any integer between 1 and 1000.
+*/
+  OrAccum<bool> @fromReciever, @fromSender;
+  OrAccum<bool> @@isSame;
+
+  SetAccum<edge> @@edgeSet;
+
+  Start (ANY) = {transaction};
+
+  // get the sender and reciever
+  Start = SELECT t FROM Start:s-((User_Recieve_Transaction_Rev|User_Transfer_Transaction_Rev):e)-:t
+          ACCUM
+            // mark the sender and reciver according to the edge type
+            case when e.type == "User_Recieve_Transaction_Rev" then
+              t.@fromReciever += true
+            else
+              t.@fromSender += true
+            end
+            ,@@edgeSet += e
+  ;
+
+  // traverse for 4 steps, or the paths of sender and reciever meets each other
+  WHILE Start.size() > 0 AND @@isSame == false LIMIT 4 DO
+    Start = SELECT t FROM Start:s-((User_to_Device|User_to_Payment):e)-:t
+            // do not traverse the vertexes that were visited
+            WHERE t.@fromReciever == false AND t.@fromSender == false
+            ACCUM t.@fromReciever += s.@fromReciever,
+                  t.@fromSender += s.@fromSender
+                  ,@@edgeSet += e
+            POST-ACCUM
+              // when two paths meets in the middle
+              CASE WHEN t.@fromReciever == true AND t.@fromSender THEN
+                @@isSame += true
+              END
+    ;
+  END;
+
+  // output the result
+  PRINT @@isSame;
+  PRINT @@edgeSet;
+}
+CREATE OR REPLACE QUERY MultiTransaction (VERTEx<Transaction> transaction) FOR GRAPH AntiFraud{
+/*
+ This query is motivated by detecting money laundering activities between two groups. Given
+ a transaction, it finds the network of users related to the sender, and finds the network
+ of users related to the receiver. Then, it finds all transactions among the two networks.
+
+ Intuitively this query can help data analysts to visualize the money laundering activities,
+ since it can visualize the transactions between the sender and receiver groups, and the
+ transaction patterns within each network.
+
+  1) Start from an input transaction, find its sender and reciever
+  2) Start from the sender, via Device_Token and Payment_Instrument edges find users within 4 steps.
+  3) Start from the reciever, via Device_Token and Payment_Instrument edges find users within 4 steps.
+  4) Record transactions cross the sender and receiver groups.
+
+  Sample input
+  transaction: any integer between 1 and 500.
+*/
+
+  //declare flags to indicate a user is a sender or a receiver
+  OrAccum<bool> @fromReciever, @fromSender;
+
+  //declare set to store sender/receiver in sender/receiver group.
+  SetAccum<VERTEX> @@recieverSet, @@senderSet;
+  SetAccum<EDGE> @@edgeSet;
+
+  //assign the input transaction to the "Start" variable, which is a SET.
+  Start (ANY) = {transaction};
+
+  // find the sender and reciever of the input transaction. Mark them.
+  // Now, Start becomes {sender, receiver} set.
+  Start = SELECT t FROM Start:s-((User_Recieve_Transaction_Rev|User_Transfer_Transaction_Rev):e)-:t
+          ACCUM
+            // mark different groups according to edge type
+            case when e.type == "User_Recieve_Transaction_Rev" then
+              t.@fromReciever += true,
+              @@recieverSet += t
+            else
+              t.@fromSender += true,
+              @@senderSet += t
+            end,
+              @@edgeSet += e;
+
+  //via the User_to_Device, User_to_Payment edge types, traverse 4 steps and
+  //put sender reacheable users to the sender set, and reciever reachable
+  //users to the receiver set
+  WHILE Start.size() > 0 LIMIT 4 DO
+    Start = SELECT t FROM Start:s-((User_to_Device|User_to_Payment):e)-:t
+            WHERE t.@fromReciever == false AND t.@fromSender == false
+            ACCUM
+              t.@fromReciever += s.@fromReciever,
+              t.@fromSender += s.@fromSender,
+              @@edgeSet += e
+            POST-ACCUM
+              CASE WHEN t.type == "User" AND t.@fromSender == true THEN
+                  @@senderSet += t
+              WHEN t.@fromReciever == true then
+                  @@recieverSet += t
+              END
+            HAVING t.@fromReciever OR t.@fromSender;
+  END;
+
+  // from the reciever set mark the transactions 1-step related to its group member
+  Start = {@@recieverSet};
+  Start = SELECT t FROM Start:s-((User_Recieve_Transaction|User_Transfer_Transaction):e)-:t
+          WHERE t != transaction
+          ACCUM
+             t.@fromReciever += s.@fromReciever,
+             @@edgeSet += e;
+
+  // from the sender set, find transactions 1-step related to its group member.
+  // Record those transactions 1-step related to both a sender member and a receiver memeber.
+  Start = {@@senderSet};
+  Start = SELECT t FROM Start:s-((User_Recieve_Transaction|User_Transfer_Transaction):e)-:t
+          WHERE t != transaction
+          ACCUM
+             t.@fromSender += s.@fromSender,
+             @@edgeSet += e
+          HAVING t.@fromReciever AND t.@fromSender;
+
+  //print cross sender and receiver group transactions.
+  print Start;
+  //print within sender and receiver subgraph
+  print @@edgeSet;
+}
+CREATE OR REPLACE QUERY fraudConnectivity (VERTEX<User> inputUser, FLOAT trustScore) FOR GRAPH AntiFraud {
+/*
+  This query finds all connect users/payment cards/device that has low credit score.
+
+  Starting with a user X find all other users connected to
+  X through device token, payment instrument connected via transactions in 3 steps
+
+  Sample input
+  User: any integer between 1 and 500
+  trustScore: any float number (e.g. 0.1)
+*/
+
+  OrAccum<bool> @visited;
+  SumAccum<int> @@result;
+  SetAccum<edge> @@visResult;
+
+  Start (_) = {inputUser};
+
+  // keep traverse for 3 steps
+  WHILE Start.size()>0 limit 3 DO
+    Start = SELECT t
+         FROM Start:s-(:e)-:t
+         // sample clause for better visualization result
+         SAMPLE 15 EDGE WHEN s.outdegree() >= 20
+         WHERE t.@visited == false AND t != inputUser
+         ACCUM
+           @@visResult += e
+         POST-ACCUM
+           CASE WHEN t.trust_score < trustScore THEN
+             @@result += 1
+           END,
+           t.@visited += true
+
+    ;
+  END;
+
+  print @@result;
+  print @@visResult;
+}
+CREATE OR REPLACE QUERY InvitedUserBehavior (VERTEX<User> inputUser) FOR GRAPH AntiFraud {
+/*
+ This query is motivated to detect those fradulent users who conduct activities to earn
+ referral bonus. How do we do that?
+
+ Given an input user, this query traverses the graph, finds out how many two-hop users that
+ are indirectely invited by the input user. That is, the users invited by the input user's
+ invitees. It also calculates the transferred total money from the one-hop invitees.
+ Finally, the traversed subgraph is returned. Intuitively, if it's a fradulent user, we
+ can tell from the money transferred from their direct invitees; and their indirect invitees
+ should be small or zero.
+
+Sample input
+  inputUser: 5354357 | 30746939 | 23189347
+*/
+  //declare some variables to store aggregates.
+  SumAccum<int> @@invitedPersonNum;
+  SumAccum<float> @@totalAmountSent;
+  SetAccum<edge> @@visRes;
+
+  //assign the input user to the "start" variable, which is a SET.
+  start = {inputUser};
+
+  //one-step traversal. From the start set, via the User_Refer_User edge,
+  //find all the invitees of the input user; store them into the "users" variable.
+  //Put all touched edges into a variable for visualization purpose.
+  users = SELECT t
+          FROM start:s-(User_Refer_User:e)-:t
+      ACCUM @@visRes += e;
+
+  //Aggregate the amounts of all transactions conducted by the one-hop invitees into
+  //variable @@totalAmountSent. Also, store the traversed edges into variable  @@visRes.
+  trans = SELECT t
+          FROM users:s-((User_Transfer_Transaction):e)-:t
+          ACCUM
+            @@totalAmountSent += t.amount,
+            @@visRes += e;
+
+  //Second-hop traversal. Find users invited by the one-hop invitees.
+  //store their count in @@invitedPersonNum. And record the traversed edges into @@visRes.
+  users = SELECT t
+          FROM users:s-(User_Refer_User:e)-:t
+          WHERE t != inputUser
+          ACCUM @@visRes += e
+            POST-ACCUM @@invitedPersonNum += 1;
+  //return 2-hop invitees count, total transfered money by 1-hop and 2-hop invitees,
+  //and the subgraph.
+  PRINT @@invitedPersonNum, @@totalAmountSent, @@visRes;
+}
+CREATE OR REPLACE QUERY TransferredAmount (vertex<User> sender, dateTime startDate=to_dateTime("2000/12/31"), dateTime endDate=to_dateTime("2020/12/31")) for GRAPH AntiFraud{
+/**
+  This query answer the question that given a user, find out how much money has been transferred out from
+  her connected users within a date range.
+
+  1) Start from an user, find all other users connected via Device_Tokent or Payment_Instrument within 4 steps.
+  2) Then start from all the connected users, find transferred transactions between input start date and end date.
+  3) Calculate total transfered money amount of the transcations collected in step 2)
+
+  Sample input
+  User : any random integer between 1 and 500
+  endDate : 2000-12-31 00:00:00
+  startDate : 2020-12-31 00:00:00
+*/
+  SumAccum<float> @@transAmount;
+  OrAccum<bool> @visited;
+  // the iteration number
+  int iterNum = 0;
+  SetAccum<edge> @@edgeSet;
+
+  Start (ANY) = {sender};
+
+  // from the input user, go 4 steps with a while loop to find her connected users.
+  WHILE (Start.size() > 0) limit 4 DO
+    Start = select t from Start:s-((User_to_Device|User_to_Payment):e)-:t
+            where t.@visited == false AND (t.type != "User" OR t != sender)
+            ACCUM
+              @@edgeSet += e
+            POST-ACCUM
+              t.@visited += true
+    ;
+
+    // collect the transferred money number for the users found in 2nd and 4th iteration
+    case when iterNum%2 == 1 then
+      tmp = select s from Start:s-(User_Transfer_Transaction:e)-:t
+            where epoch_to_datetime(t.ts) < endDate AND epoch_to_datetime(t.ts) > startDate
+            accum @@transAmount += t.amount,
+                  @@edgeSet += e;
+    end;
+    iterNum = iterNum + 1;
+  END;
+
+  print @@transAmount;
+  print @@edgeSet;
+}
+CREATE OR REPLACE QUERY RepeatedUser (vertex<User> reciever) for GRAPH AntiFraud {
+/**
+ Given a money receiver, this query is to disover whether there exists relationships among
+ those people who have sent money to this receiver.
+
+  1) Start from a reciever find all her receiving money transactions.
+  2) Find all the senders from the transactions collected in step 1)
+  3) Start from the senders in step 2), go as far as 8 steps from each sender,
+     find all the senders that are connected to other senders by a path made of
+     Device_Token, Payment_Instrument, and Users.
+  4) Output all the transactions started by the senders found in step 3) and recieved by the input user.
+
+  Sample input
+  reciever: Recommend to use 1223 as input. Or, try integer between 1 and 500.
+*/
+
+  SumAccum<int> @msgRcv;
+  OrAccum<bool> @isS, @isRepeated;
+  MaxAccum<vertex> @max;
+  MinAccum<vertex> @min;
+  SetAccum<vertex> @@linkedJoint;
+
+  SetAccum<edge> @@edgeSet;
+
+  Start (ANY) = {reciever};
+
+  // get all transactions the receiver get money from.
+  transactions = select t from Start:s-(User_Recieve_Transaction:e)-:t
+          ACCUM @@edgeSet += e
+          post-accum t.@isS += true;
+
+  // get all senders related to the above transactions.
+  Start = select t from transactions:s-(User_Transfer_Transaction_Rev:e)-:t
+          ACCUM @@edgeSet += e
+          post-accum t.@msgRcv += 1,
+                     t.@isS += true,
+                     t.@max = t,
+                     t.@min = t;
+
+  // Traverse 8 step from the senders. min/max is used to find joint node
+  WHILE (Start.size() > 0) limit 8 DO
+    Start = select t from Start:s-((User_to_Device|User_to_Payment):e)-:t
+            WHERE t.@msgRcv == 0
+            ACCUM
+              t.@msgRcv += 1,
+              t.@min += s.@min,
+              t.@max += s.@max
+            POST-ACCUM
+              // when received message from different source
+              CASE WHEN t.@msgRcv > 1 AND t.@min != t.@max THEN
+                @@linkedJoint += t
+              END
+    ;
+  END;
+
+  Start = {@@linkedJoint};
+
+  // trace back to the source senders from the vertexes that joint multiple paths
+  WHILE (Start.size() > 0) DO
+    Start = select t from Start:s-((User_to_Device|User_to_Payment):e)-:t
+            WHERE t.@msgRcv != 0
+            ACCUM @@edgeSet += e
+            POST-ACCUM
+              s.@msgRcv = 0,
+              CASE WHEN t.@isS THEN
+                t.@isRepeated += true
+              END;
+  END;
+  // get the transactions to output
+  transactions = select s from transactions:s-(User_Transfer_Transaction_Rev:e)-:t
+          where t.@isRepeated == true
+          accum @@edgeSet += e
+  ;
+
+  print transactions [transactions.amount];
+  print @@edgeSet;
+}
+set exit_on_error = "true"
