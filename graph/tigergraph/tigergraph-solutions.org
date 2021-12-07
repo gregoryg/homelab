@@ -2651,7 +2651,7 @@
   #+end_src
 ** Copy it all by evaluating this Elisp code block
   Copy everything in the local =solutions= directory to the solutions path,
-  creating subdirs as necessary
+  creating subdirs as necessary.  =C-c C-c=
   #+begin_src emacs-lisp :var uri=xfer-params[2,1] :var dataroot=data-root  :var subdir=xfer-params[3,1] :results value replace
     (copy-directory "solutions" (concat uri dataroot "/" subdir) nil t t)
     (concat "Copied solutions to " uri dataroot "/" subdir)
