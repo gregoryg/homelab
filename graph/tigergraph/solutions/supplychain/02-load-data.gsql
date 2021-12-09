@@ -1,13 +1,13 @@
 set exit_on_error = "false"
 USE GRAPH SupplyChain
 CREATE LOADING JOB load_job_supplychain FOR GRAPH SupplyChain {
-DEFINE FILENAME Model_Number_Only="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/Model Number Only.csv";
-DEFINE FILENAME ModelItemNumber="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/ModelItemNumber.csv";
-DEFINE FILENAME Inventory="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/Inventory.csv";
-DEFINE FILENAME BuildSchedule_July="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/BuildSchedule July 21.csv";
-DEFINE FILENAME ItemMaster="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/ItemMaster POC.csv";
-DEFINE FILENAME BOM="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/BOM with Unique Identifier.csv";
-DEFINE FILENAME demandtopartusedby="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/demandtopartusedby.csv";
+DEFINE FILENAME Model_Number_Only="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/Model Number Only.csv";
+DEFINE FILENAME ModelItemNumber="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/ModelItemNumber.csv";
+DEFINE FILENAME Inventory="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/Inventory.csv";
+DEFINE FILENAME BuildSchedule_July="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/BuildSchedule July 21.csv";
+DEFINE FILENAME ItemMaster="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/ItemMaster POC.csv";
+DEFINE FILENAME BOM="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/BOM with Unique Identifier.csv";
+DEFINE FILENAME demandtopartusedby="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/demandtopartusedby.csv";
 
 
 LOAD Model_Number_Only TO VERTEX models VALUES($0) USING SEPARATOR=",", HEADER="true", EOL="\n";
