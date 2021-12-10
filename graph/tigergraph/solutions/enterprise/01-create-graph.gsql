@@ -1,0 +1,17 @@
+USE GLOBAL
+DROP GRAPH EnterpriseGraph
+CREATE GRAPH EnterpriseGraph()
+USE GRAPH EnterpriseGraph
+CREATE SCHEMA_CHANGE JOB schema_enterprise_graph FOR GRAPH EnterpriseGraph {
+  ADD VERTEX Person(PRIMARY_ID name STRING, gender STRING COMPRESS) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX Company(PRIMARY_ID name STRING, registered_capital UINT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX Project(PRIMARY_ID name STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+
+  ADD UNDIRECTED EDGE WorkFor(FROM Person, TO Company, title STRING COMPRESS);
+  ADD UNDIRECTED EDGE PersonInvestCompany(FROM Person, TO Company, invest_year UINT, amount DOUBLE, control_type STRING COMPRESS);
+  ADD DIRECTED EDGE CompanyInvestCompany(FROM Company, TO Company, invest_year UINT, amount DOUBLE, control_type STRING COMPRESS) WITH REVERSE_EDGE="reverse_CompanyInvestCompany";
+  ADD UNDIRECTED EDGE BidFor(FROM Company, TO Project, price DOUBLE, solution STRING);
+}
+
+RUN SCHEMA_CHANGE JOB schema_enterprise_graph
+DROP JOB schema_enterprise_graph

@@ -1,0 +1,61 @@
+USE GRAPH CrunchBasePre_2013
+CREATE LOADING JOB load_crunchbase {
+  DEFINE FILENAME cb_acquisitions = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_acquisitions.csv";
+  DEFINE FILENAME cb_company = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_company.csv";
+  DEFINE FILENAME cb_company_milestones = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_company_milestones.csv";
+  DEFINE FILENAME cb_company_offices = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_company_offices.csv";
+  DEFINE FILENAME cb_degrees = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_degrees.csv";
+  DEFINE FILENAME cb_financialorg = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_financialorg.csv";
+  DEFINE FILENAME cb_financialorg_milestones = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_financialorg_milestones.csv";
+  DEFINE FILENAME cb_fOrg_offices = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_fOrg_offices.csv";
+  DEFINE FILENAME cb_funding_rounds = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_funding_rounds.csv";
+  DEFINE FILENAME cb_funds = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_funds.csv";
+  DEFINE FILENAME cb_invested_by_company = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_invested_by_company.csv";
+  DEFINE FILENAME cb_invested_by_fOrg = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_invested_by_fOrg.csv";
+  DEFINE FILENAME cb_invested_by_person = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_invested_by_person.csv";
+  DEFINE FILENAME cb_ipos = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_ipos.csv";
+  DEFINE FILENAME cb_milestones = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_milestones.csv";
+  DEFINE FILENAME cb_offices = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_offices.csv";
+  DEFINE FILENAME cb_people = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_people.csv";
+  DEFINE FILENAME cb_person = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_person.csv";
+  DEFINE FILENAME cb_person_milestones = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_person_milestones.csv";
+  DEFINE FILENAME cb_personwithcompany = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_personwithcompany.csv";
+  DEFINE FILENAME cb_personwithfOrg = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_personwithfOrg.csv";
+  DEFINE FILENAME cb_product = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_product.csv";
+  DEFINE FILENAME cb_product_milestones = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_product_milestones.csv";
+  DEFINE FILENAME degrees = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/degrees.csv";
+  DEFINE FILENAME university = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/university.csv";
+  LOAD cb_people TO VERTEX person VALUES($1, _, _, $2, $3, $4, $5, _, _, _, _, _, _, _, _, _, _, _, _, _) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_degrees TO EDGE hasDegree VALUES($1, $4, $2, $3, $5, $6, $7) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD university TO VERTEX university VALUES($0, $1) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_personwithcompany TO EDGE work_for_company VALUES($2, $3, $4, $5, $6, $7, $8, $9, $10) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_invested_by_company TO EDGE investment_from_company VALUES($3, $1) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_invested_by_company TO EDGE invest VALUES($3, $2) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_person_milestones TO EDGE person_milestone VALUES($1, $0) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_product TO VERTEX product VALUES($0, $4, $5, $6, $8, $9, $10, $11, $12, $13, $14, $19, $20, $38, $39) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_product TO EDGE company_product VALUES($3, $0) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_product_milestones TO EDGE product_milestone VALUES($1, $0) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_milestones TO VERTEX milestone VALUES($0, $2, $3, $4, $5, $6, $7, $8) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_company_milestones TO EDGE company_milestone VALUES($1, $0) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_ipos TO VERTEX IPO VALUES($0, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_ipos TO EDGE company_ipo VALUES($2, $0) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_acquisitions TO EDGE acquire VALUES($2, $3, $4, $5, $6, $7, $8, $9, $10, $11) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_financialorg_milestones TO EDGE financial_milestone VALUES($1, $0) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_company_offices TO EDGE company_office VALUES($1, $2) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_offices TO VERTEX office VALUES($2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_fOrg_offices TO EDGE financial_office VALUES($1, $2) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_funds TO VERTEX funds VALUES($0, $3, $4, $5, $6, $7, $8, $9, $10) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_funds TO EDGE financial_funds VALUES($2, $0) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_financialorg TO VERTEX financialORG VALUES($0, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $29, $30, $31, $32, $33, $34, $36, $37, $38, $39) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_invested_by_fOrg TO EDGE invested_by_financialORG VALUES($3, $2) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_invested_by_fOrg TO EDGE investment_from_financialORG VALUES($3, $1) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_company TO VERTEX company VALUES($0, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $29, $30, $31, $32, $33, $34, $36, $37, $38, $39) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_funding_rounds TO VERTEX funding_rounds VALUES($0, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $16, $17, $18, $19, $20, $21, $22) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_funding_rounds TO EDGE company_funding_rounds VALUES($2, $0) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_personwithfOrg TO EDGE work_for_fOrg VALUES($2, $3, $4, $5, $6, $7, $8, $9, $10) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_invested_by_person TO EDGE invested_by_person VALUES($3, $2) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_invested_by_person TO EDGE investment_from_person VALUES($3, $1) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+  LOAD cb_person TO VERTEX person VALUES($0, $4, $5, _, _, _, _, $6, $8, $11, $12, $13, $14, $19, $20, $33, $34, $37, $38, $39) USING SEPARATOR="\t", HEADER="false", EOL="\n";
+}
+RUN LOADING JOB load_crunchbase
+DROP JOB load_crunchbase

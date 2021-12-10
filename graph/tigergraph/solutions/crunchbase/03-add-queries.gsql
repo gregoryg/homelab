@@ -1,0 +1,488 @@
+USE GRAPH CrunchBasePre_2013
+CREATE QUERY FindPromisingStartupBasedOnLeader(String roundStage, int k, String sector) FOR GRAPH CrunchBasePre_2013 {
+    /*
+ DISCLAIMER: Data is from Crunchbase 2013 Snapshot under the Creative Commons Attribution License [CC-BY].
+ --- Dataset has been shrunk on Nov.20th,2020 ---
+
+ This query is to help people find the top k promising startups led by sucessful founders,
+ within a round cutoff and sector filtering.
+ E.g.  If top k is 3, round cutoff is "c", and indurstry sector is "software", we evaluate the company
+ based on how many IPOs happened after its founders' contribution to their past companies.
+
+ Given a round_stage, company_sector, and top k to find,
+ Step:
+    (1) find all companies has IPOed or got Acquired.
+    (2) find employees who contributed to the companies in step(1) for IPOed/Acquired.
+    (3) find startups whose founders have worked for the companies in step(1) before.
+    (4) select startups based on the input round cutoff and category sector.
+    (5) Find the top K companies whose founders have the most successful trails.
+
+    Path:
+    funding_rounds -> company (check IPO/acquired) -> person -> company -> IPO/acquired
+
+    Sample input
+        1.  roundStage: c       k: 3     sector: software
+        2.  roundStage: angel   k: 5     sector: mobile
+        3.  roundStage: c       k: 3     sector: security
+    */
+    //declare tuple to combine the information, with relevant company and it's IPO/acquired numbers
+    typedef tuple<vertex<company> company, int score> scoreResults;
+    //declare heap to keep the top k companies
+    HeapAccum<scoreResults>(k,score desc) @@topScoreResults;
+
+    //declare set to store vertex and edge
+    SetAccum<vertex> @@tempV;
+    SetAccum<vertex> @@verSet;
+    SetAccum<edge> @@edgeSet;
+    SetAccum<vertex> @parentV;
+    SetAccum<edge> @parentE;
+    SetAccum<String> @@roundSet;
+
+    //decalre variable to record IPO/acquired numbers
+    SumAccum<int> @num;
+    //declare variable to tag the vertex
+    MinAccum<datetime> @successTime;
+    AndAccum @startup = true;
+    AndAccum @selectCom = true;
+    //declare map to store the pair information with vertex and the datetime limitation
+    MapAccum<vertex<person>, MapAccum<vertex<company>, datetime>> @@beforeWorkTime;
+    MapAccum<vertex<person>, MapAccum<vertex<company>, edge>> @@beforeWorkEdge;
+    ListAccum<vertex<company>> @companyList;
+
+    //declare list for checking roundStage
+    ListAccum<String> @@times;
+    int index = 8;
+
+    @@times = ["angel","seed","a","b","c","d","e","f","g"];
+    //get the roundStage index
+    foreach i in range[0,@@times.size()-1] do
+        if(roundStage == @@times.get(i)) then index = i;
+        else if(i > index) then @@roundSet += @@times.get(i);
+        end;
+    end;
+
+    IPOs = {IPO.*};
+    companies = {company.*};
+
+    //1.find all companies has IPOed/Acquired.
+    //company <- IPO
+    B11 = select c
+            from IPOs:i-(company_ipo:e)->company:c
+            //filter null time
+            where datetime_diff(i.public_at,to_datetime("1970-01-01 00:00:00")) != 0
+            accum
+                c.@parentV += i, c.@parentE += e, c.@successTime = i.public_at, c.@startup += false;
+    //company <- acquire
+    B12 = select c
+            from companies:s-(acquire:e)->company:c
+            //filter null time
+            where datetime_diff(e.acquired_at,to_datetime("1970-01-01 00:00:00")) != 0
+            accum
+                c.@parentV += s, c.@parentE += e, c.@successTime = e.acquired_at, c.@startup += false;
+
+    B1 = B11 union B12;
+
+    //filter companies according to roundStage cutoff
+    Startup = companies minus B1;
+    Filt = select f
+                from Startup:c-(company_funding_rounds:e)->funding_rounds:f
+                accum
+                    case when @@roundSet.contains(f.funding_round_code) then c.@selectCom += false end;
+
+    //2. find employees who contributed to the companies in step(1) for IPOed/Acquired.
+    B2 = select p
+            from B1:c-(work_for_company:e)->person:p
+            where datetime_diff(e.start_at,to_datetime("1970-01-01 00:00:00")) != 0 and datetime_diff(e.end_at,to_datetime("1970-01-01 00:00:00")) != 0 and datetime_diff(e.start_at,c.@successTime) < 0
+            accum
+                //p.@parentV += c,
+                @@beforeWorkEdge += (p -> (c -> e)),
+                @@beforeWorkTime += (p -> (c -> e.end_at));
+
+    //3. find startups whose founders have worked for the companies in step(1) before.
+    //4. select startups based on the input round cutoff and category sector.
+    B3 = select c
+            from B2:p-(work_for_company:e)->company:c
+            where c.@startup and c.@selectCom and c.status != "acquired" and c.status != "ipo"
+                    and e.title like "%ounder%"
+                    and lower(trim(c.category_code)) == lower(trim(sector))
+                    and datetime_diff(e.start_at,to_datetime("1970-01-01 00:00:00")) != 0
+                    and datetime_diff(e.end_at,to_datetime("1970-01-01 00:00:00")) != 0
+            accum
+                foreach (key,value) in @@beforeWorkTime.get(p) do
+                    if datetime_diff(e.start_at,value) > 0 then //c.@parentV += p,
+                            p.@parentE += @@beforeWorkEdge.get(p).get(key),
+                            //c.@nextPersonCompany += (person -> [key]),
+                            p.@companyList += key,
+                            c.@parentV += p,
+                            c.@parentE += e,
+                            c.@num += 1
+                    end
+                end;
+
+    //filter the companies which not subject to the employees working timeline
+    dd = select c
+            from B3:c
+            where c.@num == 0
+            accum @@tempV += c;
+    result = {@@tempV};
+    @@tempV.clear();
+    B3 = B3 minus result;
+
+    ///5. Find the top K companies whose founders have the most successful trails.
+    Process = select c
+                        from B3:c
+                        accum @@topScoreResults += scoreResults(c,c.@num);
+    print @@topScoreResults;
+
+    foreach item in @@topScoreResults do
+            @@verSet += item.company;
+    end;
+
+    //the top K companies
+    result = {@@verSet};
+
+    //add company's funding_founds
+    B4 = select f
+            from result:c-(company_funding_rounds:e)->funding_rounds:f
+            accum @@verSet += f, @@edgeSet += e;
+
+    // trace back to the source senders from the vertexes that joint multiple paths
+    r = select c
+            from result:c
+            accum
+                @@tempV += c.@parentV, @@verSet += c.@parentV, @@edgeSet += c.@parentE;
+
+    result = {@@tempV};
+    @@tempV.clear();
+    r = select p
+            from result:p
+            accum @@edgeSet += p.@parentE,
+                    foreach item in p.@companyList do
+                        @@tempV += item, @@verSet += item
+                    end;
+
+    result = {@@tempV};
+    @@tempV.clear();
+    //clean the parent of parent
+    r = select c
+            from result:c
+            accum @@tempV += c.@parentV;
+    del = {@@tempV};
+    @@tempV.clear();
+    r = select c
+            from del:c
+            where c.@parentV.size() != 0
+            post-accum c.@parentV.clear(), c.@parentE.clear();
+    //add the parent
+    r = select c
+            from result:c
+            accum @@verSet += c.@parentV, @@edgeSet += c.@parentE;
+    result = {@@verSet};
+    print result;
+    print @@edgeSet;
+}
+CREATE QUERY KeyRoleDiscovery(STRING companyName, INT k) FOR GRAPH CrunchBasePre_2013 {
+/*
+      DISCLAIMER: Data is from Crunchbase 2013 Snapshot under the Creative Commons Attribution License [CC-BY].
+    --- Dataset has been shrunk on Nov.20th,2020 ---
+
+      This query aims to find key roles of the input company and its parent companies (those investors or acquirer).
+      Given a  company name companName, return K-step subgraph, which displays all the key roles (CEO, founder, board 		director, executive, etc.)
+      of the companies on the k-step subgraph.
+
+      Sample Input:
+      companyName: LinkedIn			k: 2;
+      companyName: LuckyCal,		k: 8;
+    companyName: FriendFeed,	k: 5;
+*/
+    OrAccum @seen;
+    SetAccum<VERTEX> @@vertices;
+    SetAccum<EDGE> @@edges;
+    DATETIME present;
+
+    present = to_datetime("1970-01-01 00:00:00");
+  companies = {company.*};
+
+    // find the company whose name is the input string
+    Start (ANY) = SELECT tgt
+                FROM companies : tgt
+                WHERE lower(trim(tgt.name)) == lower(trim(companyName))
+                ACCUM @@vertices += tgt
+                POST-ACCUM tgt.@seen = TRUE;
+
+    // find all key roles and investor/acquirer company's key roles in k-step
+    WHILE TRUE LIMIT k DO
+        Start = SELECT tgt
+                FROM Start: s - ((invested_by_company | acquired_by | work_for_company) :e) - (company | person):tgt
+                WHERE tgt.@seen == FALSE AND s.type != "person" AND
+                            (
+                                (e.type == "work_for_company" AND (e.title LIKE "%founder%" OR e.title LIKE "%Founder%" OR e.title LIKE "%CEO%" OR e.title LIKE "% ceo%" OR e.title LIKE "%CTO%" OR e.title LIKE "% cto%" OR ((e.title LIKE "%oard%irectors%" OR e.title LIKE "%xecutive%") AND datetime_diff(e.end_at, present) == 0))) OR
+                              e.type == "invested_by_company" OR e.type == "acquired_by"
+                            )
+                ACCUM @@vertices += tgt, @@edges += e
+                POST-ACCUM tgt.@seen = TRUE;
+    END;
+    IF @@vertices.size() != 0 THEN
+            results = {@@vertices};
+            print results;
+            print @@edges;
+    ELSE
+            PRINT "Can't find any companies or people have key relations with this company in max steps.";
+    END;
+}
+CREATE QUERY FindPromisingStartupBasedOnBoard(INT K1, INT K2, STRING cutoffRound, INT pastNYears) FOR GRAPH CrunchBasePre_2013 {
+/*
+    DISCLAIMER: Data is from Crunchbase 2013 Snapshot under the Creative Commons Attribution License [CC-BY].
+  --- Dataset has been shrunk on Nov.20th,2020 ---
+
+  Suppose a person want to join a startup that has a good board memeber.
+  In this query, we search crunchbase data, and target those board members who have served on startup
+    boards that have successful exits (means they are good) AND these people belong to a currently rich
+    financial organization (means they are active), and look at what other pre-IPO startups they are directing now.
+
+  Brief steps:
+  1. Find people who work for top K1 financial organizations that have raised most money in past N years.
+  2. Find the top K2 persons who has the most board experience of succesful startups.
+  3. Display the current startups whose board have the people discovered in step 2.
+  4. We can further select the startup based on an input round cutoff.
+
+  Sample Input:
+  pastNYears means year restriction, K1 means top K1 financial organizations, K2 means top K2 people.
+  K1: 30,  K2: 2,  cutoffRound: b, 	pastNYears: 15;
+    K1: 8,   K2: 1,  cutoffRound: a， pastNYears: 15;
+  K1: 10,  K2: 3,  cutoffRound: d,  pastNYears: 10;
+  K1: 20,  K2: 1,  cutoffRound: b， pastNYears: 20;
+*/
+  TYPEDEF TUPLE<VERTEX fOrg, DOUBLE amounts> rank;
+  TYPEDEF TUPLE<VERTEX people, INT counts> tmost;
+  HeapAccum<rank>(K1, amounts DESC) @@topF;
+  HeapAccum<tmost>(K2, counts DESC) @@topP;
+  MapAccum<STRING, DOUBLE> @@currency2USD;
+  ListAccum<STRING> @@codeList;
+  ListAccum<STRING> @@nptList;
+  ListAccum<DATETIME> @time;
+  SumAccum<DOUBLE> @amount;
+  SumAccum<INT> @count;
+  OrAccum @visited = FALSE;
+  OrAccum @belongto = FALSE;
+    OrAccum @potential = FALSE;
+  SetAccum<VERTEX> @@forgs;
+  SetAccum<VERTEX> @@pres;
+  SetAccum<VERTEX> @@vsets;
+  SetAccum<EDGE> @@esets;
+  SetAccum<VERTEX> @@csets;
+  SetAccum<VERTEX> @@tmp;
+  SetAccum<VERTEX> @@psets;
+  SetAccum<VERTEX> @myset;
+  DATETIME present;
+  DATETIME none;
+  SumAccum<INT> @total;
+  SumAccum<INT> @before;
+
+  present = to_datetime("2013-12-31 23:59:59");
+  none = to_datetime("1970-01-01 00:00:00");
+  @@currency2USD += ("USD" -> 1);
+  @@currency2USD += ("AUD" -> 1.28);
+  @@currency2USD += ("CAD" -> 1.25);
+  @@currency2USD += ("EUR" -> 0.85);
+  @@currency2USD += ("GBP" -> 0.76);
+  @@currency2USD += ("JPY" -> 112.84);
+  @@currency2USD += ("SEK" -> 8.14);
+
+  @@codeList = ["angel", "seed", "a", "b", "c", "d", "e", "f", "g"];
+  FOREACH i in range[0, @@codeList.size()-1] DO
+      IF @@codeList.get(i) == lower(trim(cutoffRound)) THEN
+          @@nptList += @@codeList.get(i);
+          BREAK;
+      ELSE  @@nptList += @@codeList.get(i);
+      END;
+  END;
+
+  Orgs (ANY) = {financialORG.*};
+  // find top k financial organizations who raised most money in past N years
+  Orgs = SELECT tgt
+        FROM Orgs: s - (financial_funds: e) - funds: tgt
+        WHERE datetime_diff(present, tgt.funded_at) <= pastNYears*31536000
+        ACCUM s.@amount += (tgt.raised_amount / @@currency2USD.get(tgt.raised_currency_code)), tgt.@visited = TRUE/*,
+              @@d += tgt.created_at, @@t += datetime_diff(present, tgt.created_at)*/
+        POST-ACCUM @@topF += rank(s, s.@amount);
+
+  FOREACH item IN @@topF DO
+      @@forgs += item.fOrg;
+  END;
+
+  TopORGs = {@@forgs};
+  TopORGs = SELECT tgt
+            FROM TopORGs: tgt
+            POST-ACCUM tgt.@visited = TRUE;
+
+  // tag ipo time or acquisition time on all companies
+  Pre (ANY) = {company.*};
+  Pre = SELECT tgt
+        FROM Pre:s - ((company_ipo | acquired_by): e) - (IPO | company): tgt
+        ACCUM CASE WHEN e.type == "company_ipo" AND datetime_diff(tgt.public_at, none) != 0 THEN
+                    s.@time += tgt.public_at
+              END,
+              CASE WHEN e.type == "acquired_by" AND datetime_diff(e.acquired_at, none) != 0 THEN
+                    s.@time += e.acquired_at
+              END;
+
+  // find people who work for the top k financial organizations
+  S0 = SELECT tgt
+          FROM TopORGs: s - (work_for_fOrg: e) - person: tgt
+          ACCUM tgt.@belongto = TRUE;
+
+  // find selected companies whose board has person in S1
+  S1 = SELECT tgt
+      FROM S0: s - (work_for_company: e) - company: tgt
+      WHERE (e.title LIKE "%Board%" OR e.title LIKE "%board%") AND tgt.@time.size() != 0 AND datetime_diff(e.start_at, none) != 0
+      ACCUM IF datetime_diff(tgt.@time.get(0), e.start_at) > 0 THEN
+                @@csets += tgt, tgt.@myset += s
+            END;
+
+  // count successful exits for each discovered person and do the ranking
+  S2 (ANY) = {@@csets};
+  S2 = SELECT tgt
+        FROM S2 :s - (work_for_company :e) - person: tgt
+        WHERE (e.title LIKE "%Board%" OR e.title LIKE "%board%") AND tgt.@belongto == TRUE
+        ACCUM tgt.@amount += 1
+        POST-ACCUM @@topP += tmost(tgt, tgt.@amount);
+  FOREACH item in @@topP DO
+      @@psets += item.people;
+  END;
+
+  // find rest companies without ipo or acquisition that the person serves
+  S3 (ANY) = {@@psets};
+  S3 = SELECT tgt
+      FROM S3: s - (work_for_company: e) - company: tgt
+      WHERE (e.title LIKE "%Board%" OR e.title LIKE "%board%") AND e.start_at != none AND tgt.status == "operating" AND tgt NOT IN @@csets;
+
+  // find other pre-IPO startups that top persons are directing now before certain round
+  S4 = SELECT tgt
+      FROM S3: s - (company_funding_rounds: e) - funding_rounds: tgt
+      ACCUM s.@total += 1,
+            IF @@nptList.contains(tgt.funding_round_code)
+              THEN s.@before += 1, tgt.@visited = TRUE
+            END
+      POST-ACCUM @@tmp += s;
+  S5 = {@@tmp};
+  S5 = SELECT tgt
+      FROM S5: tgt
+      WHERE tgt.@before == tgt.@total
+      ACCUM tgt.@potential = TRUE, @@csets += tgt;
+
+  // back traverse to find paths displayed in the subgraph
+  Paths (ANY) = {@@psets};
+  WHILE TRUE LIMIT 2 DO
+      Paths = SELECT tgt
+        FROM Paths :s - ((company_funding_rounds | acquired_by | company_ipo | work_for_company | work_for_fOrg | financial_funds): e) - :tgt
+        WHERE (e.type == "work_for_company" AND ((datetime_diff(e.start_at, none) != 0 AND tgt.@myset.contains(s)) OR tgt.@potential == TRUE)) OR
+            ((e.type == "work_for_fOrg" OR e.type == "financial_funds" OR e.type == "company_funding_rounds") AND tgt.@visited == TRUE)
+            OR e.type == "company_ipo" OR e.type == "acquired_by"
+          ACCUM @@vsets += tgt, @@esets += e;
+  END;
+  Result1 = {@@psets};
+  Result2 = {@@vsets};
+  PRINT Result1;
+  PRINT Result2;
+  PRINT @@esets;
+}
+CREATE QUERY InvestorSuccessfulExits(String investorName, String investorType, int years) FOR GRAPH CrunchBasePre_2013 {
+    /*
+ DISCLAIMER: Data is from Crunchbase 2013 Snapshot under the Creative Commons Attribution License [CC-BY].
+ --- Dataset has been shrunk on Nov.20th,2020 ---
+
+ This query aims to find a given investor's achievements measured by their succesful investment
+ exits (IPO, acquisition) within a fixed number of years.
+ E.g.  If fixed number of years is 4. We evaluate the investor based on how many IPOs
+ happened within 4 years after their investments.
+
+ Given an investor name, input type (company/person/fiancialORG), and maximum years before
+ the investment exit event.
+
+ First step, find the funding rounds participated by the investor.
+ Second step, find the companies funded by the rounds discovered in the first step.
+ Third step, find the IPO info (if exists) of the companies discovered in the second step
+
+ The traversal path looks like below.
+  company/fiancialORG/person -> funding_rounds -> company -> IPO
+
+  Sample input:
+    1.  investorName: General Electric ; investorType: company; years: 2;
+    2.  investorName: Accel Partners; investorType: financialORG; years: 5;
+    3.  investorName: Ted Leonsis ; investorType: person; years: 3;
+*/
+    //declare set to store vertex and edge
+    SetAccum<vertex> @@verSet;
+    SetAccum<vertex> @@addV;
+    SetAccum<edge> @@edgeSet;
+    SetAccum<vertex> @parentV;
+    SetAccum<edge> @parentE;
+    //declare variable to store the earliest time invested by this investor
+    MinAccum<datetime> @investedTime;
+    //declare variable to tag visited or not
+    OrAccum @visited = false;
+    //declare a default time to investedTime
+
+    //assign different variable according to the input type
+    start = {};
+    case
+        when lower(trim(investorType)) == "person" then start = {person.*};
+        when lower(trim(investorType)) == "company" then start = {company.*};
+        when lower(trim(investorType)) == "financialorg" then start = {financialORG.*};
+  end;
+
+    //find the investor whose name is input
+    //and assign the "Start" variable, which is a SET.
+    Start (ANY) = select c
+                    from start:c
+                    where (c.type == "person" and lower(trim(c.fullname)) == lower(trim(investorName))) or lower(trim(c.name)) == lower(trim(investorName))
+                    accum c.@visited = true;
+    print Start;
+
+    //to get invested funding rounds (investor -> funding_rounds)
+    Start = select tgt
+                from Start:s-((investment_from_company|investment_from_person|investment_from_financialORG):e)-funding_rounds:tgt
+                accum
+                    tgt.@parentE += e, tgt.@visited = true,
+                    case
+                        //update investedTime
+                        when not tgt.@visited then tgt.@investedTime = tgt.funded_at, tgt.@parentV += s
+                        else tgt.@investedTime += tgt.created_at, tgt.@parentV += s
+                    end;
+
+    //To get invested companies (funding_rounds -> company)
+    Start = select tgt
+                from Start:s-((company_funding_rounds):e)-company:tgt
+                accum
+                    tgt.@parentV += s, tgt.@parentE += e, tgt.@investedTime = s.@investedTime;
+
+    //To get company IPOs (company -> IPO)
+    Start = select tgt
+                from Start:s-((company_ipo|acquired_by):e)-:tgt
+                accum
+                    tgt.@parentV += s, tgt.@parentE += e,
+                    //select the IPO which created within input years aftering being invested
+                    if (e.type == "company_ipo" and datetime_diff(tgt.public_at, s.@investedTime) > 0 and datetime_diff(tgt.public_at, s.@investedTime) <= years*31556952)
+                        or (e.type == "acquired_by" and datetime_diff(e.acquired_at, s.@investedTime) > 0 and datetime_diff(e.acquired_at, s.@investedTime) <= years*31556952)
+                            then @@addV += tgt
+                    end;
+
+    @@verSet += @@addV;
+    Start = {@@addV};
+    @@addV.clear();
+
+    // trace back to the source senders from the vertices that joint multiple paths
+    while(Start.size()>0) do
+            Start = select s
+                    from Start:s
+                    accum @@addV += s.@parentV, @@edgeSet += s.@parentE;
+            @@verSet += @@addV;
+            Start = {@@addV};
+            @@addV.clear();
+    end;
+    //output the result
+    Start = {@@verSet};
+    print Start;
+    print @@edgeSet;
+}

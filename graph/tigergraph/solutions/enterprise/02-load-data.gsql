@@ -1,0 +1,16 @@
+USE GRAPH EnterpriseGraph
+CREATE LOADING JOB load_enterprise_knowledge FOR GRAPH EnterpriseGraph {
+  DEFINE FILENAME enterprise  = "m1:/home/tigergraph/tigergraph/data/mydata/enterprise/data/enterprise.csv";
+  DEFINE FILENAME working  = "m1:/home/tigergraph/tigergraph/data/mydata/enterprise/data/working.csv";
+  DEFINE FILENAME person_invest_enterprise  = "m1:/home/tigergraph/tigergraph/data/mydata/enterprise/data/person_invest_enterprise.csv";
+  DEFINE FILENAME enterprise_invest_enterprise  = "m1:/home/tigergraph/tigergraph/data/mydata/enterprise/data/enterprise_invest_enterprise.csv";
+  DEFINE FILENAME enterprise_bid_for_project  = "m1:/home/tigergraph/tigergraph/data/mydata/enterprise/data/enterprise_bid_for_project.csv";
+      LOAD enterprise TO VERTEX Company VALUES($0, $1) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD working TO EDGE WorkFor VALUES($0, $1, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD person_invest_enterprise TO EDGE PersonInvestCompany VALUES($0, $1, $2, $3, $4) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD enterprise_invest_enterprise TO EDGE CompanyInvestCompany VALUES($0, $1, $2, $3, $4) USING SEPARATOR=",", HEADER="true", EOL="\n";
+      LOAD enterprise_bid_for_project TO EDGE BidFor VALUES($0, $1, $2, gsql_concat($3,$4)) USING SEPARATOR=",", HEADER="true", EOL="\n";
+}
+
+RUN LOADING JOB load_enterprise_knowledge
+DROP JOB load_enterprise_knowledge

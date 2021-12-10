@@ -1,0 +1,40 @@
+USE GLOBAL
+DROP GRAPH CrunchBasePre_2013
+
+CREATE GRAPH CrunchBasePre_2013()
+USE GRAPH CrunchBasePre_2013
+CREATE SCHEMA_CHANGE JOB schema_crunchbase FOR GRAPH CrunchBasePre_2013 {
+  ADD VERTEX company(PRIMARY_ID id STRING, name STRING, normalized_name STRING, permalink STRING, category_code STRING, status STRING, founded_at DATETIME, closed_at DATETIME, domain STRING, homepage_url STRING, twitter_username STRING, logo_url STRING, short_description STRING, description STRING, overview STRING, tag_list STRING, country STRING, state STRING, city STRING, region STRING, first_investment_at DATETIME, last_investment_at DATETIME, first_funding_at DATETIME, last_funding_at DATETIME, funding_rounds UINT, funding_total_usd DOUBLE, first_milestone_at DATETIME, last_milestone_at DATETIME, relationships UINT, created_by STRING, created_at DATETIME, update_at DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX person(PRIMARY_ID id STRING, fullname STRING, normalized_name STRING, firstname STRING, lastname STRING, birthplace STRING, affiliation_name STRING, permalink STRING, status STRING, domain STRING, homepage_url STRING, twitter_username STRING, logo_url STRING, overview STRING, tag_list STRING, first_milestone_at DATETIME, last_milestone_at DATETIME, created_by STRING, created_at DATETIME, updated_at DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX financialORG(PRIMARY_ID id STRING, name STRING, normalized_name STRING, permalink STRING, category_code STRING, status STRING DEFAULT "operating", founded_at DATETIME, closed_at DATETIME, domain STRING, homepage_url STRING, twitter_username STRING, logo_url STRING, short_description STRING, description STRING, overview STRING, tag_list STRING, country_code STRING, state_code STRING, city STRING, region STRING, first_investment_at DATETIME, last_investment_at DATETIME, first_funding_at DATETIME, last_funding_at DATETIME, funding_rounds INT, funding_total_usd DOUBLE, first_milestone_at DATETIME, last_milestone_at DATETIME, relationships INT, created_by STRING, created_at DATETIME, updated_at DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX product(PRIMARY_ID id STRING, name STRING, normalized_name STRING, permalink STRING, status STRING DEFAULT "operating", founded_at DATETIME, closed_at DATETIME, domain STRING, homepage_url STRING, twitter_username STRING, logo_url STRING, overview STRING, tag_list STRING, created_at DATETIME, updates_at DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX university(PRIMARY_ID id STRING, name STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX IPO(PRIMARY_ID id UINT, valuation_amount DOUBLE, valuation_currency_code STRING, raised_amount DOUBLE, raised_currency_code STRING, public_at DATETIME, stock_symbol STRING, source_url STRING, source_description STRING, created_at DATETIME, updated_at DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX funding_rounds(PRIMARY_ID id UINT, funded_at DATETIME, funding_round_type STRING, funding_round_code STRING, raised_amount_usd DOUBLE, raised_amount DOUBLE, raised_currency_code STRING, pre_money_valuation_usd DOUBLE, pre_money_valuation DOUBLE, pre_money_currency_code STRING, post_money_valuation_usd DOUBLE, post_money_valuation DOUBLE, post_money_currency_code STRING, is_first_round INT, is_last_round INT, source_url STRING, source_description STRING, created_by STRING, created_at DATETIME, updated_at DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX office(PRIMARY_ID id UINT, description STRING, region STRING, address1 STRING, address2 STRING, city STRING, zip_code STRING, state_code STRING, country_code STRING, latitude DOUBLE, longitude DOUBLE) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX funds(PRIMARY_ID id UINT, name STRING, funded_at DATETIME, raised_amount DOUBLE, raised_currency_code STRING, source_url STRING, source_description STRING, created_at DATETIME, updated_at DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX milestone(PRIMARY_ID id UINT, milestone_at DATETIME, milestone_code STRING, description STRING, source_url STRING, source_description STRING, created_at DATETIME, updated_at DATETIME) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+
+  ADD UNDIRECTED EDGE work_for_company(FROM person, TO company, start_at DATETIME, end_at DATETIME, is_past INT, sequence INT DEFAULT "0", title STRING, created_at DATETIME, updated_at DATETIME);
+  ADD UNDIRECTED EDGE hasDegree(FROM person, TO university, degree_type STRING, subject STRING, graduated_at DATETIME, created_at DATETIME, updated_at DATETIME);
+  ADD UNDIRECTED EDGE company_ipo(FROM company, TO IPO);
+  ADD UNDIRECTED EDGE company_funding_rounds(FROM company, TO funding_rounds);
+  ADD UNDIRECTED EDGE financial_funds(FROM financialORG, TO funds);
+  ADD UNDIRECTED EDGE company_office(FROM company, TO office);
+  ADD UNDIRECTED EDGE financial_office(FROM financialORG, TO office);
+  ADD UNDIRECTED EDGE company_product(FROM company, TO product);
+  ADD UNDIRECTED EDGE person_milestone(FROM person, TO milestone);
+  ADD UNDIRECTED EDGE company_milestone(FROM company, TO milestone);
+  ADD UNDIRECTED EDGE product_milestone(FROM product, TO milestone);
+  ADD UNDIRECTED EDGE financial_milestone(FROM financialORG, TO milestone);
+  ADD UNDIRECTED EDGE investment_from_person(FROM person, TO funding_rounds);
+  ADD UNDIRECTED EDGE investment_from_company(FROM company, TO funding_rounds);
+  ADD UNDIRECTED EDGE investment_from_financialORG(FROM financialORG, TO funding_rounds);
+  ADD UNDIRECTED EDGE work_for_fOrg(FROM person, TO financialORG, start_at DATETIME, end_at DATETIME, is_past INT, sequence UINT DEFAULT "0", title STRING, created_at DATETIME, updated_at DATETIME);
+  ADD UNDIRECTED EDGE invested_by_person(FROM person, TO company);
+  ADD UNDIRECTED EDGE invested_by_financialORG(FROM financialORG, TO company);
+  ADD DIRECTED EDGE acquire(FROM company, TO company, term_code STRING, price_amout DOUBLE, price_currency_code STRING, acquired_at DATETIME, source_url STRING, source_description STRING, created_at DATETIME, updated_at DATETIME) WITH REVERSE_EDGE="acquired_by";
+  ADD DIRECTED EDGE invest(FROM company, TO company) WITH REVERSE_EDGE="invested_by_company";
+}
+RUN SCHEMA_CHANGE JOB schema_crunchbase
+DROP JOB schema_crunchbase
