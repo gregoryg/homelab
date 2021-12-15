@@ -2,13 +2,13 @@ use graph CustExp
 drop job load_job_custexp
 
 CREATE LOADING JOB load_job_custexp FOR GRAPH CustExp {
-  DEFINE FILENAME Lead="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/Lead.csv";
-  DEFINE FILENAME OpportunityContactRole="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/OpportunityContactRole.csv";
-  DEFINE FILENAME Campaign="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/Campaign.csv";
-  DEFINE FILENAME CampaignMember="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/CampaignMember.csv";
-  DEFINE FILENAME Opportunity="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/Opportunity.csv";
-  DEFINE FILENAME Account="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/Account.csv";
-  DEFINE FILENAME Contact="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/Contact.csv";
+  DEFINE FILENAME Lead="m1:/home/tigergraph/mydata/custexp/data/Lead.csv";
+  DEFINE FILENAME OpportunityContactRole="m1:/home/tigergraph/mydata/custexp/data/OpportunityContactRole.csv";
+  DEFINE FILENAME Campaign="m1:/home/tigergraph/mydata/custexp/data/Campaign.csv";
+  DEFINE FILENAME CampaignMember="m1:/home/tigergraph/mydata/custexp/data/CampaignMember.csv";
+  DEFINE FILENAME Opportunity="m1:/home/tigergraph/mydata/custexp/data/Opportunity.csv";
+  DEFINE FILENAME Account="m1:/home/tigergraph/mydata/custexp/data/Account.csv";
+  DEFINE FILENAME Contact="m1:/home/tigergraph/mydata/custexp/data/Contact.csv";
 
   LOAD Lead TO VERTEX Lead VALUES($0, $4, $5, _, $9, $11, $12, $24, $25, $26, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $43, $44, $46, $64, $65, $66, $67, $68, $69, $70, $71, $74, $57, $76, $77, $88, $89, $90, $91, $92, $93, $94, $95, $96, $97, $98, $99, $100, $101, $102, $103, $104, $105, $107, $109, $111, $112) USING SEPARATOR=",", HEADER="true", EOL="\n";
 

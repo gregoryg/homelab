@@ -21,12 +21,14 @@
   + Idempotent: graph will install into an existing TG cluster without wiping schema or data
   + (extra credit): generate way to translate solution export file into scripted
        nondestructive import
+  + Every solution needs a README.md with a script - every query needs some examples of
+    successful parameters for the data
   + Make GSQL scripts and loading jobs easily human-readable
     + e.g. replace column positions with column names
     + make import file names explicit
   + Literate programming to create all scripts - orgmode
   + Make nothing at the Global level
-  + Deploy for data loading to =mydata= directory, located directly under =DataRoot=
+  + Deploy for data loading to =mydata= directory, best located directly under =DataRoot=
     directory on node =m1=.  The reason is that when a Docker or Kubernetes container is
     restarted, data anywhere else may be lost.
     + Command to find =DataRoot=
@@ -37,8 +39,1137 @@
       #+end_src
   + Use TRAMP from this file to transfer solutions scripts and possibly grab data.
 
-
 * Solutions
+** Customer 360 New and Improved?
+*** Resources
+    + Data: /data/data-files/graph-data/cust360-capgemini/Customer360.zip or s3://gjgeksbackup/Customer360.zip
+*** Create graph
+    #+begin_src sql :tangle solutions/customer360/01-create-graph.gsql :mkdirp yes
+      ###############################################################################
+      # CUSTOMER EXPERIENCE
+      ###############################################################################
+      USE GRAPH Customer360
+      DROP JOB customer360_load
+      DROP JOB customer360_schema
+
+      USE GLOBAL
+      DROP GRAPH Customer360
+      CREATE GRAPH Customer360()
+      USE GRAPH Customer360
+
+      CREATE SCHEMA_CHANGE JOB customer360_schema FOR GRAPH Customer360 {
+
+      ######################################
+      #### VERTEX - Lookups
+      ######################################
+        ADD VERTEX Profile    (PRIMARY_ID profile_id INT, first_name STRING, last_name STRING, user_name STRING, gender STRING, ssn STRING, birthdate DATETIME, job_desc STRING, creditcard STRING, ethnicity STRING, married STRING, income STRING, education STRING, prodCommunity INT, movieCommunity INT, bookCommunity INT, otherCommunity INT)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Orders     (PRIMARY_ID order_id STRING, order_source STRING, order_date DATETIME, order_type STRING, order_qty INT, order_amt DOUBLE, order_profit DOUBLE)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Products   (PRIMARY_ID item_id STRING, item_desc STRING, department STRING, category STRING, productClass STRING, productBrand STRING, item_price DOUBLE, item_cost DOUBLE) WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Sessions   (PRIMARY_ID session_id STRING, session_timestamp DATETIME, hostname STRING, referer STRING, session_time INT, ip_address STRING, event_cnt INT, view_cnt INT, click_cnt INT) WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Events     (PRIMARY_ID event_id STRING, event_timestamp DATETIME, event_type STRING, event_time INT, event_order INT, page_url STRING, prev_page_url STRING) WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Movies     (PRIMARY_ID movie_id STRING, movieTitle STRING, movieYear INT)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Genre      (PRIMARY_ID genre STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+        ADD VERTEX Books      (PRIMARY_ID book_id STRING, bookTitle STRING, bookYear INT, bookImage STRING, bookISBN STRING)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Publisher  (PRIMARY_ID publisher STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+        ADD VERTEX Author     (PRIMARY_ID author STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+        ADD VERTEX Campaign   (PRIMARY_ID campaign_id INT, campaign_year INT, campaign_name STRING, campaign_type STRING, start_date DATETIME, end_date DATETIME)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Promotions (PRIMARY_ID promotion_id STRING, promotion_name STRING, promotion_channel STRING)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Ads        (PRIMARY_ID ad_id STRING, ad_name STRING, ad_channel STRING) WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Location   (PRIMARY_ID zipcode STRING, locationCity STRING, locationState STRING, Market STRING, Region STRING, population INT, latitude DOUBLE, longitude DOUBLE)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Address    (PRIMARY_ID address_id INT, address_type STRING, address_line STRING, city STRING, state STRING, postalcode STRING, country STRING)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX IpAddress  (PRIMARY_ID ip_address STRING, ip_type STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+        ADD VERTEX Device     (PRIMARY_ID device STRING, device_type STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+        ADD VERTEX Email      (PRIMARY_ID email_address STRING, email_type STRING, email_perm STRING, email_freq STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+        ADD VERTEX Phone      (PRIMARY_ID phone_number STRING, phone_perm STRING, phone_freq INT)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+        ADD VERTEX urlPages   (PRIMARY_ID page_url STRING, page_location STRING, page_menu STRING, page_menuitem STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+        ADD VERTEX UserAgent  (PRIMARY_ID ua_id INT, user_agent STRING)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Browser    (PRIMARY_ID browser STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+        ADD VERTEX DataSource (PRIMARY_ID source_id INT, source_name STRING, source_type STRING)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+        ADD VERTEX Store      (PRIMARY_ID store_id INT, store_name STRING, store_type STRING, shiptostore STRING, autocenter STRING, salon STRING, store_zipcode STRING, store_city STRING, store_state STRING, store_market STRING, store_region STRING, store_lat DOUBLE, store_lng DOUBLE)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+
+        ADD UNDIRECTED EDGE campaign_ads       (FROM Campaign, TO Ads);
+        ADD UNDIRECTED EDGE campaign_promotion (FROM Campaign, TO Promotions);
+        ADD UNDIRECTED EDGE address_location   (FROM Address,  TO Location);
+        ADD UNDIRECTED EDGE session_browser    (FROM Sessions, TO Browser);
+        ADD UNDIRECTED EDGE session_useragent  (FROM Sessions, TO UserAgent);
+        ADD UNDIRECTED EDGE session_ipaddr     (FROM Sessions, TO IpAddress);
+        ADD UNDIRECTED EDGE session_device     (FROM Sessions, TO Device);
+        ADD UNDIRECTED EDGE profile_sessions   (FROM Profile,  TO Sessions);
+        ADD UNDIRECTED EDGE session_events     (FROM Sessions, TO Events);
+        ADD UNDIRECTED EDGE event_ads          (FROM Events,   TO Ads);
+        ADD UNDIRECTED EDGE event_url          (FROM Events,   TO urlPages);
+        ADD UNDIRECTED EDGE profile_datasource (FROM Profile,  TO DataSource);
+        ADD UNDIRECTED EDGE profile_address    (FROM Profile,  TO Address, addressType STRING);
+        ADD UNDIRECTED EDGE profile_ipaddress  (FROM Profile,  TO IpAddress);
+        ADD UNDIRECTED EDGE profile_device     (FROM Profile,  TO Device);
+        ADD UNDIRECTED EDGE profile_phone      (FROM Profile,  TO Phone);
+        ADD UNDIRECTED EDGE profile_email      (FROM Profile,  TO Email, emailType STRING, emailDate DATETIME);
+        ADD UNDIRECTED EDGE profile_friends    (FROM Profile,  TO Profile, friend_type STRING, friend_date DATETIME);
+
+      ###############################################################################
+      # VERTICIES for the OMNI CHANNEL Group
+      ###############################################################################
+        ADD UNDIRECTED EDGE profile_campaign (FROM Profile,  TO Campaign, campaign_date DATETIME);
+        ADD UNDIRECTED EDGE profile_response (FROM Campaign, TO Profile, response_date DATETIME, response_chnl STRING);
+
+      ###############################################################################
+      # EDGES for the PRODUCT Group
+      ###############################################################################
+        ADD UNDIRECTED EDGE profile_purchase (FROM Profile, TO Orders);
+        ADD UNDIRECTED EDGE order_store      (FROM Orders,  TO Store);
+        ADD UNDIRECTED EDGE order_items      (FROM Orders,  TO Products, itemDate DATETIME, itemQty INT, itemPrice DOUBLE, itemCost DOUBLE, itemAmt DOUBLE, itemProfit DOUBLE);
+        ADD UNDIRECTED EDGE store_location   (FROM Store,   TO Location);
+
+      ###############################################################################
+      # EDGES for the MOVIE Book Group
+      ###############################################################################
+        ADD UNDIRECTED EDGE movie_ratings  (FROM Profile, TO Movies, movie_date DATETIME, movie_rating INT);
+        ADD UNDIRECTED EDGE movie_genre    (FROM Movies,  TO Genre);
+        ADD UNDIRECTED EDGE book_ratings   (FROM Profile, TO Books, book_date DATETIME, book_rating INT);
+        ADD UNDIRECTED EDGE book_publisher (FROM Books,   TO Publisher);
+        ADD UNDIRECTED EDGE book_author    (FROM Books,   TO Author);
+        ADD UNDIRECTED EDGE same_profile   (FROM Profile, TO Profile, score FLOAT);
+        ADD UNDIRECTED EDGE community_edge (FROM Profile, TO Profile, community_id FLOAT);
+      }
+
+
+      RUN SCHEMA_CHANGE JOB customer360_schema
+      DROP JOB customer360_schema
+    #+end_src
+*** Load data
+    #+begin_src sql :tangle solutions/customer360/02-load-data.gsql :mkdirp yes
+      USE GRAPH Customer360
+      DROP JOB customer360_load
+
+      CREATE LOADING JOB customer360_load FOR GRAPH Customer360 {
+
+        ###################################################################
+        # define customer group
+        ###################################################################
+        DEFINE FILENAME f_solicts      = "m1:/home/tigergraph/mydata/customer360/data/c360_solicits.csv";
+        DEFINE FILENAME f_respons      = "m1:/home/tigergraph/mydata/customer360/data/c360_response.csv";
+        DEFINE FILENAME f_profile      = "m1:/home/tigergraph/mydata/customer360/data/c360_profile.csv";
+        DEFINE FILENAME f_address      = "m1:/home/tigergraph/mydata/customer360/data/c360_address.csv";
+        DEFINE FILENAME f_ipaddr       = "m1:/home/tigergraph/mydata/customer360/data/c360_ipaddress.csv";
+        DEFINE FILENAME f_email        = "m1:/home/tigergraph/mydata/customer360/data/c360_emails.csv";
+        DEFINE FILENAME f_device       = "m1:/home/tigergraph/mydata/customer360/data/c360_devices.csv";
+        DEFINE FILENAME f_phone        = "m1:/home/tigergraph/mydata/customer360/data/c360_phones.csv";
+        DEFINE FILENAME e_address      = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_address.csv";
+        DEFINE FILENAME e_ipaddr       = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_ipaddr.csv";
+        DEFINE FILENAME e_email        = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_email.csv";
+        DEFINE FILENAME e_device       = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_device.csv";
+        DEFINE FILENAME e_phone        = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_phone.csv";
+        DEFINE FILENAME e_links        = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_links.csv";
+        DEFINE FILENAME f_orders       = "m1:/home/tigergraph/mydata/customer360/data/c360_orders.csv";
+        DEFINE FILENAME f_movieratings = "m1:/home/tigergraph/mydata/customer360/data/c360_movie_ratings.csv";
+        DEFINE FILENAME f_bookratings  = "m1:/home/tigergraph/mydata/customer360/data/c360_book_ratings.csv";
+        DEFINE FILENAME f_sessions     = "m1:/home/tigergraph/mydata/customer360/data/c360_sessions.csv";
+        DEFINE FILENAME f_events       = "m1:/home/tigergraph/mydata/customer360/data/c360_events.csv";
+
+        DEFINE FILENAME f_camp_ads     = "m1:/home/tigergraph/mydata/customer360/data/ce_camp-ads.csv";
+        DEFINE FILENAME f_camp_promo   = "m1:/home/tigergraph/mydata/customer360/data/ce_camp-promos.csv";
+        DEFINE FILENAME f_source       = "m1:/home/tigergraph/mydata/customer360/data/ce_datasource.csv";
+        DEFINE FILENAME f_geog         = "m1:/home/tigergraph/mydata/customer360/data/ce_geog.csv";
+        DEFINE FILENAME f_urls         = "m1:/home/tigergraph/mydata/customer360/data/ce_urls.csv";
+        DEFINE FILENAME f_useragent    = "m1:/home/tigergraph/mydata/customer360/data/ce_useragent.csv";
+        DEFINE FILENAME f_browser      = "m1:/home/tigergraph/mydata/customer360/data/ce_browser.csv";
+        DEFINE FILENAME f_items        = "m1:/home/tigergraph/mydata/customer360/data/ce_items.csv";
+        DEFINE FILENAME f_store        = "m1:/home/tigergraph/mydata/customer360/data/ce_store.csv";
+        DEFINE FILENAME f_movies       = "m1:/home/tigergraph/mydata/customer360/data/ce_movies.csv";
+        DEFINE FILENAME f_books        = "m1:/home/tigergraph/mydata/customer360/data/ce_books.csv";
+
+        DEFINE HEADER hdr_camp_ads   = "campaign_id", "campaign_name", "start_date", "end_date", "campaign_type", "ad_id", "ad_name", "ad_channel";
+        DEFINE HEADER hdr_camp_promo = "campaign_id", "campaign_name", "campaign_year", "start_date", "end_date", "campaign_type", "promotion_id", "promotion_name", "promotion_channel";
+        DEFINE HEADER hdr_solicits   = "user_id", "campaign_id", "solicit_timestamp";
+        DEFINE HEADER hdr_response   = "user_id", "campaign_id", "resp_timestamp", "resp_chnl";
+        DEFINE HEADER hdr_profile    = "user_id", "first_name", "last_name", "user_name", "gender", "ssn", "birthdate", "job_desc", "creditcard", "ethnicity", "married", "income", "education", "source_id";
+        DEFINE HEADER hdr_ipaddr     = "ipaddress", "ip_type";
+        DEFINE HEADER hdr_device     = "device_id", "device_type";
+        DEFINE HEADER hdr_email      = "email", "email_type", "emal_perm", "email_freq";
+        DEFINE HEADER hdr_phone      = "phone_number", "phone_perm", "phone_freq";
+        DEFINE HEADER hdr_address    = "address_id", "address_type", "address_line", "address_nbr", "city", "postalcode", "state", "country";
+        DEFINE HEADER hdr_source     = "source_id", "source_name", "source_type";
+        DEFINE HEADER hdr_geog       = "address_id","zipcode","city","state_abbr","state","county_id","county_name","msa_id","msa_name","lat","lng","population","market_id","market_name","region_id","region_name","store_id","other";
+        DEFINE HEADER hdr_urls       = "page_id", "page_location", "page_menu", "page_item", "item_id", "page_weight", "page_url", "next_page_id";
+        DEFINE HEADER hdr_useragent  = "ua_id", "user_agent", "browser", "browser_ver", "device", "device_os", "device_osver", "device_branch", "device_model";
+        DEFINE HEADER hdr_browser    = "browser";
+        DEFINE HEADER hdr_events     = "user_id", "session_id", "event_id", "event_timestamp", "event_type", "event_time", "event_order", "ua_id", "page_url", "prev_page_url", "ad_id";
+        DEFINE HEADER hdr_sessions   = "user_id", "session_id", "session_timestamp", "ua_id", "browser_id", "hostname", "referer", "promotion_id", "session_time", "device_id", "ip_address", "event_cnt", "view_cnt", "click_cnt", "cart_flg", "purch_flg";
+        DEFINE HEADER hdr_item       = "item_id", "item_desc", "dept_id", "dept_desc", "catg_id", "catg_desc", "prodClass", "prodBrand", "item_price", "item_cost", "next_dept_id", "next_catg_id", "item_weight";
+        DEFINE HEADER hdr_store      = "store_id", "store_name", "store_type", "shiptostore", "autocenter", "salon", "zipcode", "city", "state", "county_name", "msa_name", "lat", "lng", "market", "region";
+        DEFINE HEADER hdr_orders     = "user_id", "order_nbr", "order_source", "order_timestamp", "order_type", "store_id", "promo_id", "order_qty", "order_amt", "order_profit", "item_id", "item_qty", "item_price", "item_cost", "item_amt", "item_profit";
+        DEFINE HEADER hdr_movieratings = "user_id","movie_id","movie_date","movie_rating";
+        DEFINE HEADER hdr_bookratings  = "user_id","book_id","book_date","book_rating";
+        DEFINE HEADER hdr_movies       = "movie_id", "movie_title", "movie_year", "movie_genre";
+        DEFINE HEADER hdr_books        = "book_id","ISBN", "BookTitle","BookAuthor","BookYear","Publisher","BookImage";
+
+        ###################################################################
+        # Entity Resolution
+        ###################################################################
+        LOAD f_profile TO VERTEX Profile        VALUES ($"user_id", $"first_name", $"last_name", $"user_name", $"gender", $"ssn", $"birthdate", $"job_desc", $"creditcard", $"ethnicity", $"married", $"income", $"education",_,_,_,_) USING header="true", separator=",", USER_DEFINED_HEADER="hdr_profile";
+        LOAD f_address TO VERTEX Address        VALUES ($"address_id", $"address_type", $"address_line", $"city", $"postalcode", $"state", $"country") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_address";
+        LOAD f_address TO EDGE address_location VALUES ($"address_id", $"postalcode") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_address";
+        LOAD f_ipaddr  TO VERTEX IpAddress      VALUES ($"ipaddress", $"ip_type") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_ipaddr";
+        LOAD f_email   TO VERTEX Email          VALUES ($"email", $"email_type", $"emal_perm", $"email_freq") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_email";
+        LOAD f_device  TO VERTEX Device         VALUES ($"device_id", $"device_type") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_device";
+        LOAD f_phone   TO VERTEX Phone          VALUES ($"phone_number", $"phone_perm", $"phone_freq") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_phone";
+
+        LOAD e_address TO EDGE profile_address VALUES ($0, $1, $2) USING header="true", separator=",";
+        LOAD e_ipaddr  TO EDGE profile_ipaddress VALUES ($0, $1) USING header="true", separator=",";
+        LOAD e_email   TO EDGE profile_email VALUES ($0, $1, $2, $3) USING header="true", separator=",";
+        LOAD e_device  TO EDGE profile_device VALUES ($0, $1) USING header="true", separator=",";
+        LOAD e_phone   TO EDGE profile_phone VALUES ($0, $1) USING header="true", separator=",";
+        LOAD e_links   TO EDGE profile_friends  VALUES ($0, $1, $2, $3) USING header="true", separator=",";
+
+        LOAD f_source  TO VERTEX DataSource VALUES ($"source_id", $"source_name", $"source_type") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_source";
+        LOAD f_geog    TO VERTEX Location   VALUES ($"zipcode", $"city", $"state", $"market_name", $"region_name", $"population", $"lat" ,$"lng") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_geog";
+        LOAD f_profile TO EDGE profile_datasource VALUES ($"user_id", $"source_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_profile";
+
+        ###################################################################
+        # Orders
+        ###################################################################
+        LOAD f_items  TO VERTEX Products VALUES ($"item_id", $"item_desc", $"dept_desc", $"catg_desc", $"prodClass", $"prodBrand", $"item_price", $"item_cost") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_item";
+        LOAD f_store  TO VERTEX Store    VALUES ($"store_id", $"store_name", $"store_type", $"shiptostore", $"autocenter", $"salon", $"zipcode", $"city", $"state", $"market", $"region", $"lat", $"lng") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_store";
+        LOAD f_orders TO VERTEX Orders   VALUES ($"order_nbr", $"order_source", $"order_timestamp", $"order_type", $"order_qty", $"order_amt", $"order_profit") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_orders";
+        LOAD f_store  TO EDGE store_location VALUES ($"store_id", $"zipcode") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_store";
+        LOAD f_orders TO EDGE profile_purchase VALUES ($"user_id", $"order_nbr") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_orders";
+        LOAD f_orders TO EDGE order_store VALUES ($"order_nbr", $"store_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_orders";
+        LOAD f_orders TO EDGE order_items VALUES ($"order_nbr", $"item_id", $"order_timestamp", $"item_qty", $"item_price", $"item_cost", $"item_amt", $"item_profit") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_orders";
+
+        ###################################################################
+        # Campaigns
+        ###################################################################
+        LOAD f_camp_promo TO VERTEX Campaign         VALUES ($"campaign_id", $"campaign_year", $"campaign_name", $"campaign_type", $"start_date", $"end_date") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_camp_promo";
+        LOAD f_camp_promo TO VERTEX Promotions       VALUES ($"promotion_id", $"promotion_name", $"promotion_channel") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_camp_promo";
+        LOAD f_camp_promo TO EDGE campaign_promotion VALUES ($"campaign_id", $"promotion_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_camp_promo";
+        LOAD f_camp_ads   TO VERTEX Ads              VALUES ($"ad_id", $"ad_name", $"ad_channel") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_camp_ads";
+        LOAD f_camp_ads   TO EDGE campaign_ads       VALUES ($"campaign_id", $"ad_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_camp_ads";
+        LOAD f_solicts    TO EDGE profile_campaign   VALUES ($"user_id", $"campaign_id", $"solicit_timestamp") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_solicits";
+        LOAD f_respons    TO EDGE profile_response   VALUES ($"user_id", $"campaign_id", $"resp_timestamp", $"resp_chnl") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_response";
+
+        ###################################################################
+        # Sessions and Events
+        ###################################################################
+        LOAD f_urls      TO VERTEX urlPages          VALUES ($"page_url", $"page_location", $"page_menu", $"page_item") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_urls";
+        LOAD f_useragent TO VERTEX UserAgent         VALUES ($"ua_id", $"user_agent") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_useragent";
+        LOAD f_browser   TO VERTEX Browser           VALUES ($"browser") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_browser";
+        LOAD f_events    TO VERTEX Events            VALUES ($"event_id", $"event_timestamp", $"event_type", $"event_time", $"event_order", $"page_url", $"prev_page_url") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_events";
+        LOAD f_events    TO EDGE   event_url         VALUES ($"event_id", $"page_url") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_events";
+        LOAD f_events    TO EDGE   event_ads         VALUES ($"event_id", $"ad_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_events";
+        LOAD f_events    TO EDGE   session_events    VALUES ($"session_id",$"event_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_events";
+        LOAD f_sessions  TO VERTEX Sessions          VALUES ($"session_id",$"session_timestamp", $"hostname", $"referer", $"session_time", $"ip_address", $"event_cnt", $"view_cnt", $"click_cnt") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+        LOAD f_sessions  TO EDGE   session_browser   VALUES ($"session_id",$"browser_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+        LOAD f_sessions  TO EDGE   session_useragent VALUES ($"session_id",$"ua_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+        LOAD f_sessions  TO EDGE   session_ipaddr    VALUES ($"session_id",$"ip_address") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+        LOAD f_sessions  TO EDGE   session_device    VALUES ($"session_id",$"device_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+        LOAD f_sessions  TO EDGE  profile_sessions   VALUES ($"user_id", $"session_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+
+        ###################################################################
+        # Movie and Book Ratings
+        ###################################################################
+        LOAD f_movies       TO VERTEX Movies         VALUES ($"movie_id", $"movie_title", $"movie_year") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_movies";
+        LOAD f_movies       TO VERTEX Genre          VALUES ($"movie_genre") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_movies";
+        LOAD f_movies       TO EDGE movie_genre      VALUES ($"movie_id", $"movie_genre") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_movies";
+        LOAD f_books        TO VERTEX Books          VALUES ($"book_id", $"BookTitle", $"BookYear", $"BookImage", $"ISBN") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_books";
+        LOAD f_books        TO VERTEX Author         VALUES ($"BookAuthor") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_books";
+        LOAD f_books        TO VERTEX Publisher      VALUES ($"Publisher") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_books";
+        LOAD f_books        TO EDGE book_author      VALUES ($"book_id", $"BookAuthor") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_books";
+        LOAD f_books        TO EDGE book_publisher   VALUES ($"book_id", $"Publisher") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_books";
+        LOAD f_movieratings TO EDGE movie_ratings    VALUES ($"user_id", $"movie_id", $"movie_date", $"movie_rating") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_movieratings";
+        LOAD f_bookratings  TO EDGE book_ratings     VALUES ($"user_id", $"book_id", $"book_date", $"book_rating") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_bookratings";
+
+      }
+
+      RUN LOADING JOB customer360_load
+      DROP JOB customer360_load
+    #+end_src
+*** Add queries
+    #+begin_src sql :tangle solutions/customer360/03-add-queries.gsql :mkdirp yes
+      USE GRAPH Customer360
+
+      CREATE QUERY categorySales(/* Parameters here */) FOR GRAPH Customer360 {
+        TYPEDEF TUPLE <STRING categoryName, STRING salesDate, INT itemQty, DOUBLE SalesAmt> info;
+
+        HeapAccum<info>(100, SalesAmt ASC, categoryName DESC) @@result;
+        GroupByAccum<STRING categoryName, STRING salesDate, SumAccum<INT> itemQty, SumAccum<DOUBLE> SalesAmt> @@groupBy;
+        MinAccum<STRING> @categoryName;
+        MinAccum<STRING> @salesDate;
+        SumAccum<INT>    @itemQty;
+        SumAccum<DOUBLE> @itemSalesAmt;
+
+        products = {Products.*};
+
+        vCategory = SELECT s
+                      FROM products:s-(order_items:e)-Orders:t
+                     ACCUM s.@categoryName += s.category,
+                           s.@salesDate += datetime_format(e.itemDate,"%Y-%m-%d"),
+                           s.@itemQty += e.itemQty,
+                           s.@itemSalesAmt += e.itemAmt
+                POST-ACCUM @@groupBy += (s.@categoryName, s.@salesDate -> s.@itemQty, s.@itemSalesAmt);
+
+        FOREACH c IN @@groupBy DO
+          @@result += info(c.categoryName, c.salesDate, c.itemQty, c.SalesAmt);
+        END;
+
+        PRINT @@result;
+      }
+
+
+      INSTALL QUERY categorySales
+
+
+      CREATE QUERY similarCustomers(VERTEX source, STRING e_type, STRING rev_e_type, INT top_k = 100, BOOL print_accum = TRUE, STRING similarity_edge_type = "", STRING file_path = "") FOR GRAPH Customer360 {
+      /*
+      Calculates the Jaccard Similarity between a given vertex and every other vertex.
+        Jaccard similarity = intersection_size / (size_A + size_B - intersection_size)
+      Parameters:
+       source: start vertex                           top_k: #top scores to report
+       e_type: directed edge types to traverse        print_accum: print JSON output
+       rev_e_type: reverse edge types to traverse     file_path: file to write CSV output to
+       similarity_edge_type: edge type for storing vertex-vertex similarity scores
+
+        This query current supports only a single edge type (not a set of types) - 8/13/20
+      ,*/
+
+        SumAccum<INT> @sum_intersection_size, @@sum_set_size_A, @sum_set_size_B;
+        SumAccum<FLOAT> @sum_similarity;
+        FILE f (file_path);
+
+        Start (ANY) = {source};
+        Start = SELECT s
+                    FROM Start:s
+      //	  ACCUM @@sum_set_size_A += s.outdegree(e_type);
+                   ACCUM @@sum_set_size_A += s.outdegree("movie_ratings"),
+                       @@sum_set_size_A += @@sum_set_size_A + s.outdegree("book_ratings"),
+                       @@sum_set_size_A += @@sum_set_size_A + s.outdegree("profile_sessions"),
+                       @@sum_set_size_A += @@sum_set_size_A + s.outdegree("profile_purchase"),
+                       @@sum_set_size_A += @@sum_set_size_A + s.outdegree("profile_campaign"),
+                       @@sum_set_size_A += @@sum_set_size_A + s.outdegree("profile_response");
+
+        Subjects = SELECT t
+                       FROM Start:s-((movie_ratings|book_ratings|profile_sessions|profile_purchase):e)-:t;
+
+        Others = SELECT t
+                     FROM Subjects:s -((movie_ratings|book_ratings|profile_sessions|profile_purchase):e)- :t
+                    WHERE t != source
+                    ACCUM t.@sum_intersection_size += 1,
+                          t.@sum_set_size_B = t.outdegree("movie_ratings"),
+                        t.@sum_set_size_B = t.@sum_set_size_B + t.outdegree("book_ratings"),
+                        t.@sum_set_size_B = t.@sum_set_size_B + t.outdegree("profile_sessions"),
+                        t.@sum_set_size_B = t.@sum_set_size_B + t.outdegree("profile_purchase"),
+                        t.@sum_set_size_B = t.@sum_set_size_B + t.outdegree("profile_campaign"),
+                        t.@sum_set_size_B = t.@sum_set_size_B + t.outdegree("profile_response")
+               POST-ACCUM t.@sum_similarity = (t.@sum_intersection_size*1.0) / (@@sum_set_size_A + t.@sum_set_size_B - t.@sum_intersection_size)
+                 ORDER BY t.@sum_similarity DESC
+                    LIMIT top_k;
+
+        IF file_path != "" THEN
+            f.println("Vertex1", "Vertex2", "Similarity");
+        END;
+
+        Others = SELECT s
+             FROM Others:s
+             POST-ACCUM
+      //	       IF similarity_edge_type != "" THEN
+      //	           INSERT INTO EDGE similarity_edge_type VALUES (source, s, s.@sum_similarity)
+      //	       END,
+                 IF file_path != "" THEN
+                     f.println(source, s, s.@sum_similarity)
+                 END;
+
+        IF print_accum THEN
+            PRINT Others[Others.@sum_similarity];
+        END;
+      }
+
+      INSTALL QUERY similarCustomers
+
+
+      CREATE QUERY productSalesAnalysis(STRING inDepartment, DATETIME inStartDate, DATETIME inEndDate) FOR GRAPH Customer360 {
+      /* Traditional BI Style Query that Runs a Product Sales Report
+       ,* PARAMETERS: Department, StartDate, EndDate
+       ,* Toys, 2020-01-01, 2020-12-31
+       ,* Books, 2020-03-14, 2021-01-15
+       ,* Health, 2020-01-15, 2020-10-10
+      ,*/
+        TYPEDEF TUPLE <STRING deptName, STRING categoryName, STRING salesDate, INT itemQty, DOUBLE SalesAmt> info;
+
+        HeapAccum<info>(200, SalesAmt ASC, deptName DESC) @@result;
+        GroupByAccum<STRING deptName, STRING categoryName, STRING salesDate, SumAccum<INT> itemQty, SumAccum<DOUBLE> SalesAmt> @@count;
+        MinAccum<STRING> @deptName;
+        MinAccum<STRING> @categoryName;
+        MinAccum<STRING> @salesDate;
+        SumAccum<INT> @itemQty;
+        SumAccum<DOUBLE> @itemSalesAmt;
+
+        Start = {Products.*};
+
+        vCategory = SELECT s
+                      FROM Start:s-(order_items:e)-Orders:t
+                     WHERE trim(BOTH s.department) == inDepartment AND
+                           e.itemDate >= inStartDate AND
+                           e.itemDate <= inEndDate
+                     ACCUM s.@deptName += s.department,
+                           s.@categoryName += s.category,
+                           s.@salesDate += datetime_format(e.itemDate,"%Y-%m-%d"),
+                           s.@itemQty += e.itemQty,
+                           s.@itemSalesAmt += e.itemAmt
+                POST-ACCUM @@count += (s.@deptName, s.@categoryName, s.@salesDate -> s.@itemQty, s.@itemSalesAmt);
+
+        FOREACH c IN @@count DO
+       //   f.println(c.categoryName, c.salesDate, c.itemQty, c.SalesAmt);
+          @@result += info(c.deptName, c.categoryName, c.salesDate, c.itemQty, c.SalesAmt);
+        END;
+
+        PRINT @@result;
+      }
+
+      INSTALL QUERY productSalesAnalysis
+
+      CREATE QUERY entityResolution_driver(FLOAT threshold) FOR GRAPH Customer360 {
+      /* Entity Resolution Driver
+       ,* Query will Process all Profiles by passing the Profile_id to the sub Query
+       ,* with a threshold parameter that will score the Entity Resolution rules
+       ,* the sub-query will insert edge entries into the same_profile (Edge)
+       ,* The first step of this query will delete all entries in the same_profile (Edge)
+       ,* PARAMETERS threshold - defines match confidence level valid values are .5 to 1.5
+       ,*
+       ,* Print match groups with 3 or more profiles
+      ,*/
+        ListAccum<VERTEX> @vertexList;
+        ListAccum<EDGE> @edgeList;
+        SumAccum<INT> @set_size;
+        SetAccum<VERTEX<Profile>> @prfl_groups;
+
+          all_profiles = {Profile.*};
+          rm = SELECT s FROM all_profiles:s-(same_profile:e)-:t ACCUM delete(e);
+          all_profiles = SELECT s FROM all_profiles:s ACCUM entityResolution_sub(s,threshold);
+
+        Start = SELECT s FROM all_profiles:s-(same_profile:e)-:t
+                        ACCUM s.@edgeList += e,
+                              s.@vertexList += s,
+                              s.@set_size += 1;
+
+        x = SELECT s FROM Start:s WHERE s.@set_size >= 2;
+        print x;
+
+      }
+
+      CREATE QUERY entityResolution_sub(Vertex<Profile> inProfile, float threshold) FOR GRAPH Customer360 {
+          SumAccum<float> @score;
+          start = {inProfile};
+
+        all_profiles = SELECT t FROM start-((profile_phone|profile_email|profile_ipaddress|profile_address|profile_device):e)-:t;
+
+          similar_profiles = SELECT t FROM all_profiles-((profile_phone|profile_email|profile_ipaddress|profile_address|profile_device):e)-:t
+                                     WHERE t != inProfile
+                                             ACCUM CASE e.type
+                                                              WHEN "profile_phone"     THEN t.@score += 0.4
+                                                              WHEN "profile_email"     THEN t.@score += 0.3
+                                                              WHEN "profile_device"    THEN t.@score += 0.2
+                                                              WHEN "profile_ipaddress" THEN t.@score += 0.1
+                                                              WHEN "profile_address"   THEN t.@score += 0.5
+                                                       END
+                                 POST-ACCUM
+                                              CASE WHEN t.@score >= threshold THEN
+                                             INSERT INTO same_profile VALUES (inProfile, t, t.@score)
+                                                END;
+
+       }
+
+      INSTALL QUERY entityResolution_sub
+      INSTALL QUERY entityResolution_driver
+
+
+      CREATE QUERY customerJourney(/* Parameters here */) FOR GRAPH Customer360 {
+        /* Write query logic here */
+
+        OrAccum @shop;
+        OrAccum @cart;
+        OrAccum @purchase;
+
+        SumAccum <INT> @ordCount;
+        SumAccum <DOUBLE> @ordAmount;
+        MaxAccum <DATETIME> @lstPurch;
+        MinAccum <DATETIME> @fstPurch;
+
+        MapAccum<STRING, SetAccum<DATETIME>> @awareness;
+        MapAccum<STRING, SetAccum<DATETIME>> @consider;
+        MapAccum<STRING, SetAccum<DATETIME>> @purchases;
+        MapAccum<STRING, STRING> @loyaltyRecency;
+        MapAccum<STRING, STRING> @loyaltyFrequency;
+        MapAccum<STRING, STRING> @loyaltyMonetary;
+
+        Start = {Campaign.*};
+        allEvents = {Events.*};
+        allProds = {Products.*};
+
+        ###################################################################
+        # GroupBy Profile->PurchOrders  (profile, full_name, gender, ord_date, SUM(ord_qty) )
+        ###################################################################
+      #  pOrders = SELECT t FROM Start:s-(profile_purchase)-Orders:t
+      #                    ACCUM t.@profileOrders += (s,s.profile_name, t.order_date, t.order_type ->1);
+
+        acquire = SELECT t
+                    FROM Start:s-(profile_campaign:e)-Profile:t
+                   ACCUM CASE WHEN s.campaign_type == "Acquisition" THEN t.@awareness += ("Introduction"      -> e.campaign_date)
+                              WHEN s.campaign_type == "Other"       THEN t.@awareness += ("Product Awareness" -> e.campaign_date)
+                              WHEN s.campaign_type == "Special"     THEN t.@awareness += ("Brand Awareness"   -> e.campaign_date)
+                         END;
+
+        events = SELECT s
+                   FROM allEvents:s-(event_url:e)-urlPages:t
+                   ACCUM CASE WHEN t.page_location == "Cart"     THEN s.@shop     += True
+                              WHEN t.page_location == "CheckOut" THEN s.@purchase += True
+                              ELSE                                    s.@shop     += True
+                         END;
+
+        sess = SELECT t
+                   FROM events:s-(session_events:e)-Sessions:t
+                   ACCUM IF s.@shop     == True THEN t.@consider += ("Web Shop"     -> t.session_timestamp) END,
+                         IF s.@cart     == True THEN t.@consider += ("Web Cart"     -> t.session_timestamp) END,
+                         IF s.@purchase == True THEN t.@consider += ("Purchase Web" -> t.session_timestamp) END,
+                                                     t.@consider += ("Web Visit"    -> t.session_timestamp);
+
+        sess2prof = SELECT t
+                      FROM sess:s-(profile_sessions:e)-Profile:t
+                     ACCUM t.@consider += s.@consider;
+
+        orders = SELECT o
+                     FROM allProds:s-(order_items:e)-Orders:o
+                    ACCUM o.@ordAmount += e.itemAmt,
+                          o.@ordCount += e.itemQty,
+                          CASE WHEN s.department == "Personal Care"   OR s.department == "Health"  OR s.department == "Beauty" THEN o.@purchases += ("Personal Beaty & Health"  -> o.order_date)
+                               WHEN s.department == "Clothing"        OR s.department == "Baby"    OR s.department == "Toys"   THEN o.@purchases += ("Clothes Baby and Toys"    -> o.order_date)
+                               WHEN s.department == "Home and Garden" OR s.department == "Household Essentials"                THEN o.@purchases += ("Home and Household"       -> o.order_date)
+                               WHEN s.department == "Auto and Tires"  OR s.department == "Sports and Outdoors"                 THEN o.@purchases += ("Auto Sports and Outdoors" -> o.order_date)
+                          END;
+        prof = SELECT t
+                 FROM orders:s-(profile_purchase:e)-Profile:t
+                     ACCUM t.@purchases += s.@purchases,
+                           t.@lstPurch += s.order_date,
+                           t.@fstPurch += s.order_date,
+                           t.@ordAmount += s.@ordAmount,
+                           t.@ordCount  += s.@ordCount;
+
+        profiles = SELECT t FROM prof:t
+                    ACCUM  CASE WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24 BETWEEN  0 AND  10 THEN t.@loyaltyRecency += ("Recency"  -> "10")
+                                WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24 BETWEEN 11 AND  30 THEN t.@loyaltyRecency += ("Recency"  -> "30")
+                                WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24 BETWEEN 31 AND  60 THEN t.@loyaltyRecency += ("Recency"  -> "60")
+                                WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24 BETWEEN 61 AND  90 THEN t.@loyaltyRecency += ("Recency"  -> "90")
+                                WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24 BETWEEN 91 AND 120 THEN t.@loyaltyRecency += ("Recency" -> "120")
+                                WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24 > 121              THEN t.@loyaltyRecency += ("Recency" -> "999")
+                           END,
+                           CASE WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24  / t.@ordCount BETWEEN  0 AND  5 THEN t.@loyaltyFrequency += ("Frequency"  -> "5")
+                                WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24  / t.@ordCount BETWEEN  6 AND 10 THEN t.@loyaltyFrequency += ("Frequency"  -> "10")
+                                WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24  / t.@ordCount BETWEEN 11 AND 30 THEN t.@loyaltyFrequency += ("Frequency"  -> "30")
+                                WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24  / t.@ordCount BETWEEN 31 AND 60 THEN t.@loyaltyFrequency += ("Frequency"  -> "60")
+                                WHEN (datetime_diff(t.@lstPurch, t.@fstPurch) / 60 ) / 24  / t.@ordCount > 61              THEN t.@loyaltyFrequency += ("Frequency"  -> "999")
+                           END,
+                           CASE WHEN t.@ordAmount BETWEEN     0 AND  1000 THEN t.@loyaltyMonetary += ("Monetary"  ->  "1000")
+                                WHEN t.@ordAmount BETWEEN  1001 AND  2000 THEN t.@loyaltyMonetary += ("Monetary"  ->  "2000")
+                                WHEN t.@ordAmount BETWEEN  2001 AND  5000 THEN t.@loyaltyMonetary += ("Monetary"  ->  "5000")
+                                WHEN t.@ordAmount BETWEEN  5001 AND 10000 THEN t.@loyaltyMonetary += ("Monetary"  -> "10000")
+                                WHEN t.@ordAmount BETWEEN 10001 AND 20000 THEN t.@loyaltyMonetary += ("Monetary"  -> "20000")
+                                WHEN t.@ordAmount > 20001                 THEN t.@loyaltyMonetary += ("Monetary"  -> "99999")
+                           END;
+
+        print profiles;
+
+      }
+
+      INSTALL QUERY customerJourney
+
+
+
+      CREATE QUERY connectionMining(vertex<Profile> A, vertex<Profile> B, int k) FOR GRAPH Customer360 {
+        /***********************************
+         ,* Variables for phase one
+         ,***********************************/
+         SumAccum<int> @score = 0;
+         OrAccum @knowA = false, @knowB = false;
+         SetAccum<edge> @evidence, @@edgeSet;
+         SetAccum<vertex> @@verSet;
+
+         bool isFirstIter = true;
+
+         L0 (ANY) = {A,B};
+
+        /**************************
+         ,* Iteration one
+         ,* 1. find all person relates to A or B
+         ,* 2. output top k people relates both A and B
+         ,* Iteration two
+         ,* 1. Start from the person knows only A or B
+         ,* 2. Find those people who knows only A knows a person that knows only B
+         ,* 3. Find those people who knows only B knows a person that knows only A
+         ,* 4. output top k people from 2 and 3
+         ,**************************/
+         WHILE true LIMIT 3 DO
+           // Data Initialize
+           L0 = SELECT v
+           FROM L0:v
+           POST-ACCUM
+             CASE WHEN v == A THEN
+               v.@knowA += true
+             END
+             ,CASE WHEN v == B THEN
+               v.@knowB += true
+             END
+             ,v.@score = 1
+           ;
+
+            L1 (ANY) = L0;
+
+          // do it twice, go two steps to find the related citizens via
+          // hotel, flight, train, bus, case
+          log(true, " email, phone, address, ipaddress, device");
+          WHILE true LIMIT 3 DO
+            L1 = SELECT t
+                 FROM L1:s-((profile_email|profile_phone|profile_ipaddress|profile_address|profile_device):e)-:t
+                 WHERE t.@score == 0
+                 ACCUM t.@knowA += s.@knowA
+                       ,t.@knowB += s.@knowB
+                       ,t.@score += s.@score
+                       ,t.@evidence += s.@evidence
+                       ,t.@evidence += e
+            ;
+            //print A;
+          END;
+
+          RELATED = L1;
+          L1 = L0;
+
+          // go 4 steps,
+          // A/B-->PHONE NUMBER-->PHONE CALL-->PHONE NUMBER-->RELATED PEOPLE
+          // A/B-->BANK ACCOUNT-->MONEY TRANS-->BANK ACCOUNT-->RELATED PEOPLE
+          log(true, "Purchae, Book, Movie");
+          L1 = SELECT t
+                 FROM L1:s-((profile_purchase|book_ratings|movie_ratings):e)-:t
+                 WHERE t.@score == 0
+                 ACCUM t.@knowA += s.@knowA
+                       ,t.@knowB += s.@knowB
+                       ,t.@score += s.@score
+                       ,t.@evidence += s.@evidence
+                       ,t.@evidence += e
+          ;
+      //    WHILE true LIMIT 3 DO
+      //      L1 = SELECT t
+      //           FROM L1:s-((profile_email|profile_phone|profile_ipaddress|profile_address|profile_device):e)-:t
+      //           WHERE t.@score == 0
+      //           ACCUM t.@knowA += s.@knowA
+      //                 ,t.@knowB += s.@knowB
+      //                 ,t.@score += s.@score
+      //                 ,t.@evidence += s.@evidence
+      //                 ,t.@evidence += e
+      //      ;
+      //    END;
+          L1 = SELECT t
+                 FROM L1:s-((profile_purchase|book_ratings|movie_ratings):e)-:t
+                 WHERE t.@score == 0
+                 ACCUM t.@knowA += s.@knowA
+                       ,t.@knowB += s.@knowB
+                       ,t.@score += s.@score
+                       ,t.@evidence += s.@evidence
+                       ,t.@evidence += e
+          ;
+
+
+          // add the newly found citizens to the related set
+          RELATED = RELATED UNION L1;
+
+          log(true, "get COMMON_AB");
+          // Extract the people having common relations
+          // and keep the top k
+          COMMON_AB = SELECT t
+               FROM RELATED:t
+               WHERE t.@knowA == true AND t.@knowB == true
+               ORDER BY t.@score
+               LIMIT k
+          ;
+
+          COMMON_AB = SELECT s from COMMON_AB:s
+                      ACCUM @@edgeSet += s.@evidence
+          ;
+
+          IF isFirstIter == true THEN
+            // find the person that knows only A or B
+            L0 = RELATED MINUS COMMON_AB;
+                  log(true,L0.size());
+          END;
+          isFirstIter = false;
+        END;
+
+        PRINT @@edgeSet;
+        getVertexesFromEdge(@@edgeSet, @@verSet);
+        Start = {@@verSet};
+        Start = SELECT s FROM Start:s
+                POST-ACCUM s.@evidence.clear();
+
+        PRINT Start;
+      }
+
+      INSTALL QUERY connectionMining
+
+
+
+      CREATE QUERY movieRecommendations(String v_type, String e_type,FLOAT max_change=0.001, INT max_iter=25, FLOAT damping = 0.85, INT topK = 100, INT numberOfBatch, INT batchID ) FOR GRAPH Customer360  RETURNS (MapAccum<VERTEX, SetAccum<VERTEX>>) {
+
+        TYPEDEF TUPLE<VERTEX ver, FLOAT score> Vertex_Score;
+        HeapAccum<Vertex_Score>(topK,score DESC) @topScores;
+        MapAccum<Vertex,ListAccum<Vertex_Score>> @@res;
+        MaxAccum<FLOAT> @@maxDiff = 9999; # max score change in an iteration
+        MapAccum<VERTEX,FLOAT> @received_score; # sum of scores each vertex receives FROM neighbors
+        MapAccum<VERTEX,FLOAT> @score ;   # Initial score for every vertex is 0
+        SetAccum<EDGE> @@edgeSet;                   # list of all edges, if display is needed
+        OrAccum @is_source;
+        SetAccum<INT> @@end;
+        SetAccum<VERTEX> @@allProducts;
+        MapAccum<VERTEX, SetAccum<VERTEX>> @@recommendation;
+
+        All = {v_type};#  All with a set of input vertices
+
+        All = SELECT s
+                FROM All:s
+                WHERE getvid(s) % numberOfBatch == batchID;
+        # Assign unique labels to each vertex
+        Start = SELECT s
+                FROM All:s
+                POST-ACCUM s.@score +=(s->1),   # Only set score of source vertices to 1
+                           s.@is_source = true;
+        Total = All;
+
+        WHILE @@maxDiff > max_change LIMIT max_iter DO
+               V_tmp = SELECT t      # Only update score for activated vertices
+                       FROM Start:s -(e_type:e)-> :t
+      //                 WHERE (s.type == "person" AND e.timestamp <= s.timestamp) OR
+      //                       (s.type == "product" AND e.timestamp <= t.timestamp)
+                       ACCUM
+                            FOREACH (key,value) IN s.@score DO
+                                IF getvid(key) in @@end THEN
+                                      continue
+                                END,
+                                FLOAT rec_score = value/s.outdegree(e_type),#/(s.outdegree(e_type);
+                                t.@received_score += (key->rec_score)
+                            END;
+                  T = Start UNION V_tmp;
+                  Start = SELECT s
+                          FROM T:s
+                          POST-ACCUM
+                              IF s.@is_source == TRUE THEN
+                                    FLOAT oldscore = s.@score.get(s),
+                                    s.@score+=(s->-oldscore),
+                                    s.@score+=(s->((1.0-damping) + damping *s.@received_score.get(s)))
+                              END,
+                              FOREACH (key,value) IN s.@received_score DO
+                                  IF key!=s THEN
+                                      FLOAT oldscore = s.@score.get(key),
+                                      s.@score+=(key->-oldscore),
+                                      s.@score+=(key->damping*value),
+                                      IF damping*value-oldscore<0.001 THEN
+                                          @@end+=getvid(key)
+                                      END
+                                  END
+                               END,
+                               IF s.type == "Movies" THEN
+                                   @@allProducts += s
+                               END,
+                               s.@received_score.clear();
+
+                  Total=Total UNION T;
+                  END;
+
+          Total = SELECT s
+                  FROM Total:s
+                  POST-ACCUM
+                        FOREACH (key,value) IN s.@score DO
+                            @@res+=(key->Vertex_Score(s,value))
+                            END,
+                            s.@score.clear(),s.@received_score.clear();
+          @@end.clear();
+         PRINT @@res;
+          All = SELECT s
+                FROM All:s - (e_type:e)-:t
+                ACCUM
+                       FOREACH i in @@res.get(s) DO
+                            IF @@allProducts.contains(i.ver) AND getvid(i.ver) != getvid(t) THEN
+                              s.@topScores+=i
+                            END
+                        END;
+
+          All = SELECT s
+                FROM All:s
+                POST-ACCUM
+                        FOREACH element IN s.@topScores DO
+                            @@recommendation += (s -> element.ver)
+                        END;
+              //PRINT All [All.@topScores];
+            RETURN @@recommendation;
+      }
+
+      INSTALL QUERY movieRecommendations
+
+
+      CREATE QUERY productRecommendation_personalized(VERTEX <Profile> inputProfile) FOR GRAPH Customer360 {
+        /***********************************************
+         ,* Product Recommendation for each profile
+         ,* PARAMETERS Profile_id any value between 1 and 50000
+      ,*/
+
+        SumAccum<int> @ProdInCommon;
+        SumAccum<float> @SimilarityScore;
+        SumAccum<float> @Rank;
+        OrAccum @Purchased = false;
+
+        start = {inputProfile};
+        allprods = {Products.*};
+
+        #1. mark Products Purchased by the Profile
+        #2. calculate log similarity score for each persons share the same interests at Tag level.
+        orders = SELECT o FROM start:s-(profile_purchase:e)-Orders:o
+                  WHERE s == inputProfile;
+        #print orders;
+
+        products = SELECT p FROM orders:s-(order_items:e)-Products:p
+                    ACCUM p.@Purchased = true,
+                          p.@ProdInCommon += 1
+               POST-ACCUM p.@SimilarityScore = log (1 + p.@ProdInCommon);
+
+        #print products;
+
+
+        # recommend new messages to Viktor that have not liked by him.
+        Recommendations = SELECT p FROM allprods:p
+                           WHERE p.@Purchased == false
+                           ACCUM p.@Rank += p.@SimilarityScore
+                        ORDER BY p.@Rank DESC
+                   LIMIT 10;
+
+        print Recommendations;
+
+      }
+
+      INSTALL QUERY productRecommendation_personalized
+
+
+
+
+      CREATE QUERY bookRecommendation(VERTEX <Profile> inputProfile) FOR GRAPH Customer360 {
+        /***********************************************
+         ,* Product Recommendation for each profile
+         ,* PARAMETERS Profile_id any value between 1 and 50000
+      ,*/
+
+        SumAccum<int> @BookInCommon;
+        SumAccum<float> @SimilarityScore;
+        SumAccum<float> @Rank;
+        OrAccum @Read = false;
+
+        start = {inputProfile};
+        allBooks = {Books.*};
+
+        #1. mark Products Purchased by the Profile
+        #2. calculate log similarity score for each persons share the same interests at Tag level.
+        books =  SELECT b FROM start:s-(book_ratings:e)-Books:b
+                  WHERE s == inputProfile;
+        #print orders;
+
+        booksRead = SELECT b FROM start:s-(book_ratings:e)-Books:b
+                    ACCUM b.@Read = true,
+                          b.@BookInCommon += 1
+               POST-ACCUM b.@SimilarityScore = log (1 + b.@BookInCommon);
+
+        #print products;
+
+
+        # recommend new messages to Viktor that have not liked by him.
+        Recommendations = SELECT p FROM allBooks:p
+                           WHERE p.@Read == false
+                           ACCUM p.@Rank += p.@SimilarityScore
+                        ORDER BY p.@Rank DESC
+                   LIMIT 10;
+
+        print Recommendations;
+
+      }
+
+      INSTALL QUERY bookRecommendation
+
+      CREATE QUERY bestCustomers(/* Parameters here */) FOR GRAPH Customer360 {
+        TYPEDEF TUPLE<VERTEX<Profile> profile, STRING last_name, STRING first_name, STRING gender, INT ord_cnt, DOUBLE ord_qty, DOUBLE ord_amt> profile;
+
+        SumAccum<INT> @ordCnt;
+        SumAccum<INT> @ordQty;
+        SumAccum<DOUBLE> @ordAmt;
+        OrAccum @visited;
+        HeapAccum<profile>(100, ord_cnt DESC, ord_amt DESC) @@profileTop;
+
+        Start = { Profile.* };
+
+        vPersonHasOrder = SELECT s FROM Start:s-(profile_purchase:e)-Orders:t
+                           ACCUM s.@visited += True,
+                                 s.@ordCnt += 1,
+                                 s.@ordQty += t.order_qty,
+                                 s.@ordAmt += t.order_amt
+                      POST-ACCUM @@profileTop += profile(s, s.last_name, s.first_name, s.gender, s.@ordCnt, s.@ordQty, s.@ordAmt)
+                          LIMIT 100;
+
+        PRINT @@profileTop;
+      }
+
+      INSTALL QUERY bestCustomers
+
+
+
+      CREATE QUERY community_step1_jaccard_batch ( INT top_k = 10, SET<STRING> v_type, SET<STRING> feat_v_type, SET<STRING> e_type, SET<STRING> re_type, INT src_batch_num = 50, INT nbor_batch_num = 10, BOOL print_accum = true, INT print_limit = 50, STRING file_path = "") FOR GRAPH Customer360 {
+        /*
+          Calculates the Jaccard Neighborhood Similarity between all vertices using a common feature vertex type.
+            Jaccard Similarity = intersection_size / (setSize_all + setSize_self - intersection_size)
+
+          Parameters :
+            top_k   : # of top scores to report for each vertex
+            v_type  : vertex type to compare
+            feat_v_type  : feature vertex type
+            e_type  : edge type from source vertex to feature vertex type
+            re_type  : edge type from feature vertex to source vertex
+            similarity_edge : edge type for storing vertex-vertex similarity scores
+            src_batch_num  : how many batches to split the source vertices into
+            nbor_batch_num : how many batches to split the 2-hop neighbor vertices into
+            print_accum : print JSON output
+            print_limit : number of source vertices to print, -1 to print all
+            file_path : file to write CSV output to
+        ,*/
+
+        TYPEDEF TUPLE<VERTEX <Profile> ver, FLOAT val> Res_Tup; // storing results in the Heap
+        MapAccum<VERTEX <Profile>, INT> @@set_size_map, @intersection_size_map; // set sizes of all vertices
+        SetAccum<STRING> @@all_e_types_set;
+        SumAccum<FLOAT> @sum_outdegree;
+        HeapAccum<Res_Tup>(top_k, val DESC) @sim_heap; // stores topK similarity results
+        FILE f (file_path);
+        INT print_count;
+
+        all_vertices = {Profile.*};
+        all_vertices = SELECT s
+                       FROM all_vertices:s -(e_type:e)- feat_v_type:t
+                       ACCUM
+                           s.@sum_outdegree += 1;
+
+        FOREACH i IN RANGE[0, src_batch_num-1] DO
+            // store number of features for each source vertex
+            src_batch = SELECT s
+                        FROM all_vertices:s
+                        WHERE getvid(s) % src_batch_num == i
+                        ACCUM
+                            @@set_size_map += (s -> s.@sum_outdegree);
+
+            // store number of source vertices that share common features
+            common_features = SELECT t
+                              FROM src_batch:s-(e_type:e)-feat_v_type:t
+                              ACCUM t.@intersection_size_map += (s -> 1);
+
+            FOREACH j IN RANGE[0, nbor_batch_num-1] DO
+                others = SELECT t
+                         FROM common_features:s-(re_type:e)-Profile:t
+                         WHERE getvid(t) % nbor_batch_num == j
+                         ACCUM
+                             t.@intersection_size_map += s.@intersection_size_map;
+                others = SELECT s
+                         FROM others:s
+                         ACCUM
+                             // perform similarity computation and store results
+                             FLOAT div = 0,
+                             FOREACH (k,v) IN s.@intersection_size_map DO
+                                 IF k == s THEN
+                                     CONTINUE
+                                 END,
+                                 div = @@set_size_map.get(k) + s.@sum_outdegree - v,
+                                 IF div > 0 THEN
+                                     k.@sim_heap += Res_Tup(s, v/div)
+                                 END
+                             END
+                         POST-ACCUM
+                             s.@intersection_size_map.clear();
+            END;
+
+            IF print_accum == TRUE THEN
+                IF print_limit == -1 THEN
+                    PRINT src_batch[src_batch.@sim_heap];
+                ELSE
+                    IF print_count < print_limit THEN
+                        print_batch = SELECT s
+                                      FROM src_batch:s
+                                      LIMIT print_limit - print_count;
+                        print_count = print_count + src_batch.size();
+                        PRINT print_batch[print_batch.@sim_heap];
+                    END;
+                END;
+            END;
+
+            src_batch = SELECT s
+                        FROM src_batch:s
+                        POST-ACCUM
+                            FOREACH tup IN s.@sim_heap DO
+                                IF file_path != "" THEN
+                                    f.println(s, tup.ver, tup.val)
+                                END,
+                                INSERT INTO EDGE community_edge VALUES (s, tup.ver, tup.val)
+                            END,
+                            s.@sim_heap.clear();
+                            @@set_size_map.clear();
+        END;
+      }
+
+
+
+      CREATE QUERY community_step2_label_prop (SET<STRING> v_type, SET<STRING> e_type, INT max_iter, INT output_limit, BOOL print_accum = TRUE, STRING file_path = "", STRING attr = "") FOR GRAPH Customer360 {
+      # Partition the vertices into communities, according to the Label Propagation method.
+      # Indicate community membership by assigning each vertex a community ID.
+
+      OrAccum @@or_changed = true;
+      MapAccum<INT, INT> @map;     # <communityId, numNeighbors>
+      MapAccum<INT, INT> @@comm_sizes_map;   # <communityId, members>
+      SumAccum<INT> @sum_label, @sum_num;
+      FILE f (file_path);
+      Start = {v_type};
+
+      # Assign unique labels to each vertex
+      Start = SELECT s
+              FROM Start:s
+              ACCUM s.@sum_label = getvid(s);
+
+      # Propagate labels to neighbors until labels converge or the max iterations is reached
+      WHILE @@or_changed == true LIMIT max_iter DO
+          @@or_changed = false;
+          Start = SELECT s
+                  FROM Start:s -(e_type:e)-> :t
+                  ACCUM t.@map += (s.@sum_label -> 1)  # count the occurrences of neighbor's labels
+                  POST-ACCUM
+                      INT max_v = 0,
+                      INT label = 0,
+                      # Iterate over the map to get the neighbor label that occurs most often
+                      FOREACH (k,v) IN t.@map DO
+                          CASE WHEN v > max_v THEN
+                              max_v = v,
+                              label = k
+                          END
+                      END,
+                      # When the neighbor search finds a label AND it is a new label
+                      # AND the label's count has increased, update the label.
+                      CASE WHEN label != 0 AND t.@sum_label != label AND max_v > t.@sum_num THEN
+                          @@or_changed += true,
+                          t.@sum_label = label,
+                          t.@sum_num = max_v
+                      END,
+                      t.@map.clear();
+      END;
+
+      Start = {v_type};
+      Start =  SELECT s
+               FROM Start:s
+               POST-ACCUM
+                   IF attr != "" THEN
+                       s.setAttr(attr, s.@sum_label)
+                   END,
+
+                   IF file_path != "" THEN
+                       f.println(s, s.@sum_label)
+                   END,
+
+                   IF print_accum THEN
+                       @@comm_sizes_map += (s.@sum_label -> 1)
+                   END
+               LIMIT output_limit;
+
+      IF print_accum THEN
+          PRINT @@comm_sizes_map;
+          PRINT Start[Start.@sum_label];
+      END;
+      }
+
+      INSTALL QUERY community_step1_jaccard_batch
+      INSTALL QUERY community_step2_label_prop
+
+
+
+      CREATE QUERY deleteCust360_data(/* Parameters here */) FOR GRAPH Customer360 {
+        brow = {Browser.*};
+        DELETE v FROM brow:v;
+
+        dasr = {DataSource.*};
+        DELETE v FROM dasr:v;
+
+        camp = {Campaign.*};
+        DELETE v FROM camp:v;
+
+        ad = {Ads.*};
+        DELETE v FROM ad:v;
+
+        prom = {Promotions.*};
+        DELETE v FROM prom:v;
+
+        loc = {Location.*};
+        DELETE v FROM loc:v;
+
+        urlp = {urlPages.*};
+        DELETE v FROM urlp:v;
+
+        even = {Events.*};
+        DELETE s FROM even:s;
+
+        sess = {Sessions.*};
+        DELETE s FROM sess:s;
+
+        ordr = {Orders.*};
+        DELETE s FROM ordr:s;
+
+        prof = {Profile.*};
+        DELETE s FROM prof:s;
+
+        devc = {Device.*};
+        DELETE s FROM devc:s;
+
+        emai = {Email.*};
+        DELETE s FROM emai:s;
+
+        phon = {Phone.*};
+        DELETE s FROM phon:s;
+
+        ipad = {IpAddress.*};
+        DELETE s FROM ipad:s;
+
+        addr = {Address.*};
+        DELETE v FROM addr:v;
+
+        book = {Books.*};
+        DELETE v FROM book:v;
+
+        movi = {Movies.*};
+        DELETE v FROM movi:v;
+
+        genr = {Genre.*};
+        DELETE v FROM genr:v;
+
+        publ = {Publisher.*};
+        DELETE v FROM publ:v;
+
+        auth = {Author.*};
+        DELETE v FROM auth:v;
+
+        prod = {Products.*};
+        DELETE v FROM prod:v;
+
+        stor = {Store.*};
+        DELETE v FROM stor:v;
+
+        usag = {UserAgent.*};
+        DELETE v FROM usag:v;
+
+
+      }
+
+      INSTALL QUERY deleteCust360_data
+
+    #+end_src
 ** DONE CustExp / Customer 360 / Customer Attribution SFDC
    :LOGBOOK:
    - State "DONE"       from "STARTED"    [2021-10-11 Mon 18:56]
@@ -322,13 +1453,13 @@
        drop job load_job_custexp
 
        CREATE LOADING JOB load_job_custexp FOR GRAPH CustExp {
-         DEFINE FILENAME Lead="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/Lead.csv";
-         DEFINE FILENAME OpportunityContactRole="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/OpportunityContactRole.csv";
-         DEFINE FILENAME Campaign="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/Campaign.csv";
-         DEFINE FILENAME CampaignMember="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/CampaignMember.csv";
-         DEFINE FILENAME Opportunity="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/Opportunity.csv";
-         DEFINE FILENAME Account="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/Account.csv";
-         DEFINE FILENAME Contact="m1:/home/tigergraph/tigergraph/data/mydata/custexp/data/Contact.csv";
+         DEFINE FILENAME Lead="m1:/home/tigergraph/mydata/custexp/data/Lead.csv";
+         DEFINE FILENAME OpportunityContactRole="m1:/home/tigergraph/mydata/custexp/data/OpportunityContactRole.csv";
+         DEFINE FILENAME Campaign="m1:/home/tigergraph/mydata/custexp/data/Campaign.csv";
+         DEFINE FILENAME CampaignMember="m1:/home/tigergraph/mydata/custexp/data/CampaignMember.csv";
+         DEFINE FILENAME Opportunity="m1:/home/tigergraph/mydata/custexp/data/Opportunity.csv";
+         DEFINE FILENAME Account="m1:/home/tigergraph/mydata/custexp/data/Account.csv";
+         DEFINE FILENAME Contact="m1:/home/tigergraph/mydata/custexp/data/Contact.csv";
 
          LOAD Lead TO VERTEX Lead VALUES($0, $4, $5, _, $9, $11, $12, $24, $25, $26, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $43, $44, $46, $64, $65, $66, $67, $68, $69, $70, $71, $74, $57, $76, $77, $88, $89, $90, $91, $92, $93, $94, $95, $96, $97, $98, $99, $100, $101, $102, $103, $104, $105, $107, $109, $111, $112) USING SEPARATOR=",", HEADER="true", EOL="\n";
 
@@ -554,31 +1685,31 @@
     #+begin_src sql :tangle solutions/crunchbase/02-load-data.gsql :mkdirp yes
       USE GRAPH CrunchBasePre_2013
       CREATE LOADING JOB load_crunchbase {
-        DEFINE FILENAME cb_acquisitions = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_acquisitions.csv";
-        DEFINE FILENAME cb_company = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_company.csv";
-        DEFINE FILENAME cb_company_milestones = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_company_milestones.csv";
-        DEFINE FILENAME cb_company_offices = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_company_offices.csv";
-        DEFINE FILENAME cb_degrees = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_degrees.csv";
-        DEFINE FILENAME cb_financialorg = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_financialorg.csv";
-        DEFINE FILENAME cb_financialorg_milestones = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_financialorg_milestones.csv";
-        DEFINE FILENAME cb_fOrg_offices = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_fOrg_offices.csv";
-        DEFINE FILENAME cb_funding_rounds = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_funding_rounds.csv";
-        DEFINE FILENAME cb_funds = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_funds.csv";
-        DEFINE FILENAME cb_invested_by_company = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_invested_by_company.csv";
-        DEFINE FILENAME cb_invested_by_fOrg = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_invested_by_fOrg.csv";
-        DEFINE FILENAME cb_invested_by_person = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_invested_by_person.csv";
-        DEFINE FILENAME cb_ipos = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_ipos.csv";
-        DEFINE FILENAME cb_milestones = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_milestones.csv";
-        DEFINE FILENAME cb_offices = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_offices.csv";
-        DEFINE FILENAME cb_people = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_people.csv";
-        DEFINE FILENAME cb_person = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_person.csv";
-        DEFINE FILENAME cb_person_milestones = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_person_milestones.csv";
-        DEFINE FILENAME cb_personwithcompany = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_personwithcompany.csv";
-        DEFINE FILENAME cb_personwithfOrg = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_personwithfOrg.csv";
-        DEFINE FILENAME cb_product = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_product.csv";
-        DEFINE FILENAME cb_product_milestones = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/cb_product_milestones.csv";
-        DEFINE FILENAME degrees = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/degrees.csv";
-        DEFINE FILENAME university = "m1:/home/tigergraph/tigergraph/data/mydata/crunchbase/data/university.csv";
+        DEFINE FILENAME cb_acquisitions = "m1:/home/tigergraph/mydata/crunchbase/data/cb_acquisitions.csv";
+        DEFINE FILENAME cb_company = "m1:/home/tigergraph/mydata/crunchbase/data/cb_company.csv";
+        DEFINE FILENAME cb_company_milestones = "m1:/home/tigergraph/mydata/crunchbase/data/cb_company_milestones.csv";
+        DEFINE FILENAME cb_company_offices = "m1:/home/tigergraph/mydata/crunchbase/data/cb_company_offices.csv";
+        DEFINE FILENAME cb_degrees = "m1:/home/tigergraph/mydata/crunchbase/data/cb_degrees.csv";
+        DEFINE FILENAME cb_financialorg = "m1:/home/tigergraph/mydata/crunchbase/data/cb_financialorg.csv";
+        DEFINE FILENAME cb_financialorg_milestones = "m1:/home/tigergraph/mydata/crunchbase/data/cb_financialorg_milestones.csv";
+        DEFINE FILENAME cb_fOrg_offices = "m1:/home/tigergraph/mydata/crunchbase/data/cb_fOrg_offices.csv";
+        DEFINE FILENAME cb_funding_rounds = "m1:/home/tigergraph/mydata/crunchbase/data/cb_funding_rounds.csv";
+        DEFINE FILENAME cb_funds = "m1:/home/tigergraph/mydata/crunchbase/data/cb_funds.csv";
+        DEFINE FILENAME cb_invested_by_company = "m1:/home/tigergraph/mydata/crunchbase/data/cb_invested_by_company.csv";
+        DEFINE FILENAME cb_invested_by_fOrg = "m1:/home/tigergraph/mydata/crunchbase/data/cb_invested_by_fOrg.csv";
+        DEFINE FILENAME cb_invested_by_person = "m1:/home/tigergraph/mydata/crunchbase/data/cb_invested_by_person.csv";
+        DEFINE FILENAME cb_ipos = "m1:/home/tigergraph/mydata/crunchbase/data/cb_ipos.csv";
+        DEFINE FILENAME cb_milestones = "m1:/home/tigergraph/mydata/crunchbase/data/cb_milestones.csv";
+        DEFINE FILENAME cb_offices = "m1:/home/tigergraph/mydata/crunchbase/data/cb_offices.csv";
+        DEFINE FILENAME cb_people = "m1:/home/tigergraph/mydata/crunchbase/data/cb_people.csv";
+        DEFINE FILENAME cb_person = "m1:/home/tigergraph/mydata/crunchbase/data/cb_person.csv";
+        DEFINE FILENAME cb_person_milestones = "m1:/home/tigergraph/mydata/crunchbase/data/cb_person_milestones.csv";
+        DEFINE FILENAME cb_personwithcompany = "m1:/home/tigergraph/mydata/crunchbase/data/cb_personwithcompany.csv";
+        DEFINE FILENAME cb_personwithfOrg = "m1:/home/tigergraph/mydata/crunchbase/data/cb_personwithfOrg.csv";
+        DEFINE FILENAME cb_product = "m1:/home/tigergraph/mydata/crunchbase/data/cb_product.csv";
+        DEFINE FILENAME cb_product_milestones = "m1:/home/tigergraph/mydata/crunchbase/data/cb_product_milestones.csv";
+        DEFINE FILENAME degrees = "m1:/home/tigergraph/mydata/crunchbase/data/degrees.csv";
+        DEFINE FILENAME university = "m1:/home/tigergraph/mydata/crunchbase/data/university.csv";
         LOAD cb_people TO VERTEX person VALUES($1, _, _, $2, $3, $4, $5, _, _, _, _, _, _, _, _, _, _, _, _, _) USING SEPARATOR="\t", HEADER="false", EOL="\n";
         LOAD cb_degrees TO EDGE hasDegree VALUES($1, $4, $2, $3, $5, $6, $7) USING SEPARATOR="\t", HEADER="false", EOL="\n";
         LOAD university TO VERTEX university VALUES($0, $1) USING SEPARATOR="\t", HEADER="false", EOL="\n";
@@ -1133,11 +2264,11 @@
     #+begin_src sql :tangle solutions/enterprise/02-load-data.gsql :mkdirp yes
       USE GRAPH EnterpriseGraph
       CREATE LOADING JOB load_enterprise_knowledge FOR GRAPH EnterpriseGraph {
-        DEFINE FILENAME enterprise  = "m1:/home/tigergraph/tigergraph/data/mydata/enterprise/data/enterprise.csv";
-        DEFINE FILENAME working  = "m1:/home/tigergraph/tigergraph/data/mydata/enterprise/data/working.csv";
-        DEFINE FILENAME person_invest_enterprise  = "m1:/home/tigergraph/tigergraph/data/mydata/enterprise/data/person_invest_enterprise.csv";
-        DEFINE FILENAME enterprise_invest_enterprise  = "m1:/home/tigergraph/tigergraph/data/mydata/enterprise/data/enterprise_invest_enterprise.csv";
-        DEFINE FILENAME enterprise_bid_for_project  = "m1:/home/tigergraph/tigergraph/data/mydata/enterprise/data/enterprise_bid_for_project.csv";
+        DEFINE FILENAME enterprise  = "m1:/home/tigergraph/mydata/enterprise/data/enterprise.csv";
+        DEFINE FILENAME working  = "m1:/home/tigergraph/mydata/enterprise/data/working.csv";
+        DEFINE FILENAME person_invest_enterprise  = "m1:/home/tigergraph/mydata/enterprise/data/person_invest_enterprise.csv";
+        DEFINE FILENAME enterprise_invest_enterprise  = "m1:/home/tigergraph/mydata/enterprise/data/enterprise_invest_enterprise.csv";
+        DEFINE FILENAME enterprise_bid_for_project  = "m1:/home/tigergraph/mydata/enterprise/data/enterprise_bid_for_project.csv";
             LOAD enterprise TO VERTEX Company VALUES($0, $1) USING SEPARATOR=",", HEADER="true", EOL="\n";
             LOAD working TO EDGE WorkFor VALUES($0, $1, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
             LOAD person_invest_enterprise TO EDGE PersonInvestCompany VALUES($0, $1, $2, $3, $4) USING SEPARATOR=",", HEADER="true", EOL="\n";
@@ -1354,37 +2485,37 @@
     #+begin_src sql :tangle solutions/ldbc-social/02-load-data.gsql :mkdirp yes
       USE GRAPH ldbc_snb
       CREATE LOADING JOB load_ldbc_snb FOR GRAPH ldbc_snb {
-        DEFINE FILENAME v_person_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_0_0.csv";
-        DEFINE FILENAME v_post_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/post_0_0.csv";
-        DEFINE FILENAME v_tag_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/tag_0_0.csv";
-        DEFINE FILENAME v_place_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/place_0_0.csv";
-        DEFINE FILENAME v_comment_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/comment_0_0.csv";
-        DEFINE FILENAME v_forum_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/forum_0_0.csv";
-        DEFINE FILENAME v_organisation_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/organisation_0_0.csv";
-        DEFINE FILENAME v_tagclass_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/tagclass_0_0.csv";
-        DEFINE FILENAME person_knows_person_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_knows_person_0_0.csv";
-        DEFINE FILENAME comment_replyOf_post_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/comment_replyOf_post_0_0.csv";
-        DEFINE FILENAME comment_replyOf_comment_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/comment_replyOf_comment_0_0.csv";
-        DEFINE FILENAME post_hasCreator_person_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/post_hasCreator_person_0_0.csv";
-        DEFINE FILENAME post_hasTag_tag_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/post_hasTag_tag_0_0.csv";
-        DEFINE FILENAME comment_hasCreator_person_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/comment_hasCreator_person_0_0.csv";
-        DEFINE FILENAME post_isLocatedIn_place_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/post_isLocatedIn_place_0_0.csv";
-        DEFINE FILENAME comment_hasTag_tag_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/comment_hasTag_tag_0_0.csv";
-        DEFINE FILENAME comment_isLocatedIn_place_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/comment_isLocatedIn_place_0_0.csv";
-        DEFINE FILENAME forum_containerOf_post_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/forum_containerOf_post_0_0.csv";
-        DEFINE FILENAME forum_hasMember_person_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/forum_hasMember_person_0_0.csv";
-        DEFINE FILENAME forum_hasModerator_person_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/forum_hasModerator_person_0_0.csv";
-        DEFINE FILENAME forum_hasTag_tag_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/forum_hasTag_tag_0_0.csv";
-        DEFINE FILENAME organisation_isLocatedIn_place_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/organisation_isLocatedIn_place_0_0.csv";
-        DEFINE FILENAME person_hasInterest_tag_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_hasInterest_tag_0_0.csv";
-        DEFINE FILENAME person_isLocatedIn_place_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_isLocatedIn_place_0_0.csv";
-        DEFINE FILENAME person_likes_comment_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_likes_comment_0_0.csv";
-        DEFINE FILENAME person_likes_post_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_likes_post_0_0.csv";
-        DEFINE FILENAME person_studyAt_organisation_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_studyAt_organisation_0_0.csv";
-        DEFINE FILENAME person_workAt_organisation_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_workAt_organisation_0_0.csv";
-        DEFINE FILENAME place_isPartOf_place_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/place_isPartOf_place_0_0.csv";
-        DEFINE FILENAME tag_hasType_tagclass_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/tag_hasType_tagclass_0_0.csv";
-        DEFINE FILENAME tagclass_isSubclassOf_tagclass_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/tagclass_isSubclassOf_tagclass_0_0.csv";
+        DEFINE FILENAME v_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_0_0.csv";
+        DEFINE FILENAME v_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_0_0.csv";
+        DEFINE FILENAME v_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_0_0.csv";
+        DEFINE FILENAME v_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_0_0.csv";
+        DEFINE FILENAME v_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_0_0.csv";
+        DEFINE FILENAME v_forum_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_0_0.csv";
+        DEFINE FILENAME v_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/organisation_0_0.csv";
+        DEFINE FILENAME v_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tagclass_0_0.csv";
+        DEFINE FILENAME person_knows_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_knows_person_0_0.csv";
+        DEFINE FILENAME comment_replyOf_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_replyOf_post_0_0.csv";
+        DEFINE FILENAME comment_replyOf_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_replyOf_comment_0_0.csv";
+        DEFINE FILENAME post_hasCreator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_hasCreator_person_0_0.csv";
+        DEFINE FILENAME post_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_hasTag_tag_0_0.csv";
+        DEFINE FILENAME comment_hasCreator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_hasCreator_person_0_0.csv";
+        DEFINE FILENAME post_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME comment_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_hasTag_tag_0_0.csv";
+        DEFINE FILENAME comment_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/comment_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME forum_containerOf_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_containerOf_post_0_0.csv";
+        DEFINE FILENAME forum_hasMember_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasMember_person_0_0.csv";
+        DEFINE FILENAME forum_hasModerator_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasModerator_person_0_0.csv";
+        DEFINE FILENAME forum_hasTag_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/forum_hasTag_tag_0_0.csv";
+        DEFINE FILENAME organisation_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/organisation_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME person_hasInterest_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_hasInterest_tag_0_0.csv";
+        DEFINE FILENAME person_isLocatedIn_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_isLocatedIn_place_0_0.csv";
+        DEFINE FILENAME person_likes_comment_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_likes_comment_0_0.csv";
+        DEFINE FILENAME person_likes_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_likes_post_0_0.csv";
+        DEFINE FILENAME person_studyAt_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_studyAt_organisation_0_0.csv";
+        DEFINE FILENAME person_workAt_organisation_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_workAt_organisation_0_0.csv";
+        DEFINE FILENAME place_isPartOf_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_isPartOf_place_0_0.csv";
+        DEFINE FILENAME tag_hasType_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_hasType_tagclass_0_0.csv";
+        DEFINE FILENAME tagclass_isSubclassOf_tagclass_file="m1:/home/tigergraph/mydata/ldbc-social/data/tagclass_isSubclassOf_tagclass_0_0.csv";
 
 
 
@@ -1519,17 +2650,17 @@
       # -*- mode: sql; -*-
       use graph Northwind
       CREATE LOADING JOB load_all_north {
-        DEFINE FILENAME categories="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/categories.csv";
-        DEFINE FILENAME customers="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/customers.csv";
-        DEFINE FILENAME employees="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/employees.csv";
-        DEFINE FILENAME employee_territories="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/employee-territories.csv";
-        DEFINE FILENAME order_details="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/order-details.csv";
-        DEFINE FILENAME orders="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/orders.csv";
-        DEFINE FILENAME products="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/products.csv";
-        DEFINE FILENAME referrals="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/referrals.csv";
-        DEFINE FILENAME regions="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/regions.csv";
-        DEFINE FILENAME suppliers="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/suppliers.csv";
-        DEFINE FILENAME territories="m1:/home/tigergraph/tigergraph/data/mydata/northwind/data/territories.csv";
+        DEFINE FILENAME categories="m1:/home/tigergraph/mydata/northwind/data/categories.csv";
+        DEFINE FILENAME customers="m1:/home/tigergraph/mydata/northwind/data/customers.csv";
+        DEFINE FILENAME employees="m1:/home/tigergraph/mydata/northwind/data/employees.csv";
+        DEFINE FILENAME employee_territories="m1:/home/tigergraph/mydata/northwind/data/employee-territories.csv";
+        DEFINE FILENAME order_details="m1:/home/tigergraph/mydata/northwind/data/order-details.csv";
+        DEFINE FILENAME orders="m1:/home/tigergraph/mydata/northwind/data/orders.csv";
+        DEFINE FILENAME products="m1:/home/tigergraph/mydata/northwind/data/products.csv";
+        DEFINE FILENAME referrals="m1:/home/tigergraph/mydata/northwind/data/referrals.csv";
+        DEFINE FILENAME regions="m1:/home/tigergraph/mydata/northwind/data/regions.csv";
+        DEFINE FILENAME suppliers="m1:/home/tigergraph/mydata/northwind/data/suppliers.csv";
+        DEFINE FILENAME territories="m1:/home/tigergraph/mydata/northwind/data/territories.csv";
 
         LOAD employees TO VERTEX Reps VALUES($"EmployeeID", $"LastName", $"FirstName", $"Title", $"TitleOfCourtesy", $"BirthDate", $"HireDate", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"HomePhone", $"Extension", $"ReportsTo", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
         LOAD referrals TO EDGE referredby VALUES("$from_rep", $"to_rep") USING SEPARATOR=",", HEADER="true", EOL="\n";
@@ -1641,7 +2772,7 @@
     #+begin_src sql :tangle solutions/ldbc-social/02-load-data.gsql :mkdirp yes
       USE GRAPH ldbc_snb
       CREATE LOADING JOB load_ldbc_snb FOR GRAPH ldbc_snb {
-        DEFINE FILENAME v_person_file="m1:/home/tigergraph/tigergraph/data/mydata/ldbc-social/data/person_0_0.csv";
+        DEFINE FILENAME v_person_file="m1:/home/tigergraph/mydata/ldbc-social/data/person_0_0.csv";
         DEFINE FILENAME v_post_file="m1:/home/tigergraph/mydata/ldbc-social/data/post_0_0.csv";
         DEFINE FILENAME v_tag_file="m1:/home/tigergraph/mydata/ldbc-social/data/tag_0_0.csv";
         DEFINE FILENAME v_place_file="m1:/home/tigergraph/mydata/ldbc-social/data/place_0_0.csv";
@@ -1793,13 +2924,13 @@
       set exit_on_error = "false"
       USE GRAPH SupplyChain
       CREATE LOADING JOB load_job_supplychain FOR GRAPH SupplyChain {
-      DEFINE FILENAME Model_Number_Only="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/Model Number Only.csv";
-      DEFINE FILENAME ModelItemNumber="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/ModelItemNumber.csv";
-      DEFINE FILENAME Inventory="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/Inventory.csv";
-      DEFINE FILENAME BuildSchedule_July="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/BuildSchedule July 21.csv";
-      DEFINE FILENAME ItemMaster="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/ItemMaster POC.csv";
-      DEFINE FILENAME BOM="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/BOM with Unique Identifier.csv";
-      DEFINE FILENAME demandtopartusedby="m1:/home/tigergraph/tigergraph/data/mydata/supplychain/data/demandtopartusedby.csv";
+      DEFINE FILENAME Model_Number_Only="m1:/home/tigergraph/mydata/supplychain/data/Model Number Only.csv";
+      DEFINE FILENAME ModelItemNumber="m1:/home/tigergraph/mydata/supplychain/data/ModelItemNumber.csv";
+      DEFINE FILENAME Inventory="m1:/home/tigergraph/mydata/supplychain/data/Inventory.csv";
+      DEFINE FILENAME BuildSchedule_July="m1:/home/tigergraph/mydata/supplychain/data/BuildSchedule July 21.csv";
+      DEFINE FILENAME ItemMaster="m1:/home/tigergraph/mydata/supplychain/data/ItemMaster POC.csv";
+      DEFINE FILENAME BOM="m1:/home/tigergraph/mydata/supplychain/data/BOM with Unique Identifier.csv";
+      DEFINE FILENAME demandtopartusedby="m1:/home/tigergraph/mydata/supplychain/data/demandtopartusedby.csv";
 
 
       LOAD Model_Number_Only TO VERTEX models VALUES($0) USING SEPARATOR=",", HEADER="true", EOL="\n";
@@ -3427,4 +4558,4 @@
   #+end_src
 
   #+RESULTS:
-  : Copied solutions to /kube:poodle@tigergraph-0:/home/tigergraph/tigergraph/data/mydata/
+  : Copied solutions to /kube:poodle@tigergraph-0:/home/tigergraph/mydata/
