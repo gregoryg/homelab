@@ -2599,7 +2599,7 @@
     #+end_src
 ** Northwind
 *** Resources
-    + data:
+    + data: s3://gjgeksbackup/northwind-data.tar.gz, or /data/data-files/graph-data/northwind-data.tar.gz
 *** Create graph
     #+begin_src sql :tangle solutions/northwind/01-create-graph.gsql :mkdirp yes
       # -*- mode: sql; -*-
@@ -2607,15 +2607,12 @@
       create graph Northwind()
       use graph Northwind
       create schema_change job schema_change_northwind {
-        # Vertex Reps
         ADD VERTEX Reps(PRIMARY_ID id INT, LastName STRING, FirstName STRING, Title STRING, CourtesyTitle STRING, BirthDate DATETIME, HireDate DATETIME, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, HomePhone STRING, PhoneExtension STRING, ReportsTo INT, group_id INT, is_root BOOL) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
         ADD VERTEX Customers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Country STRING, Phone STRING, referred_by STRING, group_id INT, is_root BOOL, Type STRING DEFAULT "DIRECT") WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
-        # Vertex Orders
         ADD VERTEX Orders(PRIMARY_ID id INT, CustomerID STRING, EmployeeID INT, OrderDate DATETIME, RequiredDate DATETIME, ShippedDate DATETIME, ShipVia INT, Freight DOUBLE, ShipName STRING, ShipAddress STRING, ShipCity STRING, ShipRegion STRING, ShipPostalCode STRING, ShipCountry STRING, OrderAmount DOUBLE, CommissionAmount DOUBLE, fraud_score DOUBLE, ReturnedDate STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
-        # Vertex Products
         ADD VERTEX Products(PRIMARY_ID id INT, ProductName STRING, SupplierID INT, CategoryID INT, QuantityPerUnit STRING, UnitPrice DOUBLE, UnitsInStock INT, UnitsOnOrder INT, ReorderLevel INT, Discontinued INT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
         ADD VERTEX Territories(PRIMARY_ID id STRING, Description STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
@@ -2624,11 +2621,9 @@
 
         ADD VERTEX Suppliers(PRIMARY_ID id STRING, CompanyName STRING, ContactName STRING, ContactTitle STRING, Address STRING, City STRING, Region STRING, PostalCode STRING, Phone STRING, Country STRING, HomePage STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE";
 
-        ADD DIRECTED EDGE include(FROM Orders, TO Products, Quantity INT, UnitPrice DOUBLE, Discount DOUBLE, LineTotalNoDiscount DOUBLE, LineTotal DOUBLE) WITH REVERSE_EDGE="reverse_include";
+        ADD VERTEX Categories(PRIMARY_ID CategoryID INT, CategoryName STRING, Description STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="true";
 
-        ADD DIRECTED EDGE referredby(FROM Customers, TO Customers) WITH REVERSE_EDGE="reverse_referredby";
-
-        ADD DIRECTED EDGE fulfill(FROM Reps, TO Orders) WITH REVERSE_EDGE="reverse_fulfill";
+        ADD DIRECTED EDGE referredby(FROM Customers, TO Customers, referral_date DATETIME) WITH REVERSE_EDGE="reverse_referredby";
 
         ADD UNDIRECTED EDGE place(FROM Customers, TO Orders, CustomerID STRING, OrderID INT);
 
@@ -2638,9 +2633,16 @@
 
         ADD UNDIRECTED EDGE rep_customer(FROM Reps, TO Customers);
 
-        ADD DIRECTED EDGE provide(FROM Suppliers, TO Products) WITH REVERSE_EDGE="reverse_provide";
+        ADD UNDIRECTED EDGE order_product(FROM Orders, TO Products, UnitPrice DOUBLE, Quantity INT, Discount DOUBLE, LineTotalNoDiscount DOUBLE, LineTotal DOUBLE);
 
-        ADD DIRECTED EDGE deliver_within(FROM Suppliers, TO Regions) WITH REVERSE_EDGE="reverse_deliver_within";
+        ADD UNDIRECTED EDGE product_supplier(FROM Products, TO Suppliers);
+
+        ADD UNDIRECTED EDGE rep_order(FROM Reps, TO Orders);
+
+        ADD UNDIRECTED EDGE supplier_region(FROM Suppliers, TO Regions);
+
+        ADD UNDIRECTED EDGE product_category(FROM Categories, TO Products);
+
       }
       run schema_change job schema_change_northwind
       drop job schema_change_northwind
@@ -2651,43 +2653,80 @@
       use graph Northwind
       CREATE LOADING JOB load_all_north {
         DEFINE FILENAME categories="m1:/home/tigergraph/mydata/northwind/data/categories.csv";
+        DEFINE HEADER   categories = "CategoryID","CategoryName","Description","Picture";
+
         DEFINE FILENAME customers="m1:/home/tigergraph/mydata/northwind/data/customers.csv";
+        DEFINE HEADER   customers = "CustomerID","CompanyName","ContactName","ContactTitle","Address","City","Region","PostalCode","Country","Phone","Fax","ReferredBy";
+
         DEFINE FILENAME employees="m1:/home/tigergraph/mydata/northwind/data/employees.csv";
+        DEFINE HEADER   employees = "EmployeeID","LastName","FirstName","Title","TitleOfCourtesy","BirthDate","HireDate","Address","City","Region","PostalCode","Country","HomePhone","Extension","Photo","Notes","ReportsTo","PhotoPath";
+
         DEFINE FILENAME employee_territories="m1:/home/tigergraph/mydata/northwind/data/employee-territories.csv";
+        DEFINE HEADER   employee_territories = "EmployeeID","TerritoryID";
+
         DEFINE FILENAME order_details="m1:/home/tigergraph/mydata/northwind/data/order-details.csv";
+        DEFINE HEADER   order_details = "OrderID","ProductID","UnitPrice","Quantity","Discount","LineTotalNoDiscount","LineTotal";
+
         DEFINE FILENAME orders="m1:/home/tigergraph/mydata/northwind/data/orders.csv";
+        DEFINE HEADER   orders = "OrderID","CustomerID","EmployeeID","OrderDate","RequiredDate","ShippedDate","ShipVia","Freight","ShipName","ShipAddress","ShipCity","ShipRegion","ShipPostalCode","ShipCountry","OrderAmt","CommissionAmt";
+
         DEFINE FILENAME products="m1:/home/tigergraph/mydata/northwind/data/products.csv";
+        DEFINE HEADER   products = "ProductID","ProductName","SupplierID","CategoryID","QuantityPerUnit","UnitPrice","UnitsInStock","UnitsOnOrder","ReorderLevel","Discontinued";
+
         DEFINE FILENAME referrals="m1:/home/tigergraph/mydata/northwind/data/referrals.csv";
+        DEFINE HEADER   referrals = "from_rep","to_rep","date";
+
         DEFINE FILENAME regions="m1:/home/tigergraph/mydata/northwind/data/regions.csv";
+        DEFINE HEADER   regions = "RegionID","RegionDescription";
+
         DEFINE FILENAME suppliers="m1:/home/tigergraph/mydata/northwind/data/suppliers.csv";
+        DEFINE HEADER   suppliers = "SupplierID","CompanyName","ContactName","ContactTitle","Address","City","Region","PostalCode","Country","Phone","Fax","HomePage";
+
         DEFINE FILENAME territories="m1:/home/tigergraph/mydata/northwind/data/territories.csv";
+        DEFINE HEADER   territories = "TerritoryID","TerritoryDescription","RegionID";
 
+      # File categories
+        LOAD categories TO VERTEX Categories VALUES($"CategoryID", $"CategoryName", $"Description") USING SEPARATOR=",", HEADER="true", EOL="\n", USER_DEFINED_HEADER="categories";
+
+      # File customers
+        LOAD customers TO VERTEX Customers VALUES($"CustomerID", $"CompanyName", $"ContactName", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"Phone", $"ReferredBy", _, _, _) USING SEPARATOR=",", HEADER="true", EOL="\n", USER_DEFINED_HEADER="customers";
+
+      # File employees
         LOAD employees TO VERTEX Reps VALUES($"EmployeeID", $"LastName", $"FirstName", $"Title", $"TitleOfCourtesy", $"BirthDate", $"HireDate", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"HomePhone", $"Extension", $"ReportsTo", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD referrals TO EDGE referredby VALUES("$from_rep", $"to_rep") USING SEPARATOR=",", HEADER="true", EOL="\n";
 
-
+      # File employee_territories
         LOAD employee_territories TO EDGE operate_in VALUES($"EmployeeID", $"TerritoryID") USING SEPARATOR=",", HEADER="true", EOL="\n";
 
+      # file orders
+        LOAD orders TO VERTEX Orders VALUES($"OrderID", $"CustomerID", $"EmployeeID", $"OrderDate", $"RequiredDate", $"ShippedDate", $"ShipVia", $"Freight", $"ShipName", $"ShipAddress", $"ShipCity", $"ShipRegion", $"ShipPostalCode", $"ShipCountry", $"OrderAmt", $"CommissionAmt",_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD orders TO EDGE place VALUES($"CustomerID", $"OrderID", $"CustomerID", $"OrderID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD orders TO EDGE rep_order VALUES($"EmployeeID", $"OrderID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD orders TO EDGE rep_customer VALUES($"EmployeeID", $"CustomerID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      # file order_details
+        LOAD order_details TO VERTEX Orders VALUES($"OrderID", _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD order_details TO VERTEX Products VALUES($"ProductID", _, _, _, _, _, _, _, _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD order_details TO EDGE order_product VALUES($"OrderID", $"ProductID", $"Quantity", $"UnitPrice", $"Discount", $"LineTotalNoDiscount", $"LineTotal") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      # File products
+        LOAD products TO VERTEX Products VALUES($"ProductID", $"ProductName", $"SupplierID", $"CategoryID", $"QuantityPerUnit", $"UnitPrice", $"UnitsInStock", $"UnitsOnOrder", $"ReorderLevel", $"Discontinued") USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD products TO VERTEX Suppliers VALUES($"SupplierID",_,_,_,_,_,_,_,_,_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD products TO VERTEX Categories VALUES($"CategoryID",_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD products TO EDGE product_supplier VALUES($"ProductID", $"SupplierID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+        LOAD products TO EDGE product_category VALUES($"CategoryID", $"ProductID") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      # File referrals
+        LOAD referrals TO EDGE referredby VALUES("$from_rep", $"to_rep", $"date") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      # File regions
         LOAD regions TO VERTEX Regions VALUES($"RegionID", $"RegionDescription") USING SEPARATOR=",", HEADER="true", EOL="\n";
 
+      # File suppliers
+        LOAD suppliers TO VERTEX Suppliers VALUES($"SupplierID", $"CompanyName", $"ContactName", $"ContactTitle", $"Address", $"City", $"Region", $"PostalCode", $"Phone", $"Country", $"HomePage") USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+      # File territories
         LOAD territories TO VERTEX Territories VALUES($"TerritoryID", $"TerritoryDescription") USING SEPARATOR=",", HEADER="true", EOL="\n";
         LOAD territories TO EDGE located_in VALUES($"TerritoryID", $"RegionID") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD customers TO VERTEX Customers VALUES($"CustomerID", $"CompanyName", $"ContactName", $"Address", $"City", $"Region", $"PostalCode", $"Country", $"Phone", $"ReferredBy", _, _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD suppliers TO VERTEX Suppliers VALUES($"SupplierID", $"CompanyName", $"ContactName", $"ContactTitle", $"Address", $"City", $"Region", $"PostalCode", $"Phone", $"Country", $"HomePage") USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD suppliers TO EDGE deliver_within VALUES($"SupplierID", $"Region") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD products TO VERTEX Products VALUES($"ProductID", $"ProductName", $"SupplierID", $"CategoryID", $"QuantityPerUnit", $"UnitPrice", $"UnitsInStock", $"UnitsOnOrder", $"ReorderLevel", $"Discontinued") USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD products TO EDGE provide VALUES($"SupplierID", $"ProductID") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD order_details TO VERTEX Orders VALUES($"OrderID", _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD order_details TO EDGE include VALUES($"OrderID", $"ProductID", $"Quantity", $"UnitPrice", $"Discount", $"LineTotalNoDiscount", $"LineTotal") USING SEPARATOR=",", HEADER="true", EOL="\n";
-
-        LOAD orders TO VERTEX Orders VALUES($"OrderID", $"CustomerID", $"EmployeeID", $"OrderDate", $"RequiredDate", $"ShippedDate", $"ShipVia", $"Freight", $"ShipName", $"ShipAddress", $"ShipCity", $"ShipRegion", $"ShipPostalCode", $"ShipCountry", $"OrderAmt", $"CommissionAmt",_,_) USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD orders TO EDGE place VALUES($"CustomerID", $"OrderID", _, _) USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD orders TO EDGE rep_customer VALUES($"EmployeeID", $"CustomerID") USING SEPARATOR=",", HEADER="true", EOL="\n";
-        LOAD orders TO EDGE fulfill VALUES($"EmployeeID", $"OrderID") USING SEPARATOR=",", HEADER="true", EOL="\n";
       }
       run loading job load_all_north
       drop job load_all_north
