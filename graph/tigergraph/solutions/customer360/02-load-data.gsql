@@ -1,0 +1,144 @@
+USE GRAPH Customer360
+DROP JOB customer360_load
+
+CREATE LOADING JOB customer360_load FOR GRAPH Customer360 {
+
+  ###################################################################
+  # define customer group
+  ###################################################################
+  DEFINE FILENAME f_solicts      = "m1:/home/tigergraph/mydata/customer360/data/c360_solicits.csv";
+  DEFINE FILENAME f_respons      = "m1:/home/tigergraph/mydata/customer360/data/c360_response.csv";
+  DEFINE FILENAME f_profile      = "m1:/home/tigergraph/mydata/customer360/data/c360_profile.csv";
+  DEFINE FILENAME f_address      = "m1:/home/tigergraph/mydata/customer360/data/c360_address.csv";
+  DEFINE FILENAME f_ipaddr       = "m1:/home/tigergraph/mydata/customer360/data/c360_ipaddress.csv";
+  DEFINE FILENAME f_email        = "m1:/home/tigergraph/mydata/customer360/data/c360_emails.csv";
+  DEFINE FILENAME f_device       = "m1:/home/tigergraph/mydata/customer360/data/c360_devices.csv";
+  DEFINE FILENAME f_phone        = "m1:/home/tigergraph/mydata/customer360/data/c360_phones.csv";
+  DEFINE FILENAME e_address      = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_address.csv";
+  DEFINE FILENAME e_ipaddr       = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_ipaddr.csv";
+  DEFINE FILENAME e_email        = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_email.csv";
+  DEFINE FILENAME e_device       = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_device.csv";
+  DEFINE FILENAME e_phone        = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_phone.csv";
+  DEFINE FILENAME e_links        = "m1:/home/tigergraph/mydata/customer360/data/c360_profile_links.csv";
+  DEFINE FILENAME f_orders       = "m1:/home/tigergraph/mydata/customer360/data/c360_orders.csv";
+  DEFINE FILENAME f_movieratings = "m1:/home/tigergraph/mydata/customer360/data/c360_movie_ratings.csv";
+  DEFINE FILENAME f_bookratings  = "m1:/home/tigergraph/mydata/customer360/data/c360_book_ratings.csv";
+  DEFINE FILENAME f_sessions     = "m1:/home/tigergraph/mydata/customer360/data/c360_sessions.csv";
+  DEFINE FILENAME f_events       = "m1:/home/tigergraph/mydata/customer360/data/c360_events.csv";
+
+  DEFINE FILENAME f_camp_ads     = "m1:/home/tigergraph/mydata/customer360/data/ce_camp-ads.csv";
+  DEFINE FILENAME f_camp_promo   = "m1:/home/tigergraph/mydata/customer360/data/ce_camp-promos.csv";
+  DEFINE FILENAME f_source       = "m1:/home/tigergraph/mydata/customer360/data/ce_datasource.csv";
+  DEFINE FILENAME f_geog         = "m1:/home/tigergraph/mydata/customer360/data/ce_geog.csv";
+  DEFINE FILENAME f_urls         = "m1:/home/tigergraph/mydata/customer360/data/ce_urls.csv";
+  DEFINE FILENAME f_useragent    = "m1:/home/tigergraph/mydata/customer360/data/ce_useragent.csv";
+  DEFINE FILENAME f_browser      = "m1:/home/tigergraph/mydata/customer360/data/ce_browser.csv";
+  DEFINE FILENAME f_items        = "m1:/home/tigergraph/mydata/customer360/data/ce_items.csv";
+  DEFINE FILENAME f_store        = "m1:/home/tigergraph/mydata/customer360/data/ce_store.csv";
+  DEFINE FILENAME f_movies       = "m1:/home/tigergraph/mydata/customer360/data/ce_movies.csv";
+  DEFINE FILENAME f_books        = "m1:/home/tigergraph/mydata/customer360/data/ce_books.csv";
+
+  DEFINE HEADER hdr_camp_ads   = "campaign_id", "campaign_name", "start_date", "end_date", "campaign_type", "ad_id", "ad_name", "ad_channel";
+  DEFINE HEADER hdr_camp_promo = "campaign_id", "campaign_name", "campaign_year", "start_date", "end_date", "campaign_type", "promotion_id", "promotion_name", "promotion_channel";
+  DEFINE HEADER hdr_solicits   = "user_id", "campaign_id", "solicit_timestamp";
+  DEFINE HEADER hdr_response   = "user_id", "campaign_id", "resp_timestamp", "resp_chnl";
+  DEFINE HEADER hdr_profile    = "user_id", "first_name", "last_name", "user_name", "gender", "ssn", "birthdate", "job_desc", "creditcard", "ethnicity", "married", "income", "education", "source_id";
+  DEFINE HEADER hdr_ipaddr     = "ipaddress", "ip_type";
+  DEFINE HEADER hdr_device     = "device_id", "device_type";
+  DEFINE HEADER hdr_email      = "email", "email_type", "emal_perm", "email_freq";
+  DEFINE HEADER hdr_phone      = "phone_number", "phone_perm", "phone_freq";
+  DEFINE HEADER hdr_address    = "address_id", "address_type", "address_line", "address_nbr", "city", "postalcode", "state", "country";
+  DEFINE HEADER hdr_source     = "source_id", "source_name", "source_type";
+  DEFINE HEADER hdr_geog       = "address_id","zipcode","city","state_abbr","state","county_id","county_name","msa_id","msa_name","lat","lng","population","market_id","market_name","region_id","region_name","store_id","other";
+  DEFINE HEADER hdr_urls       = "page_id", "page_location", "page_menu", "page_item", "item_id", "page_weight", "page_url", "next_page_id";
+  DEFINE HEADER hdr_useragent  = "ua_id", "user_agent", "browser", "browser_ver", "device", "device_os", "device_osver", "device_branch", "device_model";
+  DEFINE HEADER hdr_browser    = "browser";
+  DEFINE HEADER hdr_events     = "user_id", "session_id", "event_id", "event_timestamp", "event_type", "event_time", "event_order", "ua_id", "page_url", "prev_page_url", "ad_id";
+  DEFINE HEADER hdr_sessions   = "user_id", "session_id", "session_timestamp", "ua_id", "browser_id", "hostname", "referer", "promotion_id", "session_time", "device_id", "ip_address", "event_cnt", "view_cnt", "click_cnt", "cart_flg", "purch_flg";
+  DEFINE HEADER hdr_item       = "item_id", "item_desc", "dept_id", "dept_desc", "catg_id", "catg_desc", "prodClass", "prodBrand", "item_price", "item_cost", "next_dept_id", "next_catg_id", "item_weight";
+  DEFINE HEADER hdr_store      = "store_id", "store_name", "store_type", "shiptostore", "autocenter", "salon", "zipcode", "city", "state", "county_name", "msa_name", "lat", "lng", "market", "region";
+  DEFINE HEADER hdr_orders     = "user_id", "order_nbr", "order_source", "order_timestamp", "order_type", "store_id", "promo_id", "order_qty", "order_amt", "order_profit", "item_id", "item_qty", "item_price", "item_cost", "item_amt", "item_profit";
+  DEFINE HEADER hdr_movieratings = "user_id","movie_id","movie_date","movie_rating";
+  DEFINE HEADER hdr_bookratings  = "user_id","book_id","book_date","book_rating";
+  DEFINE HEADER hdr_movies       = "movie_id", "movie_title", "movie_year", "movie_genre";
+  DEFINE HEADER hdr_books        = "book_id","ISBN", "BookTitle","BookAuthor","BookYear","Publisher","BookImage";
+
+  ###################################################################
+  # Entity Resolution
+  ###################################################################
+  LOAD f_profile TO VERTEX Profile        VALUES ($"user_id", $"first_name", $"last_name", $"user_name", $"gender", $"ssn", $"birthdate", $"job_desc", $"creditcard", $"ethnicity", $"married", $"income", $"education",_,_,_,_) USING header="true", separator=",", USER_DEFINED_HEADER="hdr_profile";
+  LOAD f_address TO VERTEX Address        VALUES ($"address_id", $"address_type", $"address_line", $"city", $"postalcode", $"state", $"country") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_address";
+  LOAD f_address TO EDGE address_location VALUES ($"address_id", $"postalcode") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_address";
+  LOAD f_ipaddr  TO VERTEX IpAddress      VALUES ($"ipaddress", $"ip_type") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_ipaddr";
+  LOAD f_email   TO VERTEX Email          VALUES ($"email", $"email_type", $"emal_perm", $"email_freq") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_email";
+  LOAD f_device  TO VERTEX Device         VALUES ($"device_id", $"device_type") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_device";
+  LOAD f_phone   TO VERTEX Phone          VALUES ($"phone_number", $"phone_perm", $"phone_freq") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_phone";
+
+  LOAD e_address TO EDGE profile_address VALUES ($0, $1, $2) USING header="true", separator=",";
+  LOAD e_ipaddr  TO EDGE profile_ipaddress VALUES ($0, $1) USING header="true", separator=",";
+  LOAD e_email   TO EDGE profile_email VALUES ($0, $1, $2, $3) USING header="true", separator=",";
+  LOAD e_device  TO EDGE profile_device VALUES ($0, $1) USING header="true", separator=",";
+  LOAD e_phone   TO EDGE profile_phone VALUES ($0, $1) USING header="true", separator=",";
+  LOAD e_links   TO EDGE profile_friends  VALUES ($0, $1, $2, $3) USING header="true", separator=",";
+
+  LOAD f_source  TO VERTEX DataSource VALUES ($"source_id", $"source_name", $"source_type") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_source";
+  LOAD f_geog    TO VERTEX Location   VALUES ($"zipcode", $"city", $"state", $"market_name", $"region_name", $"population", $"lat" ,$"lng") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_geog";
+  LOAD f_profile TO EDGE profile_datasource VALUES ($"user_id", $"source_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_profile";
+
+  ###################################################################
+  # Orders
+  ###################################################################
+  LOAD f_items  TO VERTEX Products VALUES ($"item_id", $"item_desc", $"dept_desc", $"catg_desc", $"prodClass", $"prodBrand", $"item_price", $"item_cost") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_item";
+  LOAD f_store  TO VERTEX Store    VALUES ($"store_id", $"store_name", $"store_type", $"shiptostore", $"autocenter", $"salon", $"zipcode", $"city", $"state", $"market", $"region", $"lat", $"lng") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_store";
+  LOAD f_orders TO VERTEX Orders   VALUES ($"order_nbr", $"order_source", $"order_timestamp", $"order_type", $"order_qty", $"order_amt", $"order_profit") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_orders";
+  LOAD f_store  TO EDGE store_location VALUES ($"store_id", $"zipcode") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_store";
+  LOAD f_orders TO EDGE profile_purchase VALUES ($"user_id", $"order_nbr") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_orders";
+  LOAD f_orders TO EDGE order_store VALUES ($"order_nbr", $"store_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_orders";
+  LOAD f_orders TO EDGE order_items VALUES ($"order_nbr", $"item_id", $"order_timestamp", $"item_qty", $"item_price", $"item_cost", $"item_amt", $"item_profit") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_orders";
+
+  ###################################################################
+  # Campaigns
+  ###################################################################
+  LOAD f_camp_promo TO VERTEX Campaign         VALUES ($"campaign_id", $"campaign_year", $"campaign_name", $"campaign_type", $"start_date", $"end_date") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_camp_promo";
+  LOAD f_camp_promo TO VERTEX Promotions       VALUES ($"promotion_id", $"promotion_name", $"promotion_channel") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_camp_promo";
+  LOAD f_camp_promo TO EDGE campaign_promotion VALUES ($"campaign_id", $"promotion_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_camp_promo";
+  LOAD f_camp_ads   TO VERTEX Ads              VALUES ($"ad_id", $"ad_name", $"ad_channel") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_camp_ads";
+  LOAD f_camp_ads   TO EDGE campaign_ads       VALUES ($"campaign_id", $"ad_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_camp_ads";
+  LOAD f_solicts    TO EDGE profile_campaign   VALUES ($"user_id", $"campaign_id", $"solicit_timestamp") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_solicits";
+  LOAD f_respons    TO EDGE profile_response   VALUES ($"user_id", $"campaign_id", $"resp_timestamp", $"resp_chnl") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_response";
+
+  ###################################################################
+  # Sessions and Events
+  ###################################################################
+  LOAD f_urls      TO VERTEX urlPages          VALUES ($"page_url", $"page_location", $"page_menu", $"page_item") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_urls";
+  LOAD f_useragent TO VERTEX UserAgent         VALUES ($"ua_id", $"user_agent") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_useragent";
+  LOAD f_browser   TO VERTEX Browser           VALUES ($"browser") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_browser";
+  LOAD f_events    TO VERTEX Events            VALUES ($"event_id", $"event_timestamp", $"event_type", $"event_time", $"event_order", $"page_url", $"prev_page_url") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_events";
+  LOAD f_events    TO EDGE   event_url         VALUES ($"event_id", $"page_url") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_events";
+  LOAD f_events    TO EDGE   event_ads         VALUES ($"event_id", $"ad_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_events";
+  LOAD f_events    TO EDGE   session_events    VALUES ($"session_id",$"event_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_events";
+  LOAD f_sessions  TO VERTEX Sessions          VALUES ($"session_id",$"session_timestamp", $"hostname", $"referer", $"session_time", $"ip_address", $"event_cnt", $"view_cnt", $"click_cnt") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+  LOAD f_sessions  TO EDGE   session_browser   VALUES ($"session_id",$"browser_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+  LOAD f_sessions  TO EDGE   session_useragent VALUES ($"session_id",$"ua_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+  LOAD f_sessions  TO EDGE   session_ipaddr    VALUES ($"session_id",$"ip_address") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+  LOAD f_sessions  TO EDGE   session_device    VALUES ($"session_id",$"device_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+  LOAD f_sessions  TO EDGE  profile_sessions   VALUES ($"user_id", $"session_id") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_sessions";
+
+  ###################################################################
+  # Movie and Book Ratings
+  ###################################################################
+  LOAD f_movies       TO VERTEX Movies         VALUES ($"movie_id", $"movie_title", $"movie_year") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_movies";
+  LOAD f_movies       TO VERTEX Genre          VALUES ($"movie_genre") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_movies";
+  LOAD f_movies       TO EDGE movie_genre      VALUES ($"movie_id", $"movie_genre") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_movies";
+  LOAD f_books        TO VERTEX Books          VALUES ($"book_id", $"BookTitle", $"BookYear", $"BookImage", $"ISBN") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_books";
+  LOAD f_books        TO VERTEX Author         VALUES ($"BookAuthor") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_books";
+  LOAD f_books        TO VERTEX Publisher      VALUES ($"Publisher") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_books";
+  LOAD f_books        TO EDGE book_author      VALUES ($"book_id", $"BookAuthor") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_books";
+  LOAD f_books        TO EDGE book_publisher   VALUES ($"book_id", $"Publisher") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_books";
+  LOAD f_movieratings TO EDGE movie_ratings    VALUES ($"user_id", $"movie_id", $"movie_date", $"movie_rating") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_movieratings";
+  LOAD f_bookratings  TO EDGE book_ratings     VALUES ($"user_id", $"book_id", $"book_date", $"book_rating") USING header="true", separator=",", USER_DEFINED_HEADER="hdr_bookratings";
+
+}
+
+RUN LOADING JOB customer360_load
+DROP JOB customer360_load

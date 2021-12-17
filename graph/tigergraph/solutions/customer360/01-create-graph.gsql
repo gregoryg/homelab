@@ -1,0 +1,90 @@
+###############################################################################
+# CUSTOMER EXPERIENCE
+###############################################################################
+USE GRAPH Customer360
+DROP JOB customer360_load
+DROP JOB customer360_schema
+
+USE GLOBAL
+DROP GRAPH Customer360
+CREATE GRAPH Customer360()
+USE GRAPH Customer360
+
+CREATE SCHEMA_CHANGE JOB customer360_schema FOR GRAPH Customer360 {
+
+######################################
+#### VERTEX - Lookups
+######################################
+  ADD VERTEX Profile    (PRIMARY_ID profile_id INT, first_name STRING, last_name STRING, user_name STRING, gender STRING, ssn STRING, birthdate DATETIME, job_desc STRING, creditcard STRING, ethnicity STRING, married STRING, income STRING, education STRING, prodCommunity INT, movieCommunity INT, bookCommunity INT, otherCommunity INT)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Orders     (PRIMARY_ID order_id STRING, order_source STRING, order_date DATETIME, order_type STRING, order_qty INT, order_amt DOUBLE, order_profit DOUBLE)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Products   (PRIMARY_ID item_id STRING, item_desc STRING, department STRING, category STRING, productClass STRING, productBrand STRING, item_price DOUBLE, item_cost DOUBLE) WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Sessions   (PRIMARY_ID session_id STRING, session_timestamp DATETIME, hostname STRING, referer STRING, session_time INT, ip_address STRING, event_cnt INT, view_cnt INT, click_cnt INT) WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Events     (PRIMARY_ID event_id STRING, event_timestamp DATETIME, event_type STRING, event_time INT, event_order INT, page_url STRING, prev_page_url STRING) WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Movies     (PRIMARY_ID movie_id STRING, movieTitle STRING, movieYear INT)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Genre      (PRIMARY_ID genre STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+  ADD VERTEX Books      (PRIMARY_ID book_id STRING, bookTitle STRING, bookYear INT, bookImage STRING, bookISBN STRING)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Publisher  (PRIMARY_ID publisher STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+  ADD VERTEX Author     (PRIMARY_ID author STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+  ADD VERTEX Campaign   (PRIMARY_ID campaign_id INT, campaign_year INT, campaign_name STRING, campaign_type STRING, start_date DATETIME, end_date DATETIME)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Promotions (PRIMARY_ID promotion_id STRING, promotion_name STRING, promotion_channel STRING)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Ads        (PRIMARY_ID ad_id STRING, ad_name STRING, ad_channel STRING) WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Location   (PRIMARY_ID zipcode STRING, locationCity STRING, locationState STRING, Market STRING, Region STRING, population INT, latitude DOUBLE, longitude DOUBLE)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Address    (PRIMARY_ID address_id INT, address_type STRING, address_line STRING, city STRING, state STRING, postalcode STRING, country STRING)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX IpAddress  (PRIMARY_ID ip_address STRING, ip_type STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+  ADD VERTEX Device     (PRIMARY_ID device STRING, device_type STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+  ADD VERTEX Email      (PRIMARY_ID email_address STRING, email_type STRING, email_perm STRING, email_freq STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+  ADD VERTEX Phone      (PRIMARY_ID phone_number STRING, phone_perm STRING, phone_freq INT)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+  ADD VERTEX urlPages   (PRIMARY_ID page_url STRING, page_location STRING, page_menu STRING, page_menuitem STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+  ADD VERTEX UserAgent  (PRIMARY_ID ua_id INT, user_agent STRING)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Browser    (PRIMARY_ID browser STRING)  WITH primary_id_as_attribute="true", STATS="outdegree_by_edgetype";
+  ADD VERTEX DataSource (PRIMARY_ID source_id INT, source_name STRING, source_type STRING)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+  ADD VERTEX Store      (PRIMARY_ID store_id INT, store_name STRING, store_type STRING, shiptostore STRING, autocenter STRING, salon STRING, store_zipcode STRING, store_city STRING, store_state STRING, store_market STRING, store_region STRING, store_lat DOUBLE, store_lng DOUBLE)  WITH primary_id_as_attribute="false", STATS="outdegree_by_edgetype";
+
+  ADD UNDIRECTED EDGE campaign_ads       (FROM Campaign, TO Ads);
+  ADD UNDIRECTED EDGE campaign_promotion (FROM Campaign, TO Promotions);
+  ADD UNDIRECTED EDGE address_location   (FROM Address,  TO Location);
+  ADD UNDIRECTED EDGE session_browser    (FROM Sessions, TO Browser);
+  ADD UNDIRECTED EDGE session_useragent  (FROM Sessions, TO UserAgent);
+  ADD UNDIRECTED EDGE session_ipaddr     (FROM Sessions, TO IpAddress);
+  ADD UNDIRECTED EDGE session_device     (FROM Sessions, TO Device);
+  ADD UNDIRECTED EDGE profile_sessions   (FROM Profile,  TO Sessions);
+  ADD UNDIRECTED EDGE session_events     (FROM Sessions, TO Events);
+  ADD UNDIRECTED EDGE event_ads          (FROM Events,   TO Ads);
+  ADD UNDIRECTED EDGE event_url          (FROM Events,   TO urlPages);
+  ADD UNDIRECTED EDGE profile_datasource (FROM Profile,  TO DataSource);
+  ADD UNDIRECTED EDGE profile_address    (FROM Profile,  TO Address, addressType STRING);
+  ADD UNDIRECTED EDGE profile_ipaddress  (FROM Profile,  TO IpAddress);
+  ADD UNDIRECTED EDGE profile_device     (FROM Profile,  TO Device);
+  ADD UNDIRECTED EDGE profile_phone      (FROM Profile,  TO Phone);
+  ADD UNDIRECTED EDGE profile_email      (FROM Profile,  TO Email, emailType STRING, emailDate DATETIME);
+  ADD UNDIRECTED EDGE profile_friends    (FROM Profile,  TO Profile, friend_type STRING, friend_date DATETIME);
+
+###############################################################################
+# VERTICIES for the OMNI CHANNEL Group
+###############################################################################
+  ADD UNDIRECTED EDGE profile_campaign (FROM Profile,  TO Campaign, campaign_date DATETIME);
+  ADD UNDIRECTED EDGE profile_response (FROM Campaign, TO Profile, response_date DATETIME, response_chnl STRING);
+
+###############################################################################
+# EDGES for the PRODUCT Group
+###############################################################################
+  ADD UNDIRECTED EDGE profile_purchase (FROM Profile, TO Orders);
+  ADD UNDIRECTED EDGE order_store      (FROM Orders,  TO Store);
+  ADD UNDIRECTED EDGE order_items      (FROM Orders,  TO Products, itemDate DATETIME, itemQty INT, itemPrice DOUBLE, itemCost DOUBLE, itemAmt DOUBLE, itemProfit DOUBLE);
+  ADD UNDIRECTED EDGE store_location   (FROM Store,   TO Location);
+
+###############################################################################
+# EDGES for the MOVIE Book Group
+###############################################################################
+  ADD UNDIRECTED EDGE movie_ratings  (FROM Profile, TO Movies, movie_date DATETIME, movie_rating INT);
+  ADD UNDIRECTED EDGE movie_genre    (FROM Movies,  TO Genre);
+  ADD UNDIRECTED EDGE book_ratings   (FROM Profile, TO Books, book_date DATETIME, book_rating INT);
+  ADD UNDIRECTED EDGE book_publisher (FROM Books,   TO Publisher);
+  ADD UNDIRECTED EDGE book_author    (FROM Books,   TO Author);
+  ADD UNDIRECTED EDGE same_profile   (FROM Profile, TO Profile, score FLOAT);
+  ADD UNDIRECTED EDGE community_edge (FROM Profile, TO Profile, community_id FLOAT);
+}
+
+
+RUN SCHEMA_CHANGE JOB customer360_schema
+DROP JOB customer360_schema
