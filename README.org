@@ -1107,6 +1107,25 @@
         "update": "https://rancher.hypecyclist.org:8443/v3/clusters/c-vb78v"
       }
     }
+* Setting default applications in the absence of a Desktop Environment
+  Using a tiling window manager such as EXWM, you don't have the window dressing of
+  graphical utilities to set default apps.  Here are some steps to setting those things at
+  a lower level
+** Use =alternatives= for =x-www-browser= and =gnome-www-browser=
+   #+begin_src bash
+     sudo update-alternatives --config /usr/bin/x-www-browser x-www-browser /usr/bin/microsoft-edge 10
+   #+end_src
+** Keep mime types up to date
+   In =~/.config/mimeapps.list=
+   #+begin_src bash
+     [Default Applications]
+     x-scheme-handler/http=microsoft-edge.desktop
+   #+end_src
+** Update using =xdg-settings=
+   #+begin_src bash
+     xdg-settings set default-web-browser microsoft-edge.desktop
+   #+end_src
+
 * Dell XPS 13" 2 in 1 Laptop - Linux stuff
 ** Buzzing from headphone jack when nothing is playing
    The key is to set an option in the =snd-hda-intel= module.  =power_save=0= means never
