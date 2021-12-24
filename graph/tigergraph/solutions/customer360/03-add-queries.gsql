@@ -1,4 +1,6 @@
 USE GRAPH Customer360
+PUT ExprFunctions FROM "/home/tigergraph/mydata/customer360/ExprFunctions.hpp"
+PUT ExprUtil FROM "/home/tigergraph/mydata/customer360/ExprUtil.hpp"
 
 CREATE QUERY categorySales(/* Parameters here */) FOR GRAPH Customer360 {
   TYPEDEF TUPLE <STRING categoryName, STRING salesDate, INT itemQty, DOUBLE SalesAmt> info;
@@ -139,6 +141,31 @@ CREATE QUERY productSalesAnalysis(STRING inDepartment, DATETIME inStartDate, DAT
 
 INSTALL QUERY productSalesAnalysis
 
+# entityResolution_sub must be created and installed prior to creating entityResolution_driver
+CREATE QUERY entityResolution_sub(Vertex<Profile> inProfile, float threshold) FOR GRAPH Customer360 {
+    SumAccum<float> @score;
+    start = {inProfile};
+
+  all_profiles = SELECT t FROM start-((profile_phone|profile_email|profile_ipaddress|profile_address|profile_device):e)-:t;
+
+    similar_profiles = SELECT t FROM all_profiles-((profile_phone|profile_email|profile_ipaddress|profile_address|profile_device):e)-:t
+                               WHERE t != inProfile
+                                       ACCUM CASE e.type
+                                                        WHEN "profile_phone"     THEN t.@score += 0.4
+                                                        WHEN "profile_email"     THEN t.@score += 0.3
+                                                        WHEN "profile_device"    THEN t.@score += 0.2
+                                                        WHEN "profile_ipaddress" THEN t.@score += 0.1
+                                                        WHEN "profile_address"   THEN t.@score += 0.5
+                                                 END
+                           POST-ACCUM
+                                        CASE WHEN t.@score >= threshold THEN
+                                       INSERT INTO same_profile VALUES (inProfile, t, t.@score)
+                                          END;
+
+ }
+
+INSTALL QUERY entityResolution_sub
+
 CREATE QUERY entityResolution_driver(FLOAT threshold) FOR GRAPH Customer360 {
 /* Entity Resolution Driver
  * Query will Process all Profiles by passing the Profile_id to the sub Query
@@ -168,29 +195,6 @@ CREATE QUERY entityResolution_driver(FLOAT threshold) FOR GRAPH Customer360 {
 
 }
 
-CREATE QUERY entityResolution_sub(Vertex<Profile> inProfile, float threshold) FOR GRAPH Customer360 {
-    SumAccum<float> @score;
-    start = {inProfile};
-
-  all_profiles = SELECT t FROM start-((profile_phone|profile_email|profile_ipaddress|profile_address|profile_device):e)-:t;
-
-    similar_profiles = SELECT t FROM all_profiles-((profile_phone|profile_email|profile_ipaddress|profile_address|profile_device):e)-:t
-                               WHERE t != inProfile
-                                       ACCUM CASE e.type
-                                                        WHEN "profile_phone"     THEN t.@score += 0.4
-                                                        WHEN "profile_email"     THEN t.@score += 0.3
-                                                        WHEN "profile_device"    THEN t.@score += 0.2
-                                                        WHEN "profile_ipaddress" THEN t.@score += 0.1
-                                                        WHEN "profile_address"   THEN t.@score += 0.5
-                                                 END
-                           POST-ACCUM
-                                        CASE WHEN t.@score >= threshold THEN
-                                       INSERT INTO same_profile VALUES (inProfile, t, t.@score)
-                                          END;
-
- }
-
-INSTALL QUERY entityResolution_sub
 INSTALL QUERY entityResolution_driver
 
 

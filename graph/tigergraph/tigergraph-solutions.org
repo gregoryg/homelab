@@ -284,8 +284,228 @@
       DROP JOB customer360_load
     #+end_src
 *** Add queries
+**** UDF functions required for queries
+     + ExprUtil
+       #+begin_src c++ :tangle solutions/customer360/ExprUtil.hpp
+         /******************************************************************************
+          ,* Copyright (c) 2016, TigerGraph Inc.
+          ,* All rights reserved.
+          ,* Project: TigerGraph Query Language
+          ,*
+          ,* - This library is for defining struct and helper functions that will be used
+          ,*   in the user-defined functions in "ExprFunctions.hpp". Note that functions
+          ,*   defined in this file cannot be directly called from TigerGraph Query scripts.
+          ,*   Please put such functions into "ExprFunctions.hpp" under the same directory
+          ,*   where this file is located.
+          ,*
+          ,* - Please don't remove necessary codes in this file
+          ,*
+          ,* - A backup of this file can be retrieved at
+          ,*     <tigergraph_root_path>/dev_<backup_time>/gdk/gsql/src/QueryUdf/ExprUtil.hpp
+          ,*   after upgrading the system.
+          ,*
+          ,******************************************************************************/
+
+         #ifndef EXPRUTIL_HPP_
+         #define EXPRUTIL_HPP_
+
+         #include <stdlib.h>
+         #include <stdio.h>
+         #include <string>
+         #include <gle/engine/cpplib/headers.hpp>
+
+         typedef std::string string; //XXX DON'T REMOVE
+
+         /*
+          ,* Define structs that used in the functions in "ExprFunctions.hpp"
+          ,* below. For example,
+          ,*
+          ,*   struct Person {
+          ,*     string name;
+          ,*     int age;
+          ,*     double height;
+          ,*     double weight;
+          ,*   }
+          ,*
+          ,*/
+
+           /*******************************************************
+            ,* Config this for grid size. The numer is in minunte.
+            ,* the area of a geo grid is the square of GRID_SIDE_LENGTH.
+            ,* The value of GRID_SIDE_LENGTH should be able to evenly devide 60.
+            ,******************************************************/
+           static const int GRID_SIDE_LENGTH = 4;
+
+           struct Degree {
+             int day;
+             int min;
+             int sec;
+
+             Degree() {
+               day = 0;
+               min = 0;
+               sec = 0;
+             }
+
+             Degree(int d, int m, int s) {
+               day = d;
+               min = m;
+               sec = s;
+             }
+           };
+
+           const double pi = 3.14159265358979323846;
+           static const float  earthRadiusKm = 6373.0;
+           static const int MAP_LAT_LOW_BOUND = -90;   // Low Bound of latitude of the map;
+           static const int MAP_LAT_HIGH_BOUND = 90;   // High Bound of latitude of the map;
+           static const int MAP_LONG_LOW_BOUND = -180; // Low Bound of longitude of the map;
+           static const int MAP_LONG_HIGH_BOUND = 180; // High Bound of longitude of the map;
+           static const int NUM_OF_COLS = (MAP_LONG_HIGH_BOUND*60 -MAP_LONG_LOW_BOUND*60)/GRID_SIDE_LENGTH;
+           static const int NUM_OF_ROWS = (MAP_LAT_HIGH_BOUND*60 - MAP_LAT_LOW_BOUND*60)/GRID_SIDE_LENGTH;
+
+           inline float km2Latitude(float km) {
+             return km/110.54;
+           }
+
+           inline float km2Longitude(float km, double lat) {
+             return km/(111.32*cos(lat));
+           }
+
+           inline int gridNumlat (float km) {
+             return std::abs(round(km2Latitude(km)/(360.0/NUM_OF_COLS)));
+           }
+
+           inline int gridNumLong (float km, double lat) {
+             return std::abs(round(km2Longitude(km, lat)/(180.0/NUM_OF_ROWS)));
+           }
+
+           inline void deg_to_dms(double deg, Degree& degree) {
+             degree.day = int(deg);
+             double md = (deg - degree.day) * 60;
+             degree.min = int(md);
+             degree.sec = (md - degree.min) * 60;
+           }
+
+           inline string map_lat_long_grid_id(double latitude,double longitude) {
+             Degree lat_degree,long_degree;
+
+             deg_to_dms(latitude,lat_degree);
+             deg_to_dms(longitude,long_degree);
+
+             int64_t grid_id = ((lat_degree.day - MAP_LAT_LOW_BOUND) * 60 + lat_degree.min)/GRID_SIDE_LENGTH * NUM_OF_COLS + ((long_degree.day - MAP_LONG_LOW_BOUND) * 60 + long_degree.min)/GRID_SIDE_LENGTH;
+
+             return std::to_string(grid_id);
+           }
+
+           // public domain conversion of degrees to radians
+           // used in geo-location.
+           inline double deg2rad(double d) {
+             return (d * pi / 180);
+           }
+
+
+         #endif /* EXPRUTIL_HPP_ */
+       #+end_src
+
+     + ExprFunctions
+       #+begin_src c++ :tangle solutions/customer360/ExprFunctions.hpp
+         /******************************************************************************
+          ,* Copyright (c) 2015-2016, TigerGraph Inc.
+          ,* All rights reserved.
+          ,* Project: TigerGraph Query Language
+          ,* udf.hpp: a library of user defined functions used in queries.
+          ,*
+          ,* - This library should only define functions that will be used in
+          ,*   TigerGraph Query scripts. Other logics, such as structs and helper
+          ,*   functions that will not be directly called in the GQuery scripts,
+          ,*   must be put into "ExprUtil.hpp" under the same directory where
+          ,*   this file is located.
+          ,*
+          ,* - Supported type of return value and parameters
+          ,*     - int
+          ,*     - float
+          ,*     - double
+          ,*     - bool
+          ,*     - string (don't use std::string)
+          ,*     - accumulators
+          ,*
+          ,* - Function names are case sensitive, unique, and can't be conflict with
+          ,*   built-in math functions and reserve keywords.
+          ,*
+          ,* - Please don't remove necessary codes in this file
+          ,*
+          ,* - A backup of this file can be retrieved at
+          ,*     <tigergraph_root_path>/dev_<backup_time>/gdk/gsql/src/QueryUdf/ExprFunctions.hpp
+          ,*   after upgrading the system.
+          ,*
+          ,******************************************************************************/
+
+         #ifndef EXPRFUNCTIONS_HPP_
+         #define EXPRFUNCTIONS_HPP_
+
+         #include <stdlib.h>
+         #include <stdio.h>
+         #include <string>
+         #include <gle/engine/cpplib/headers.hpp>
+
+         /**     XXX Warning!! Put self-defined struct in ExprUtil.hpp **
+          ,*  No user defined struct, helper functions (that will not be directly called
+          ,*  in the GQuery scripts) etc. are allowed in this file. This file only
+          ,*  contains user-defined expression function's signature and body.
+          ,*  Please put user defined structs, helper functions etc. in ExprUtil.hpp
+          ,*/
+         #include "ExprUtil.hpp"
+
+         namespace UDIMPL {
+           typedef std::string string; //XXX DON'T REMOVE
+
+           /****** BIULT-IN FUNCTIONS **************/
+           /****** XXX DON'T REMOVE ****************/
+           inline int str_to_int (string str) {
+             return atoi(str.c_str());
+           }
+
+           inline int float_to_int (float val) {
+             return (int) val;
+           }
+
+           inline string to_string (double val) {
+             char result[200];
+             sprintf(result, "%g", val);
+             return string(result);
+           }
+
+           inline void getVertexesFromEdge(SetAccum<EDGE>& edgeSet, SetAccum<VERTEX>& res) {
+             for (auto it = edgeSet.data_.begin(); it != edgeSet.data_.end(); ++it) {
+               res += it->srcVid;
+               res += it->tgtVid;
+             }
+           }
+
+           template<typename EdgeTuple>
+             inline bool PathContainsV(ListAccum<EdgeTuple>& pathAccum, VERTEX v) {
+               for (uint32_t i = 0; i < pathAccum.data_.size(); ++i) {
+                 if (v == pathAccum.data_[i].v) {
+                   return true;
+                 }
+               }
+               return false;
+             }
+
+         }
+
+
+         /****************************************/
+
+         #endif /* EXPRFUNCTIONS_HPP_ */
+       #+end_src
+
+**** The queries
+
     #+begin_src sql :tangle solutions/customer360/03-add-queries.gsql :mkdirp yes
       USE GRAPH Customer360
+      PUT ExprFunctions FROM "/home/tigergraph/mydata/customer360/ExprFunctions.hpp"
+      PUT ExprUtil FROM "/home/tigergraph/mydata/customer360/ExprUtil.hpp"
 
       CREATE QUERY categorySales(/* Parameters here */) FOR GRAPH Customer360 {
         TYPEDEF TUPLE <STRING categoryName, STRING salesDate, INT itemQty, DOUBLE SalesAmt> info;
@@ -426,6 +646,31 @@
 
       INSTALL QUERY productSalesAnalysis
 
+      # entityResolution_sub must be created and installed prior to creating entityResolution_driver
+      CREATE QUERY entityResolution_sub(Vertex<Profile> inProfile, float threshold) FOR GRAPH Customer360 {
+          SumAccum<float> @score;
+          start = {inProfile};
+
+        all_profiles = SELECT t FROM start-((profile_phone|profile_email|profile_ipaddress|profile_address|profile_device):e)-:t;
+
+          similar_profiles = SELECT t FROM all_profiles-((profile_phone|profile_email|profile_ipaddress|profile_address|profile_device):e)-:t
+                                     WHERE t != inProfile
+                                             ACCUM CASE e.type
+                                                              WHEN "profile_phone"     THEN t.@score += 0.4
+                                                              WHEN "profile_email"     THEN t.@score += 0.3
+                                                              WHEN "profile_device"    THEN t.@score += 0.2
+                                                              WHEN "profile_ipaddress" THEN t.@score += 0.1
+                                                              WHEN "profile_address"   THEN t.@score += 0.5
+                                                       END
+                                 POST-ACCUM
+                                              CASE WHEN t.@score >= threshold THEN
+                                             INSERT INTO same_profile VALUES (inProfile, t, t.@score)
+                                                END;
+
+       }
+
+      INSTALL QUERY entityResolution_sub
+
       CREATE QUERY entityResolution_driver(FLOAT threshold) FOR GRAPH Customer360 {
       /* Entity Resolution Driver
        ,* Query will Process all Profiles by passing the Profile_id to the sub Query
@@ -455,29 +700,6 @@
 
       }
 
-      CREATE QUERY entityResolution_sub(Vertex<Profile> inProfile, float threshold) FOR GRAPH Customer360 {
-          SumAccum<float> @score;
-          start = {inProfile};
-
-        all_profiles = SELECT t FROM start-((profile_phone|profile_email|profile_ipaddress|profile_address|profile_device):e)-:t;
-
-          similar_profiles = SELECT t FROM all_profiles-((profile_phone|profile_email|profile_ipaddress|profile_address|profile_device):e)-:t
-                                     WHERE t != inProfile
-                                             ACCUM CASE e.type
-                                                              WHEN "profile_phone"     THEN t.@score += 0.4
-                                                              WHEN "profile_email"     THEN t.@score += 0.3
-                                                              WHEN "profile_device"    THEN t.@score += 0.2
-                                                              WHEN "profile_ipaddress" THEN t.@score += 0.1
-                                                              WHEN "profile_address"   THEN t.@score += 0.5
-                                                       END
-                                 POST-ACCUM
-                                              CASE WHEN t.@score >= threshold THEN
-                                             INSERT INTO same_profile VALUES (inProfile, t, t.@score)
-                                                END;
-
-       }
-
-      INSTALL QUERY entityResolution_sub
       INSTALL QUERY entityResolution_driver
 
 
@@ -2732,6 +2954,156 @@
       drop job load_all_north
     #+end_src
 *** Add queries
+** Patents Graph by Dan Barkus
+*** Resources
+*** Schema
+    #+begin_src sql :tangle solutions/patents/01-create-schema.gsql :mkdirp yes
+      USE GRAPH Patents
+      CREATE SCHEMA_CHANGE JOB patent_schema_change FOR GRAPH Patents {
+        # Vertices
+        ADD VERTEX Application(PRIMARY_ID id STRING, filingDate DATETIME, confirmationNumber STRING, docketNumber STRING, title STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX ContinuationType(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX USPCClass(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX USPCSubclass(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX EventCode(PRIMARY_ID id STRING, description STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX PTAEvent(PRIMARY_ID id STRING, description STRING, applicantDelay FLOAT, usptoDelay FLOAT) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX ExtensionIndicator(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX PTASummary(PRIMARY_ID id STRING, ptoDelayA FLOAT, ptoDelayB FLOAT, ptoDelayC FLOAT, overlapDelay FLOAT, nonOverlapDelay FLOAT, manualAdjustment FLOAT, applicationDelay FLOAT, PTA FLOAT) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX PTESummay(PRIMARY_ID id STRING, ptoAdjustment FLOAT, ptoDelay FLOAT, applicantDelay FLOAT, PTE FLOAT) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX ApplicationStatus(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX PatentNumber(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX Examiner(PRIMARY_ID id STRING, fullName STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX ArtUnit(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX Attorney(PRIMARY_ID id STRING, firstName STRING, middleName STRING, lastName STRING, suffix STRING, phone STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX PracticeCategory(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX SmallEntity(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX First_toFile(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX FileLocation(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX PGPUBNumber(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX WIPONumber(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX Inventor(PRIMARY_ID id STRING, first STRING, middle STRING, last STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX ForeignParent(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX City(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX Region(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX Country(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX PostalCode(PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX Correspondence(PRIMARY_ID id STRING, name STRING, customerNumber STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        ADD VERTEX Address(PRIMARY_ID id STRING, line1 STRING, line2 STRING, line3 STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+        # Edges
+        ADD DIRECTED EDGE has_child(FROM Application, TO Application, date DATETIME) WITH REVERSE_EDGE="reverse_has_child";
+        ADD DIRECTED EDGE has_parent(FROM Application, TO Application, date DATETIME) WITH REVERSE_EDGE="reverse_has_parent";
+        ADD UNDIRECTED EDGE is_continuation_type(FROM Application, TO ContinuationType);
+        ADD UNDIRECTED EDGE has_class(FROM Application, TO USPCClass);
+        ADD UNDIRECTED EDGE has_subclass(FROM Application, TO USPCSubclass);
+        ADD DIRECTED EDGE is_subclass(FROM USPCSubclass, TO USPCClass) WITH REVERSE_EDGE="reverse_is_subclass";
+        ADD UNDIRECTED EDGE has_code(FROM Application, TO EventCode, date DATETIME);
+        ADD UNDIRECTED EDGE has_pta_event(FROM Application, TO PTAEvent, date DATETIME);
+        ADD UNDIRECTED EDGE is_extension(FROM PTAEvent, TO ExtensionIndicator);
+        ADD DIRECTED EDGE has_start(FROM PTAEvent, TO PTAEvent) WITH REVERSE_EDGE="reverse_has_start";
+        ADD UNDIRECTED EDGE has_pta_summary(FROM Application, TO PTASummary);
+        ADD UNDIRECTED EDGE has_pte_summary(FROM Application, TO PTESummay);
+        ADD UNDIRECTED EDGE has_status(FROM Application, TO ApplicationStatus, date DATETIME);
+        ADD UNDIRECTED EDGE has_patent(FROM Application, TO PatentNumber, date DATETIME);
+        ADD UNDIRECTED EDGE has_examiner(FROM Application, TO Examiner);
+        ADD UNDIRECTED EDGE from_unit(FROM Examiner, TO ArtUnit);
+        ADD UNDIRECTED EDGE has_attorney(FROM Application, TO Attorney);
+        ADD UNDIRECTED EDGE has_practice_category(FROM Attorney, TO PracticeCategory);
+        ADD UNDIRECTED EDGE is_small(FROM Application, TO SmallEntity);
+        ADD UNDIRECTED EDGE follows_ftf(FROM Application, TO First_toFile);
+        ADD UNDIRECTED EDGE at_location(FROM Application, TO FileLocation, date DATETIME);
+        ADD UNDIRECTED EDGE has_PGPUB(FROM Application, TO PGPUBNumber, date DATETIME);
+        ADD UNDIRECTED EDGE has_WIPO(FROM Application, TO WIPONumber, date DATETIME);
+        ADD UNDIRECTED EDGE filed_application(FROM Application, TO Inventor, rank INT);
+        ADD UNDIRECTED EDGE has_foreign_parent(FROM Application, TO ForeignParent, date DATETIME);
+        ADD UNDIRECTED EDGE from_city(FROM Inventor, TO City);
+        ADD UNDIRECTED EDGE from_region(FROM Inventor, TO Region);
+        ADD UNDIRECTED EDGE from_country(FROM Inventor, TO Country);
+        ADD UNDIRECTED EDGE filed_country(FROM ForeignParent, TO Country);
+        ADD UNDIRECTED EDGE has_correspondence(FROM Inventor, TO Correspondence);
+        ADD UNDIRECTED EDGE has_address(FROM Address, TO Correspondence);
+        # Compound edges
+        ADD UNDIRECTED EDGE in_code(FROM City, TO PostalCode | FROM Correspondence, TO PostalCode | FROM Address, TO PostalCode);
+        ADD UNDIRECTED EDGE in_region(FROM PostalCode, TO Region | FROM Correspondence, TO Region | FROM Address, TO Region);
+        ADD UNDIRECTED EDGE in_country(FROM PostalCode, TO Country | FROM Country, TO Region | FROM Correspondence, TO Country | FROM Address, TO Country);
+        ADD UNDIRECTED EDGE in_city(FROM Region, TO City | FROM Correspondence, TO City | FROM Address, TO City);
+      }
+      RUN SCHEMA_CHANGE JOB patent_schema_change
+      DROP JOB patent_schema_change
+    #+end_src
+*** Data
+    #+begin_src sql :tangle solutions/patents/02-load-data.gsql :mkdirp yes
+      USE GRAPH Patents
+      CREATE LOADING JOB load_patents_all FOR GRAPH Patents {
+        DEFINE FILENAME inventors = "m1:/home/tigergraph/mydata/patents/data/all_inventors.csv";
+        DEFINE FILENAME application_data = "m1:/home/tigergraph/mydata/patents/data/application_data.csv";
+        DEFINE FILENAME attorney_agent = "m1:/home/tigergraph/mydata/patents/data/attorney_agent.csv";
+        DEFINE FILENAME continuity_children = "m1:/home/tigergraph/mydata/patents/data/continuity_children.csv";
+        DEFINE FILENAME continuity_parents = "m1:/home/tigergraph/mydata/patents/data/continuity_parents.csv";
+        DEFINE FILENAME correspondence_address = "m1:/home/tigergraph/mydata/patents/data/correspondence_address.csv";
+        DEFINE FILENAME event_codes = "m1:/home/tigergraph/mydata/patents/data/event_codes.csv";
+        DEFINE FILENAME foreign_priority = "m1:/home/tigergraph/mydata/patents/data/foreign_priority.csv";
+        DEFINE FILENAME pat_term_adj = "m1:/home/tigergraph/mydata/patents/data/pat_term_adj.csv";
+        DEFINE FILENAME pta_summary = "m1:/home/tigergraph/mydata/patents/data/pta_summary.csv";
+        DEFINE FILENAME pte_summary = "m1:/home/tigergraph/mydata/patents/data/pte_summary.csv";
+        DEFINE FILENAME transactions = "m1:/home/tigergraph/mydata/patents/data/transactions.csv";
+
+            LOAD inventors TO VERTEX Inventor VALUES(gsql_concat($1,",",$3," ",$2), $1, $2, $3) USING SEPARATOR=",", HEADER="false", EOL="\n", QUOTE="double";
+            LOAD inventors TO EDGE filed_application VALUES($0, gsql_concat($1,",",$3," ",$2), $4) USING SEPARATOR=",", HEADER="false", EOL="\n", QUOTE="double";
+            LOAD inventors TO EDGE from_city VALUES(gsql_concat($1,",",$3," ",$2), $5) USING SEPARATOR=",", HEADER="false", EOL="\n", QUOTE="double";
+            LOAD inventors TO EDGE from_region VALUES(gsql_concat($1,",",$3," ",$2), $6) USING SEPARATOR=",", HEADER="false", EOL="\n", QUOTE="double";
+            LOAD inventors TO EDGE from_country VALUES(gsql_concat($1,",",$3," ",$2), $7) USING SEPARATOR=",", HEADER="false", EOL="\n", QUOTE="double";
+
+            LOAD application_data TO VERTEX Application VALUES($0, $1, $7, $8, $19) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE has_examiner VALUES($0, $3) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE from_unit VALUES($3, $4) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE has_class VALUES($0, $5) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE has_subclass VALUES($0, $6) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE is_subclass VALUES($6, $5) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE has_status VALUES($0, $9, $10) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE has_patent VALUES($0, $17, $18) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE is_small VALUES($0, $20) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE follows_ftf VALUES($0, $21) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE at_location VALUES($0, $11, $12) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD application_data TO EDGE has_PGPUB VALUES($0, $13, $14) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+
+            LOAD attorney_agent TO VERTEX Attorney VALUES($5, $0, $2, $1, $3, $4) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD attorney_agent TO EDGE has_attorney VALUES($7, $5) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD attorney_agent TO EDGE has_practice_category VALUES($5, $6) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+
+            LOAD continuity_children TO EDGE has_child VALUES($0, $1, $2) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+
+            LOAD continuity_parents TO EDGE has_parent VALUES($0, $1, $2) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD continuity_parents TO EDGE is_continuation_type VALUES($0, $3) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+
+            LOAD correspondence_address TO VERTEX Correspondence VALUES($9, $1, $9) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD correspondence_address TO VERTEX Address VALUES(gsql_concat($2,$3,$4), $2, $3, $4) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD correspondence_address TO EDGE has_address VALUES(gsql_concat($2,$3,$4), $9) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD correspondence_address TO EDGE in_code VALUES($9 Correspondence, $6 PostalCode) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD correspondence_address TO EDGE in_city VALUES($9 Correspondence, $5 City) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD correspondence_address TO EDGE in_region VALUES($9 Correspondence, $7 Region) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD correspondence_address TO EDGE in_country VALUES($9 Correspondence, $8 Country) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD correspondence_address TO EDGE in_code VALUES(gsql_concat($2,$3,$4) Address, $6 PostalCode) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD correspondence_address TO EDGE in_city VALUES(gsql_concat($2,$3,$4) Address, $5 City) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD correspondence_address TO EDGE in_region VALUES(gsql_concat($2,$3,$4) Address, $7 Region) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD correspondence_address TO EDGE in_country VALUES(gsql_concat($2,$3,$4) Address, $8 Country) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+
+            LOAD event_codes TO VERTEX EventCode VALUES($0, $1) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+
+            LOAD foreign_priority TO EDGE has_foreign_parent VALUES($0, $1, $2) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD foreign_priority TO EDGE filed_country VALUES($1, $3) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+
+            LOAD pat_term_adj TO VERTEX PTAEvent VALUES(gsql_uuid_v4($1), $3, $4, $5) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD pat_term_adj TO EDGE has_pta_event VALUES($0, gsql_uuid_v4($1), $2) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+            LOAD pat_term_adj TO EDGE is_extension VALUES(gsql_uuid_v4($1), $7) USING SEPARATOR=",", HEADER="true", EOL="\n", QUOTE="double";
+
+            LOAD transactions TO EDGE has_code VALUES($0, $1, $2) USING SEPARATOR=",", HEADER="false", EOL="\n", QUOTE="double";
+      }
+
+      RUN LOADING JOB load_patents_all
+      DROP JOB load_patents_all
+
+    #+end_src
+*** Queries
 ** STARTED Real estate leasing
    :LOGBOOK:
    - State "STARTED"    from "DONE"       [2021-11-02 Tue 12:13]
@@ -4548,6 +4920,18 @@
       }
       set exit_on_error = "true"
     #+end_src
+** TODO Experimental graph: Fraud Detection in Medicare Claims!
+   + Initial article: [[https://towardsdatascience.com/fraud-detection-with-graph-analytics-2678e817b69e][Fraud Detection with Graph Analytics | by Lina Faik | Towards Data Science]]
+     + [[https://kundusoumya98.medium.com/healthcare-provider-fraud-detection-and-analysis-using-machine-learning-632f7a380c79][Healthcare Provider Fraud Detection And Analysis using Machine learning:- | b...]]
+     + [[https://rohansoni-jssaten2019.medium.com/healthcare-provider-fraud-detection-and-analysis-machine-learning-6af6366caff2][Healthcare Provider Fraud Detection And Analysis — Machine learning | by Roha...]]
+   + Kaggle data set page: [[https://www.kaggle.com/rohitrox/healthcare-provider-fraud-detection-analysis/version/1?select=Train_Outpatientdata-1542865627584.csv][HEALTHCARE PROVIDER FRAUD DETECTION ANALYSIS | Kaggle]]
+     #+begin_quote
+     Provider Fraud is one of the biggest problems facing Medicare. According to the
+     government, the total Medicare spending increased exponentially due to frauds in
+     Medicare claims. Healthcare fraud is an organized crime which involves peers of
+     providers, physicians, beneficiaries acting together to make fraud claims.
+     #+end_quote
+
 * Transfer Solutions to TigerGraph server
   First set up all the parameters needed to access the TG server (usually the =m1= node)
 
