@@ -5,3 +5,5 @@
 *terraform.tfstate
 *terraform.tfstate.backup
 src
+notebooks/credentials.json
+notebooks/token.json
