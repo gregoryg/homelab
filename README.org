@@ -1236,6 +1236,13 @@
          --namespace sparky \
          --create-namespace
   #+end_src
+* R kernel in Jupyter
+  + [[https://richpauloo.github.io/2018-05-16-Installing-the-R-kernel-in-Jupyter-Lab/][Installing the R kernel in Jupyter Lab]]
+    #+begin_src R
+      install.packages('devtools')
+      devtools::install_github("IRkernel/IRkernel")
+      IRkernel::installspec()
+    #+end_src
 * PySpark and Jupyter notebook
   + ref: [[https://www.sicara.ai/blog/2017-05-02-get-started-pyspark-jupyter-notebook-3-minutes][Get Started with PySpark and Jupyter Notebook in 3 Minutes | Sicara]]
 ** Pre-reqs
