@@ -119,7 +119,7 @@ type = custom/script
 interval = 30
 label-maxlen=5
 label-ellipsis = false
-exec = "python3 ~/.config/polybar/scripts/modules/timeicon.py"
+exec = "python3 ~/.config/polybar/modules/timeicon.py"
 
 ; Module Updates
 
@@ -245,14 +245,14 @@ interval = 1
 [module/playerctl]
 type = custom/script
 tail = true
-exec = ~/.config/polybar/scripts/modules/playerctl.sh
+exec = ~/.config/polybar/modules/playerctl.sh
 click-left = "playerctl play-pause"
 click-right = "playerctl next"
 click-middle = "playerctl previous"
 
 [module/playerctl_long]
 inherit="module/playerctl"
-exec = bash ~/.config/polybar/scripts/modules/playerctl.sh 40
+exec = bash ~/.config/polybar/modules/playerctl.sh 40
 
 [module/playerctl_buttons]
 type = custom/menu
@@ -281,7 +281,7 @@ inherit="module/pavucontrol_button"
 [module/cava]
 type = custom/script
 tail = true
-exec = python3 ~/.config/polybar/scripts/modules/cava.py
+exec = python3 ~/.config/polybar/modules/cava.py
 
 [module/gmail_unread]
 type = custom/script
