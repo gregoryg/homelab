@@ -1,0 +1,374 @@
+; -*- mode: conf; -*-
+; Originally cribbed from https://gitlab.com/linuxstuff/dotfiles/-/tree/master/.config/polybar
+; from this reddit post: https://www.reddit.com/r/Polybar/comments/l0perd/autohiding_polybar_for_more_screen_space/
+; configure polybar: https://github.com/jaagr/polybar            ;
+
+; Global Settings
+
+[settings]
+screenchange-reload = true
+
+[colors]
+brutaldark = #333333
+cyanishy = #afeeee
+black = #000000
+white = #ffffff
+purtydark = #1f2528
+greyish = #c0c5ce
+lightgrey = #d3d3d3
+transparent = #00ffffff
+background = ${colors.purtydark}
+foreground = ${colors.lightgrey}
+foreground-alt = #555
+underline-1 = #c792ea
+border = ${colors.transparent}
+
+border-color = #00000000
+
+focused = ${xrdb:i3_focused}
+unfocused = ${xrdb:foreground}
+
+; Material design icon font:
+; https://github.com/Templarian/MaterialDesign-Font/blob/master/MaterialDesignIconsDesktop.ttf
+
+[bar/base_master]
+background = ${colors.background}
+foreground = ${colors.foreground}
+fixed-center = true
+font-0 = Hack Nerd Font:fontformat=truetype:pixelsize=10;1
+font-1 = Material Design Icons Desktop:fontformat=truetype:pixelsize=10:antialias=true;1
+font-2 = "Font Awesome:size=14;2"
+font-3 = "Cantarell:size=18:weight=bold;2"
+font-4 = "Fira Mono:size=13;-3"
+
+line-size = 1
+module-margin-left = 1
+module-margin-right = 1
+padding= 2
+separator =|
+override-redirect = true
+
+[bar/base_border]
+inherit="bar/base_master"
+border-size=2
+border-color=${colors.border}
+radius = 15.0
+
+[bar/base_floating]
+inherit="bar/base_border"
+bottom = true
+enable-ipc = false
+height = 42px
+width = 60%
+offset-x = 20%
+offset-y = 8px
+override-redirect = true
+tray-detached = true
+tray-maxsize = 25
+tray-offset-x= 86
+tray-offset-y =0px
+tray-padding = 3
+tray-position = left
+tray-scale = 0.8
+
+[bar/base_floating_popup]
+inherit="bar/base_border"
+bottom = true
+enable-ipc = true
+height = 42px
+width = 22%
+offset-x = 20%
+offset-y = 58px
+
+[bar/floating]
+inherit="bar/base_floating"
+modules-left = exwm-workspace vpn gmail_unread
+modules-center =  playerctl_long
+; modules-left = floating_popup_button pavucontrol_button_sep
+; modules-right = sensors_cpu_pc  memory pulseaudio-control
+modules-right = cpu pulseaudio-control battery clock vpn
+enable-ipc = true
+
+[global/wm]
+margin-top = 0
+margin-bottom = 0
+
+[module/separator]
+type = custom/text
+content = |
+
+[module/sep]
+inherit = "module/separator"
+
+; Module Date
+
+[module/clock]
+type = internal/date
+interval = 1
+date =
+date-alt =%d.%m.%Y
+time =" %H:%M"
+time-alt =%H:%M:%S,
+label =%time% %date%
+
+[module/clock_icon]
+inherit = "module/clock"
+date = 🕓
+[module/clock_analog]
+type = custom/script
+interval = 30
+label-maxlen=5
+label-ellipsis = false
+exec = "python3 ~/.config/polybar/scripts/modules/timeicon.py"
+
+; Module Updates
+
+[module/memory]
+type = internal/memory
+interval = 2
+; label = 󰆼 %percentage_used%%
+label = MEM %percentage_used%%
+
+[module/memory_sep]
+inherit = module/memory
+format = <label> |
+
+[module/exwm-work]
+type = custom/script
+exec = emacsclient -e "exwm-workspace-current-index" | sed -e 's/^"//' -e 's/"$//'
+interval = 5
+format = <label>
+[module/exwm-workspace]
+type = custom/ipc
+hook-0 = emacsclient -e "exwm-workspace-current-index" | sed -e 's/^"//' -e 's/"$//'
+initial = 1
+; format = <label> POOP
+; format-underline = ${colors.underline-1}
+format-underline = ${colors.white}
+format-padding = 1
+
+[module/cpu]
+type = internal/cpu
+interval = 2
+; format = <label> <ramp-coreload>
+format = CPU <label>
+format-underline = ${colors.underline-1}
+; click-left = emacsclient -e "(proced)"
+click-left = "setsid gnome-terminal -- htop"
+label = %percentage:2%%
+ramp-coreload-spacing = 0
+ramp-coreload-0 = ▁
+ramp-coreload-0-foreground = ${colors.foreground-alt}
+ramp-coreload-1 = ▂
+ramp-coreload-2 = ▃
+ramp-coreload-3 = ▄
+ramp-coreload-4 = ▅
+ramp-coreload-5 = ▆
+ramp-coreload-6 = ▇
+
+
+[module/sensors_cpu_pc]
+type = custom/script
+interval = 2
+; format = 󰍛 <label>
+format = OHAI <label>
+label-maxlen=15
+label-ellipsis=true
+exec = "echo $((top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\([0-9.]*\)%* id.*/\1/' | awk -F '.' '{print 100 - $1}' ; echo '%, ' ; sensors | grep "CPUTIN" | awk -F' ' '{print $2}' | awk -F'.' '{print $1}' | tr -d '+'; echo '°') | tr -d '\n')"
+click-left = "setsid gnome-terminal -- htop"
+
+; Module Network Interfaces
+
+[module/pulseaudio]
+type = internal
+
+[module/wlan]
+type = internal/network
+interface = wlp0s20f3
+interval = 3
+format-connected = <label-connected>
+label-connected = %ifname%: %local_ip% [%essid%]
+
+[module/wlan_short]
+inherit="module/wlan"
+label-connected = %essid%
+
+[module/eth_pc]
+type = internal/network
+interface = enp5s0
+interval = 3
+format-connected = <label-connected>
+; label-connected = 󰈀 %local_ip%
+
+; Module VPN
+; this works when using NetManager to connect to VPN
+[module/vpn]
+type = custom/script
+interval = 3
+format = vpn: <label>
+label-maxlen=50
+label-ellipsis=true
+exec = echo $(nmcli con show --active | grep vpn | cut -c1-12 | tr -d ' ')
+
+; Module Volume + Media
+
+[module/pulseaudio-control]
+type = custom/script
+tail = true
+format-underline = ${colors.cyanishy}
+label-padding = 2
+label-foreground = ${colors.foreground}
+
+# Icons mixed from Font Awesome 5 and Material Icons
+# You can copy-paste your options for each possible action, which is more
+# trouble-free but repetitive, or apply only the relevant ones (for example
+# --sink-blacklist is only needed for next-sink).
+exec = ~/bin/pulseaudio-control --icons-volume " , " --icon-muted " " --sink-nicknames-from "device.description" --sink-nickname "alsa_output.pci-0000_00_1b.0.analog-stereo:  Speakers" --sink-nickname "alsa_output.usb-Kingston_HyperX_Virtual_Surround_Sound_00000000-00.analog-stereo:  Headphones" listen
+; exec = ~/bin/pulseaudio-control --icons-volume "+ ,- " --icon-muted "x " --sink-nicknames-from "device.description" --sink-nickname "alsa_output.pci-0000_00_1b.0.analog-stereo:  Speakers" --sink-nickname "alsa_output.usb-Kingston_HyperX_Virtual_Surround_Sound_00000000-00.analog-stereo:  Headphones" listen
+click-right = exec pavucontrol &
+click-left = pulseaudio-control togmute
+click-middle = pulseaudio-control --sink-blacklist "alsa_output.pci-0000_01_00.1.hdmi-stereo-extra2" next-sink
+scroll-up = pulseaudio-control --volume-max 150 up
+scroll-down = pulseaudio-control --volume-max 150 down
+
+[module/volume]
+type = internal/pulseaudio
+master-mixer = IEC958
+mapped = true
+format-volume = <label-volume>
+label-volume =  %percentage%
+label-volume-foreground = ${root.foreground}
+format-muted-foreground = ${root.foreground}
+label-muted =  x
+interval = 1
+
+[module/playerctl]
+type = custom/script
+tail = true
+exec = ~/.config/polybar/scripts/modules/playerctl.sh
+click-left = "playerctl play-pause"
+click-right = "playerctl next"
+click-middle = "playerctl previous"
+
+[module/playerctl_long]
+inherit="module/playerctl"
+exec = bash ~/.config/polybar/scripts/modules/playerctl.sh 40
+
+[module/playerctl_buttons]
+type = custom/menu
+expand-right = true
+label-open = 
+label-close = 
+label-separator = "  "
+menu-0-0 = 
+menu-0-0-exec = "playerctl previous"
+menu-0-1 = 
+menu-0-1-exec = "playerctl play-pause"
+menu-0-2 = 
+menu-0-2-exec = "playerctl next"
+
+[module/pavucontrol_button]
+type = custom/text
+; content = 󰕾
+click-left = "sh ~/.config/rofi/menus/launch.sh defaultsink"
+click-right = "setsid pavucontrol"
+click-middle = "bash ~/Userdata/Scripts/Launchers/restart_pulseaudio_1s.sh"
+
+[module/pavucontrol_button_sep]
+inherit="module/pavucontrol_button"
+; content = 󰕾 |
+
+[module/cava]
+type = custom/script
+tail = true
+exec = python3 ~/.config/polybar/scripts/modules/cava.py
+
+[module/gmail_unread]
+type = custom/script
+interval = 10
+format = ✉ <label>
+exec =  /home/gregj/.config/polybar/gmail-unread.py
+; click-left = "x-www-browser --new-window https://mail.google.com/mail/u/0/#search/in:inbox+is:unread"
+click-left = "gtk-launch gmail"
+; Module Battery
+
+[module/battery]
+type = internal/battery
+battery = BAT0
+poll-interval = 3
+adapter = ADP1
+full-at = 95
+; label-full = 󱐋 %percentage%%
+; ;label-charging = 󱐋 %percentage%% (+%consumption%W, %time%)
+; label-charging = 󱐋 %percentage%% (+%consumption%W)
+; label-discharging = 󱐋 %percentage%% (-%consumption%W, %time%)
+; ; label-discharging = 󱐋 %percentage%% (-%consumption%W)
+; label-charging = %percentage%% / %time%
+label-charging = %percentage%% ↾
+; format-charging = <animation-charging> <label-charging>
+format-charging = <ramp-capacity> <label-charging>
+format-charging-underline = ${colors.underline-1}
+
+; label-discharging = %percentage%% / %time%
+label-discharging = %percentage%% ⇃
+format-discharging = <ramp-capacity> <label-discharging>
+format-discharging-underline = ${self.format-charging-underline}
+
+format-full = <ramp-capacity> <label-full>
+format-full-underline = ${self.format-charging-underline}
+
+ramp-capacity-0 = 
+ramp-capacity-1 = 
+ramp-capacity-2 = 
+ramp-capacity-3 = 
+ramp-capacity-4 = 
+
+animation-charging-0 = 
+animation-charging-1 = 
+animation-charging-2 = 
+animation-charging-3 = 
+animation-charging-4 = 
+animation-charging-framerate = 750
+
+[module/battery_short]
+type = internal/battery
+battery = BAT0
+poll-interval = 3
+adapter = ADP1
+full-at = 95
+label-full = %percentage%%
+label-charging = + %percentage%%
+label-discharging = - %percentage%%
+
+; Module Disk
+
+[module/disk_short_pc]
+type = custom/script
+; format = 󰆓 <label>
+interval = 10
+exec = echo $(df -h / | tail +2 | awk -F ' ' '{print $3 " / " $2 " (" $5 ")"}' | tr -d 'G')
+click-left = "setsid alacritty -e sh -c 'echo Disk overview... ; echo ; df -h -x tmpfs; echo ; read -p Done'"
+click-right = "setsid alacritty -e sh -c 'echo Scanning main disk ; echo ; ncdu --exclude /data / ; echo ; read -p Done!'"
+click-middle = "setsid alacritty -e sh -c 'echo Scanning full disk... ; echo ; sudo ncdu / ; echo ; read -p Done!'"
+
+[module/disk_short_pc_spacer]
+inherit = "module/disk_short_pc"
+; format = | 󰆓 <label>
+
+; Module Backlight
+
+[module/xbacklight]
+type = internal/xbacklight
+format = <label>
+label = %percentage% 
+
+[module/xbacklight_buttons]
+type = custom/menu
+expand-right = true
+label-open = blght
+label-close = x
+label-separator = "  "
+menu-0-0 = -
+menu-0-0-exec = "xbacklight -dec 10; notify-send 'brightness down'"
+menu-0-1 = +
+menu-0-1-exec = "xbacklight -inc 10; notify-send 'brightness up'"
