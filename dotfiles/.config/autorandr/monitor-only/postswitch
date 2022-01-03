@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#!/usr/bin/env bash
+/home/gregj/bin/lefty
+/home/gregj/bin/capsctrl.sh
+/home/gregj/bin/schedule-rotate-wallpapers.sh
+/home/gregj/bin/relaunch-albert.sh
