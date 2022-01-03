@@ -1181,9 +1181,6 @@
      file /tmp/${keyfile}
    #+end_src
 
-   #+RESULTS:
-   : /tmp/linux_signing_key.pub: PGP public key block Public-Key (old)
-
    + If your key is in a different format, convert it by importing it into a temp keyring,
      then exporting it again
 
@@ -1194,20 +1191,6 @@
      rm temp-keyring.gpg
    #+end_src
 
-   #+RESULTS:
-   #+begin_example
-   gpg: keybox './temp-keyring.gpg' created
-   " imported
-   gpg: key 7721F63BD38B4796: 1 signature not checked due to a missing key
-   " imported
-   gpg: Total number processed: 2
-   gpg:               imported: 2
-   gpg: public key of ultimately trusted key 88F1B1F338F524AC not found
-   gpg: public key of ultimately trusted key 8BED022043E6E8FC not found
-   gpg: marginals needed: 3  completes needed: 1  trust model: pgp
-   gpg: depth: 0  valid:   2  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 2u
-   #+end_example
-
    + Now that you have your converted key, do *not* add it to apt's trusted keystore by
      copying it into =/etc/apt/trusted.gpg.d/=. Instead, put it somewhere like
      =/usr/local/share/keyrings/=. (You'll need to create that keyrings directory first.)
@@ -1215,10 +1198,6 @@
        sudo mkdir -p /usr/local/share/keyrings/
        sudo mv -iv ${keyfile}_keyring.gpg /usr/local/share/keyrings/
      #+end_src
-
-     #+RESULTS:
-     :
-     : renamed 'gpgkey_keyring.gpg' -> '/usr/local/share/keyrings/gpgkey_keyring.gpg'
 
    + At this point, nothing has changed and apt doesn't know the key exists. The last step
      is to modify the specific =.list= file for the repository to tell apt where to find the
