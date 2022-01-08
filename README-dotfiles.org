@@ -11,7 +11,7 @@
 
    We take the original =.bashrc= and append my changes by tangling the following code block
 
-   #+begin_src bash :noweb yes :exports none :tangle /tmp/bashrc-appended
+   #+begin_src bash :noweb yes :exports none :tangle ~/.bashrc
      <<original-bashrc()>>
      <<bash-additions>>
    #+end_src
@@ -85,7 +85,7 @@
 
    #+name: original-bashrc
    #+begin_src bash :results output replace
-     cat /tmp/BASHRC-STARTER
+     cat ~/.bashrc
    #+end_src
 
 ** Mount special directories in =/etc/fstab=
