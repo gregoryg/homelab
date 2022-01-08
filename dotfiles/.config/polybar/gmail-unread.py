@@ -3,12 +3,18 @@
 from __future__ import print_function
 
 import os.path
+from datetime import datetime
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+
+# Return space if today is a weekend
+if datetime.today().weekday() > 4:
+    print(' ')
+    exit(0)
 
 # If modifying these scopes, delete the file gmailapi-token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
