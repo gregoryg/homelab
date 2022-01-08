@@ -128,9 +128,8 @@
 
    #+begin_src bash
      ln -s `pwd`/./dotfiles/.config/polybar ~/.config/
+     sudo apt -y install polybar
    #+end_src
-
-   #+RESULTS:
 
 ** Zoom
    On EXWM I do not want the mini-window to appear.  It become a small floating window
