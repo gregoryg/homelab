@@ -223,12 +223,13 @@ label-foreground = ${colors.foreground}
 # You can copy-paste your options for each possible action, which is more
 # trouble-free but repetitive, or apply only the relevant ones (for example
 # --sink-blacklist is only needed for next-sink).
-exec = ~/bin/pulseaudio-control --icons-volume " , " --icon-muted " " --sink-nicknames-from "device.description" --sink-nickname "alsa_output.pci-0000_00_1f.3.analog-stereo:  Speakers" --sink-nickname "bluez_sink.38_18_4C_3E_36_51.a2dp_sink:  Headphones" --sink-nickname "bluez_sink.BC_F2_92_A7_29_EC.a2dp_sink: Earpiece" listen
+# exec = ~/bin/pulseaudio-control --icons-volume " , " --icon-muted " " --sink-nicknames-from "device.description" --sink-nickname "alsa_output.pci-0000_00_1f.3.analog-stereo:  Speakers" --sink-nickname "bluez_sink.38_18_4C_3E_36_51.a2dp_sink:  Headphones" --sink-nickname "bluez_sink.BC_F2_92_A7_29_EC.a2dp_sink: Earpiece" listen
+exec = ~/bin/pulseaudio-control-glados listen
 click-right = exec pavucontrol &
-click-left =   ~/bin/pulseaudio-control --sink-nicknames-from "device.description" --sink-nickname "alsa_output.pci-0000_00_1f.3.analog-stereo: Speakers" --sink-nickname "bluez_sink.38_18_4C_3E_36_51.a2dp_sink:  Headphones" --sink-nickname "bluez_sink.BC_F2_92_A7_29_EC.a2dp_sink: Earpiece" togmute
-click-middle = ~/bin/pulseaudio-control --sink-blacklist "alsa_output.pci-0000_01_00.1.hdmi-stereo-extra2" next-sink
-scroll-up =    ~/bin/pulseaudio-control --sink-nicknames-from "device.description" --sink-nickname "alsa_output.pci-0000_00_1f.3.analog-stereo: Speakers" --sink-nickname "bluez_sink.38_18_4C_3E_36_51.a2dp_sink:  Headphones" --sink-nickname "bluez_sink.BC_F2_92_A7_29_EC.a2dp_sink: Earpiece" up
-scroll-down =  ~/bin/pulseaudio-control --sink-nicknames-from "device.description" --sink-nickname "alsa_output.pci-0000_00_1f.3.analog-stereo: Speakers" --sink-nickname "bluez_sink.38_18_4C_3E_36_51.a2dp_sink:  Headphones" --sink-nickname "bluez_sink.BC_F2_92_A7_29_EC.a2dp_sink: Earpiece" down
+click-left =   ~/bin/pulseaudio-control-glados togmute
+click-middle = ~/bin/pulseaudio-control-glados next-sink
+scroll-up =    ~/bin/pulseaudio-control-glados up
+scroll-down =    ~/bin/pulseaudio-control-glados down
 
 [module/volume]
 type = internal/pulseaudio
