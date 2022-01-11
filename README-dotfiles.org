@@ -139,5 +139,3 @@
    #+begin_src bash :results none
      sed -i.bak 's,enableMiniWindow.\+,enableMiniWindow=false,' ~/.config/zoomus.conf
    #+end_src
-
-   #+RESULTS:
