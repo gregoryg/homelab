@@ -39,17 +39,10 @@ if not creds or not creds.valid:
 
 try:
     service = build('gmail', 'v1', credentials=creds)
-    results = service.users().messages().list(userId='me', q="in:inbox is:unread").execute()
-    messages = []
-    if 'messages' in results:
-        messages.extend(results['messages'])
-    while 'nextPageToken' in results:
-        page_token = results['nextpagetoken']
-        results = service.users().messages().list(userId='me', q="in:inbox is:unread", pageToken=page_token).execut()
-        if 'messages' in results:
-            messages.extend(results['messages'])
-    # if len(messages):
-    print(len(messages))
+    # results = service.users().messages().list(userId='me', q="in:inbox is:unread").execute()
+    results = service.users().threads().list(userId='me', q="in:inbox is:unread").execute()
+    if len(results['threads']):
+        print(len(results['threads']))
 except HttpError as error:
     # TODO(developer) - Handle errors from gmail API.
     print(f'An error occurred: {error}')
