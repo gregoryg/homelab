@@ -4,6 +4,7 @@
   #+begin_src bash
     eksctl create cluster \
            --profile <MYPROFILE> \
+           --auto-kubeconfig \
            --name gg-tiger32-test \
            --region us-west-2 \
            --with-oidc \
