@@ -56,8 +56,6 @@
       az group delete --name gg-aks-rg --yes --no-wait
     #+end_src
 
-
-
 * Set up GKE cluster
   + full cluster High Memory configuration
     #+begin_src bash

@@ -13,7 +13,7 @@ from googleapiclient.errors import HttpError
 
 # Return space if today is a weekend
 if datetime.today().weekday() > 4:
-    print(' ')
+    print('')
     exit(0)
 
 # If modifying these scopes, delete the file gmailapi-token.json.
@@ -41,8 +41,10 @@ try:
     service = build('gmail', 'v1', credentials=creds)
     # results = service.users().messages().list(userId='me', q="in:inbox is:unread").execute()
     results = service.users().threads().list(userId='me', q="in:inbox is:unread").execute()
-    if len(results['threads']):
-        print(len(results['threads']))
+    if results['resultSizeEstimate'] > 0:
+        print (results['resultSizeEstimate'])
+    else:
+        print(' ')
 except HttpError as error:
     # TODO(developer) - Handle errors from gmail API.
     print(f'An error occurred: {error}')
