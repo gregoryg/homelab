@@ -3,7 +3,7 @@
 
 # Set the max text length.
 # Default is 10 characters
-LENGTH=${1:-20}    
+LENGTH=${1:-40}
 
 # Set the source audio player here.
 # Players supporting the MPRIS spec are supported.
