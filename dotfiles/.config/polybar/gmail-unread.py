@@ -11,7 +11,11 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-# Return space if today is a weekend
+# Return zippo if we are paused (/tmp/pause-gmail-unread exists)
+if os.path.exists('/tmp/pause-gmail-unread'):
+    print('')
+    exit(0)
+# Return zippo if today is a weekend
 if datetime.today().weekday() > 4:
     print('')
     exit(0)

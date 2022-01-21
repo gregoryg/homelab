@@ -292,6 +292,7 @@ exec =  /home/gregj/.config/polybar/gmail-unread.py
 ; click-left = "x-www-browser --new-window https://mail.google.com/mail/u/0/#search/in:inbox+is:unread"
 ; click-left = "gtk-launch gmail"
 click-left = '/home/gregj/bin/gmail-buffer-or-launch.sh'
+click-right = '/home/gregj/bin/gmail-unread-toggle-pause.sh'
 ; Module Battery
 
 [module/battery]
