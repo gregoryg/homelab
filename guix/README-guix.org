@@ -59,8 +59,11 @@
     (use-modules (gnu packages xfce))
     (use-modules (gnu system)) ; for sudoers
     (use-modules (gnu packages emacs-xyz))
+    (use-modules (gnu services ))
     (use-modules (gnu packages emacs))
     (use-modules (gnu services docker))
+    (use-modules (gnu services ssh ))
+    (use-modules (gnu packages ssh))
     (use-modules (gnu packages compton))
     (use-modules (gnu packages gnome))
     (use-modules (gnu packages xdisorg))
