@@ -45,15 +45,19 @@
   and downloads of the entire system.
 
 * System configuration
-  + TODO: add cifs and nfs mounts to /etc/fstab
-  + TODO: figger it out re: libinput and tap-to-touch+scrolling
-  + TODO: compile albert or replace it with rofi
-  + TODO: get notifications working (dunst)
-  + TODO:
+  + [ ] TODO: add cifs and nfs mounts to /etc/fstab
+  + [X] TODO: Bind mounts
+  + [ ] TODO: figger it out re: libinput and tap-to-touch+scrolling
+  + [ ] TODO: compile albert or replace it with *rofi*
+  + [ ] TODO: get notifications working (dunst)
+  + [ ] TODO: kubectl
+  + [ ] TODO: JupyterLab with R and Python kernels, pyTigerGraph etc
+  + [X] TODO: NOPASSWD sudo
 
   #+begin_src scheme :tangle ~/config.scm
     (use-modules (gnu ) (nongnu packages linux))
     (use-modules (gnu packages xfce))
+    (use-modules (gnu system)) ; for sudoers
     (use-modules (gnu packages emacs-xyz))
     (use-modules (gnu packages emacs))
     (use-modules (gnu services docker))
@@ -97,6 +101,12 @@
      (firmware (append (list iwlwifi-firmware)
                        %base-firmware))
 
+     (sudoers-file
+      (plain-file "sudoers"
+                  (string-append (plain-file-content %sudoers-specification)
+                                 (format #f "~a ALL = NOPASSWD: ALL~%"
+                                         "gregj"
+                                         ))))
      (users (cons* (user-account
                     (name "gregj")
                     (group "users")
