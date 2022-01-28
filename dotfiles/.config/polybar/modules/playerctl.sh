@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Based on https://github.com/PrayagS/polybar-spotify/
 
 # Set the max text length.
@@ -18,12 +18,12 @@ PLAYER="playerctld"
 FORMAT="{{ title }} - {{ artist }}"
 
 # see man zscroll for documentation of the following parameters
-zscroll -l "$LENGTH" \
+~/bin/zscroll -l "$LENGTH" \
         --delay 0.2 \
         --scroll-padding " >> " \
-        --match-command "playerctl -s --player=$PLAYER status 2>/dev/null" \
+        --match-command "playerctl --player=$PLAYER status 2>/dev/null" \
         --match-text "Playing" "--scroll 1" \
         --match-text "Paused" "--scroll 0" \
-        --update-check true "playerctl -s --player=$PLAYER metadata --format '$FORMAT'" &
+        --update-check true "playerctl --player=$PLAYER metadata --format '$FORMAT'" &
 
 wait
