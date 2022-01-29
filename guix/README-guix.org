@@ -44,15 +44,39 @@
   only the subset of things you care about at the moment rather than triggering recompiles
   and downloads of the entire system.
 
+* Guix complete system to-dos [53%]
+** TODO add cifs and nfs mounts to /etc/fstab
+** DONE Bind mounts
+** DONE figger it out re: libinput and tap-to-touch+scrolling
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2022-01-29 Sat 08:40]
+:END:
+   Tap to click
+   2-finger tap right click
+   other stuff too
+** DONE compile albert or replace it with *rofi*
+*** TODO Get Alt-space working on EXWM windows
+      Or *any* key combo - try out
+** DONE get notifications working (dunst)
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2022-01-29 Sat 08:42]
+:END:
+** DONE kubectl (just downloaded and moved to =.local/bin=
+** TODO JupyterLab with R and Python kernels, pyTigerGraph etc
+** DONE NOPASSWD sudo
+** CANCELLED udev permissions so I can adjust backlight
+:LOGBOOK:
+- State "CANCELLED"  from "TODO"       [2022-01-29 Sat 08:43] \\
+  Just started magically working :shrug:
+:END:
+** TODO Change rofi theme
+** TODO Document and add method for updating =channels.scm=
+   How do I get updated hashes for =.config/guix/channels.scm=?  Does it get updated when
+   doing =guix reconfigure=??
+** TODO Fix python environment for unread Gmail in polybar
+** TODO CUPS and lpr
+
 * System configuration
-  + [ ] TODO: add cifs and nfs mounts to /etc/fstab
-  + [X] TODO: Bind mounts
-  + [ ] TODO: figger it out re: libinput and tap-to-touch+scrolling
-  + [ ] TODO: compile albert or replace it with *rofi*
-  + [ ] TODO: get notifications working (dunst)
-  + [ ] TODO: kubectl
-  + [ ] TODO: JupyterLab with R and Python kernels, pyTigerGraph etc
-  + [X] TODO: NOPASSWD sudo
 
   #+begin_src scheme :tangle ~/config.scm
     (use-modules (gnu ) (nongnu packages linux))
@@ -60,15 +84,23 @@
     (use-modules (gnu system)) ; for sudoers
     (use-modules (gnu packages emacs-xyz))
     (use-modules (gnu services ))
+    (use-modules (gnu services networking))
     (use-modules (gnu packages emacs))
     (use-modules (gnu services docker))
     (use-modules (gnu services ssh ))
     (use-modules (gnu packages ssh))
     (use-modules (gnu packages compton))
     (use-modules (gnu packages gnome))
-    (use-modules (gnu packages xdisorg))
-    (use-service-modules nix)
+    (use-modules (gnu packages xdisorg));
+                                            ;    (use-service-modules nix)
     (use-service-modules desktop networking ssh xorg)
+
+    ;; wilschenk's odd thing I need to figure out: this-file
+    (define this-file
+      (local-file (basename (assoc-ref (current-source-location) 'filename))
+                  "config.scm"))
+
+    ;; define additional partitions and bind mounts
     (define data-drive
       (file-system
        (device (file-system-label "data"))
@@ -76,10 +108,52 @@
        (mount-point "/data")))
     (define (%projects-bind-mount) "/data/projects")
     (define (%backgrounds-bind-mount) "/data/backgrounds")
-    (define this-file
-      (local-file (basename (assoc-ref (current-source-location) 'filename))
-                  "config.scm"))
 
+    ;; fix up my touchpad for laptops
+    (define %xorg-libinput-config
+      "Section \"InputClass\"
+      Identifier \"libinput touchpad gorto\"
+      Driver \"libinput\"
+      MatchDevicePath \"/dev/input/event*\"
+      MatchIsTouchpad \"on\"
+
+      Option \"NaturalScrolling\" \"on\"
+      Option \"Tapping\" \"on\"
+      # Option \"TappingDrag\" \"on\"
+      Option \"DisableWhileTyping\" \"on\"
+      Option \"MiddleEmulation\" \"on\"
+      Option \"ScrollMethod\" \"twofinger\"
+    EndSection
+    # Section \"InputClass\"
+    #   Identifier \"Keyboards\"
+    #   Driver \"libinput\"
+    #   MatchDevicePath \"/dev/input/event*\"
+    #   MatchIsKeyboard \"on\"
+    # EndSection
+    ")
+
+    ;;
+    (define %my-desktop-services
+      (modify-services %desktop-services
+                       ;; Configure the substitute server for the Nonguix repo
+
+                       ;; Suspend the machine when the laptop lid is closed
+                       (elogind-service-type config =>
+                                             (elogind-configuration (inherit config)
+                                                                    (handle-lid-switch-external-power 'suspend)))
+
+                       ;; Enable backlight control rules for users
+                       ;; (udev-service-type config =>
+                       ;;                    (udev-configuration (inherit config)
+                       ;;                                        (rules (cons %backlight-udev-rule
+                       ;;                                                     (udev-configuration-rules config)))))
+
+                       ;; Add OpenVPN support to NetworkManager
+                       (network-manager-service-type config =>
+                                                     (network-manager-configuration (inherit config)
+                                                                                    (vpn-plugins (list network-manager-openvpn))))))
+
+    ;; the heart of the matter
     (operating-system
      (kernel linux)
      (locale "en_US.utf8")
@@ -118,6 +192,7 @@
                     (home-directory "/home/gregj"))
                    %base-user-accounts))
 
+     ;; think about adding *all* packages here and breaking into profiles/manifests later
      (packages
       (append
        (list
@@ -140,17 +215,20 @@
         (service gnome-desktop-service-type)
         (service openssh-service-type)
         ;; Enable the build service for Nix package manager
-        (service nix-service-type)
+        ;;        (service nix-service-type)
         (service docker-service-type)
-        ;; (service libvirt-service-type
-        ;;          (libvirt-configuration
-        ;;           (unix-sock-group "libvirt")
-        ;;           (tls-port "16555")))
+        (service libvirt-service-type
+                 (libvirt-configuration
+                  (unix-sock-group "libvirt")
+                  (tls-port "16555")))
 
         (set-xorg-configuration
          (xorg-configuration
-          (keyboard-layout keyboard-layout))))
-       %desktop-services))
+          (keyboard-layout keyboard-layout)
+          (extra-config (list %xorg-libinput-config)))))
+       %my-desktop-services
+       ;; %desktop-services
+       ))
      (swap-devices (list (swap-space (target (file-system-label "swap")))))
      ;; (file-system-label "swap")))
      (file-systems (cons* (file-system
