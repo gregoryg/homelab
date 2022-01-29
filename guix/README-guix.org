@@ -236,6 +236,10 @@
                            (mount-point "/")
                            (type "ext4"))
                           ;; Not needed for bootable usb but needed for final system
+                          (file-system
+                           (device (file-system-label "guix-gnu"))
+                           (mount-point "/gnu")
+                           (type "xfs"))
                           data-drive
                           (file-system
                            (device (%projects-bind-mount))
