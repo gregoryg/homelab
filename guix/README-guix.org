@@ -55,7 +55,10 @@
    2-finger tap right click
    other stuff too
 ** DONE compile albert or replace it with *rofi*
-*** TODO Get Alt-space working on EXWM windows
+*** DONE Get Alt-space working on EXWM windows
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2022-01-30 Sun 10:50]
+:END:
       Or *any* key combo - try out
 ** DONE get notifications working (dunst)
 :LOGBOOK:
@@ -79,215 +82,239 @@
 * System configuration
 
   #+begin_src scheme :tangle ~/config.scm
-    (use-modules (gnu ) (nongnu packages linux))
-    (use-modules (gnu packages xfce))
-    (use-modules (gnu system)) ; for sudoers
-    (use-modules (gnu packages emacs-xyz))
-    (use-modules (gnu packages version-control))
-    (use-modules (gnu packages package-management))
-    (use-modules (gnu packages vim))
-    (use-modules (gnu packages fonts))
-    (use-modules (gnu services ))
-    (use-modules (gnu services networking))
-    (use-modules (gnu packages emacs))
-    (use-modules (gnu services docker))
-    (use-modules (gnu services ssh ))
-    (use-modules (gnu packages ssh))
-    (use-modules (gnu packages compton))
-    (use-modules (gnu packages gnome))
-    (use-modules (gnu packages image-viewers))
-    (use-modules (gnu packages xorg))
-    (use-modules (gnu packages wm))
-    (use-modules (gnu packages rsync))
-    (use-modules (gnu packages freedesktop))
-    (use-modules (gnu packages file))
-    (use-modules (gnu packages xdisorg))
-                                            ;    (use-service-modules nix)
-    (use-service-modules desktop networking ssh xorg)
+                (use-modules (gnu ) (nongnu packages linux))
+                (use-modules (gnu packages xfce))
+                (use-modules (gnu system)) ; for sudoers
+                (use-modules (gnu packages emacs-xyz))
+                (use-modules (gnu packages version-control))
+                (use-modules (gnu packages package-management))
+                (use-modules (gnu packages vim))
+                (use-modules (gnu packages dunst))
+                (use-modules (gnu packages fonts))
+                (use-modules (gnu services ))
+                (use-modules (gnu services networking))
+                (use-modules (gnu packages emacs))
+                (use-modules (gnu services docker))
+                (use-modules (gnu services ssh ))
+                (use-modules (gnu packages ssh))
+                (use-modules (gnu packages compton))
+                (use-modules (gnu packages gnome))
+                (use-modules (gnu packages image-viewers))
+                (use-modules (gnu packages xorg))
+                (use-modules (gnu packages wm))
+                (use-modules (gnu packages python))
+                (use-modules (gnu packages rsync))
+                (use-modules (gnu packages freedesktop))
+                (use-modules (gnu packages file))
+                (use-modules (gnu packages gnupg))
+                (use-modules (gnu packages gnome-xyz))
+                (use-modules (gnu packages kde-frameworks))
+    ;; (use-modules (gnu packages python-web))
+                (use-modules (gnu packages xdisorg))
+                                                        ;    (use-service-modules nix)
+                (use-service-modules desktop networking ssh xorg)
 
-    ;; wilschenk's odd thing I need to figure out: this-file
-    (define this-file
-      (local-file (basename (assoc-ref (current-source-location) 'filename))
-                  "config.scm"))
+                ;; wilschenk's odd thing I need to figure out: this-file
+                (define this-file
+                  (local-file (basename (assoc-ref (current-source-location) 'filename))
+                              "config.scm"))
 
-    ;; define additional partitions and bind mounts
-    (define data-drive
-      (file-system
-       (device (file-system-label "data"))
-       (type "ext4")
-       (mount-point "/data")))
-    (define (%projects-bind-mount) "/data/projects")
-    (define (%backgrounds-bind-mount) "/data/backgrounds")
+                ;; define additional partitions and bind mounts
+                (define data-drive
+                  (file-system
+                   (device (file-system-label "data"))
+                   (type "ext4")
+                   (mount-point "/data")))
+                (define (%projects-bind-mount) "/data/projects")
+                (define (%backgrounds-bind-mount) "/data/backgrounds")
 
-    ;; fix up my touchpad for laptops
-    (define %xorg-libinput-config
-      "Section \"InputClass\"
-          Identifier \"libinput touchpad gorto\"
-          Driver \"libinput\"
-          MatchDevicePath \"/dev/input/event*\"
-          MatchIsTouchpad \"on\"
+                ;; fix up my touchpad for laptops
+                (define %xorg-libinput-config
+                  "Section \"InputClass\"
+                      Identifier \"libinput touchpad gorto\"
+                      Driver \"libinput\"
+                      MatchDevicePath \"/dev/input/event*\"
+                      MatchIsTouchpad \"on\"
 
-          Option \"NaturalScrolling\" \"on\"
-          Option \"Tapping\" \"on\"
-          # Option \"TappingDrag\" \"on\"
-          Option \"DisableWhileTyping\" \"on\"
-          Option \"MiddleEmulation\" \"on\"
-          Option \"ScrollMethod\" \"twofinger\"
-        EndSection
-        # Section \"InputClass\"
-        #   Identifier \"Keyboards\"
-        #   Driver \"libinput\"
-        #   MatchDevicePath \"/dev/input/event*\"
-        #   MatchIsKeyboard \"on\"
-        # EndSection
-        ")
+                      Option \"NaturalScrolling\" \"on\"
+                      Option \"Tapping\" \"on\"
+                      # Option \"TappingDrag\" \"on\"
+                      Option \"DisableWhileTyping\" \"on\"
+                      Option \"MiddleEmulation\" \"on\"
+                      Option \"ScrollMethod\" \"twofinger\"
+                    EndSection
+                    # Section \"InputClass\"
+                    #   Identifier \"Keyboards\"
+                    #   Driver \"libinput\"
+                    #   MatchDevicePath \"/dev/input/event*\"
+                    #   MatchIsKeyboard \"on\"
+                    # EndSection
+                    ")
 
-    ;;
-    (define %my-desktop-services
-      (modify-services %desktop-services
-                       ;; Configure the substitute server for the Nonguix repo
+                ;;
+                (define %my-desktop-services
+                  (modify-services %desktop-services
+                                   ;; Configure the substitute server for the Nonguix repo
 
-                       ;; Suspend the machine when the laptop lid is closed
-                       (elogind-service-type config =>
-                                             (elogind-configuration (inherit config)
-                                                                    (handle-lid-switch-external-power 'suspend)))
+                                   ;; Suspend the machine when the laptop lid is closed
+                                   (elogind-service-type config =>
+                                                         (elogind-configuration (inherit config)
+                                                                                (handle-lid-switch-external-power 'suspend)))
 
-                       ;; Enable backlight control rules for users
-                       ;; (udev-service-type config =>
-                       ;;                    (udev-configuration (inherit config)
-                       ;;                                        (rules (cons %backlight-udev-rule
-                       ;;                                                     (udev-configuration-rules config)))))
+                                   ;; Enable backlight control rules for users
+                                   ;; (udev-service-type config =>
+                                   ;;                    (udev-configuration (inherit config)
+                                   ;;                                        (rules (cons %backlight-udev-rule
+                                   ;;                                                     (udev-configuration-rules config)))))
 
-                       ;; Add OpenVPN support to NetworkManager
-                       (network-manager-service-type config =>
-                                                     (network-manager-configuration (inherit config)
-                                                                                    (vpn-plugins (list network-manager-openvpn))))))
+                                   ;; Add OpenVPN support to NetworkManager
+                                   (network-manager-service-type config =>
+                                                                 (network-manager-configuration (inherit config)
+                                                                                                (vpn-plugins (list network-manager-openvpn))))))
 
-    ;; the heart of the matter
-    (operating-system
-     (kernel linux)
-     (locale "en_US.utf8")
-     (host-name "camina")
-     (timezone "America/Denver")
-     (initrd-modules (append (list "vmd")
-                             %base-initrd-modules))
+                ;; the heart of the matter
+                (operating-system
+                 (kernel linux)
+                 (locale "en_US.utf8")
+                 (host-name "camina")
+                 (timezone "America/Denver")
+                 (initrd-modules (append (list "vmd")
+                                         %base-initrd-modules))
 
-     (keyboard-layout (keyboard-layout "us" "altgr-intl"))
+                 (keyboard-layout (keyboard-layout "us" "altgr-intl"))
 
-     ;; This will be what is used on the target machine
-     (bootloader (bootloader-configuration
-                  (bootloader grub-efi-bootloader)
-                  (timeout 1)
-                  (targets (list "/boot/efi"))))
+                 ;; This will be what is used on the target machine
+                 (bootloader (bootloader-configuration
+                              (bootloader grub-efi-bootloader)
+                              (timeout 1)
+                              (targets (list "/boot/efi"))))
 
-     ;; This is needed to create a bootable USB
-     ;;(bootloader (bootloader-configuration
-     ;;              (bootloader grub-bootloader)
-     ;;              (target "/dev/sda")))
+                 ;; This is needed to create a bootable USB
+                 ;;(bootloader (bootloader-configuration
+                 ;;              (bootloader grub-bootloader)
+                 ;;              (target "/dev/sda")))
 
-     (firmware (append (list iwlwifi-firmware)
-                       %base-firmware))
+                 (firmware (append (list iwlwifi-firmware)
+                                   %base-firmware))
 
-     (sudoers-file
-      (plain-file "sudoers"
-                  (string-append (plain-file-content %sudoers-specification)
-                                 (format #f "~a ALL = NOPASSWD: ALL~%"
-                                         "gregj"
-                                         ))))
-     (users (cons* (user-account
-                    (name "gregj")
-                    (group "users")
-                    (supplementary-groups '("wheel" "netdev" "audio" "lp" "video" "docker" "kvm"))
-                    ;; TODO: Default to name?
-                    (home-directory "/home/gregj"))
-                   %base-user-accounts))
+                 (sudoers-file
+                  (plain-file "sudoers"
+                              (string-append (plain-file-content %sudoers-specification)
+                                             (format #f "~a ALL = NOPASSWD: ALL~%"
+                                                     "gregj"
+                                                     ))))
+                 (users (cons* (user-account
+                                (name "gregj")
+                                (group "users")
+                                (supplementary-groups '("wheel" "netdev" "audio" "lp" "video" "docker" "kvm"))
+                                ;; TODO: Default to name?
+                                (home-directory "/home/gregj"))
+                               %base-user-accounts))
 
-     ;; think about adding *all* packages here and breaking into profiles/manifests later
-     (packages
-      (append
-       (list
-        xfce
-        emacs-exwm
-        emacs-next
-        picom
-        upower
-        xscreensaver
-        git
-        flatpak
-        vim
-        font-hack
-        feh
-        wmctrl
-        xrandr
-        autorandr
-        arandr
-        rofi
-        emacs-guix
-        polybar
-        rsync
-        xdg-utils
-        file
-        (specification->package "nss-certs"))
-       %base-packages))
+                 ;; think about adding *all* packages here and breaking into profiles/manifests later
+                 (packages
+                  (append
+                   (list
+                    xfce
+                    emacs-exwm
+                    emacs-next
+                    picom
+                    upower
+                    xscreensaver
+                    git
+                    flatpak
+                    vim
+                    font-hack
+                    feh
+                    wmctrl
+                    xrandr
+                    autorandr
+                    arandr
+                    rofi
+                    emacs-guix
+                    polybar
+                    rsync
+                    xdg-utils
+                    file
+                    dunst
+                  libnotify
+                    python
+                    ;; python-google-api-client
+                    pinentry
+                    pinentry-gtk2
+                    adwaita-icon-theme
+                    papirus-icon-theme
+                    hicolor-icon-theme
+                    oxygen-icons
+                    elementary-xfce-icon-theme
+                    tango-icon-theme
+                    (specification->package "nss-certs"))
+                   %base-packages))
 
 
-     (services
-      (append
-       (list
-        ;; Copy current config to /etc/config.scm
-        (simple-service 'config-file etc-service-type
-                        `(("config.scm" ,this-file)))
-        (service gnome-desktop-service-type)
-        (service openssh-service-type)
-        ;; Enable the build service for Nix package manager
-        ;;        (service nix-service-type)
-        (service docker-service-type)
-        ;; (service libvirt-service-type
-        ;;          (libvirt-configuration
-        ;;           (unix-sock-group "libvirt")
-        ;;           (tls-port "16555")))
+                 (services
+                  (append
+                   (list
+                    ;; Copy current config to /etc/config.scm
+                    (simple-service 'config-file etc-service-type
+                                    `(("config.scm" ,this-file)))
+                    (service slim-service-type
+                             (slim-configuration
+                              (xorg-configuration
+                               (xorg-configuration
+                                (keyboard-layout keyboard-layout)
+                                (extra-config (list %xorg-libinput-config))))))
+                    (service gnome-desktop-service-type)
+                    (service openssh-service-type)
+                    ;; Enable the build service for Nix package manager
+                    ;;        (service nix-service-type)
+                    (service docker-service-type)
+                    ;; (service libvirt-service-type
+                    ;;          (libvirt-configuration
+                    ;;           (unix-sock-group "libvirt")
+                    ;;           (tls-port "16555")))
 
-        (set-xorg-configuration
-         (xorg-configuration
-          (keyboard-layout keyboard-layout)
-          (extra-config (list %xorg-libinput-config)))))
-       %my-desktop-services
-       ;; %desktop-services
-       ))
-     (swap-devices (list (swap-space (target (file-system-label "swap")))))
-     ;; (file-system-label "swap")))
-     (file-systems (cons* (file-system
-                           (device (file-system-label "guix"))
-                           (mount-point "/")
-                           (type "ext4"))
-                          ;; Not needed for bootable usb but needed for final system
-                          (file-system
-                           (device (file-system-label "guix-gnu"))
-                           (mount-point "/gnu")
-                           (type "xfs"))
-                          data-drive
-                          (file-system
-                           (device (%projects-bind-mount))
-                           (mount-point "/home/gregj/projects")
-                           (type "none")
-                           (flags '(bind-mount))
-                           (dependencies (list data-drive)))
-                          (file-system
-                           (device (%backgrounds-bind-mount))
-                           (mount-point "/home/gregj/backgrounds")
-                           (type "none")
-                           (flags '(bind-mount))
-                           (dependencies (list data-drive)))
-                          (file-system
-                           (device (file-system-label "EFI"))
-                           (type "vfat")
-                           (mount-point "/boot/efi"))
-                          (file-system
-                           (mount-point "/tmp")
-                           (device "none")
-                           (type "tmpfs")
-                           (check? #f))
-                          %base-file-systems)))
+                    (set-xorg-configuration
+                     (xorg-configuration
+                      (keyboard-layout keyboard-layout)
+                      (extra-config (list %xorg-libinput-config)))))
+                   %my-desktop-services
+                   ;; %desktop-services
+                   ))
+                 (swap-devices (list (swap-space (target (file-system-label "swap")))))
+                 ;; (file-system-label "swap")))
+                 (file-systems (cons* (file-system
+                                       (device (file-system-label "guix"))
+                                       (mount-point "/")
+                                       (type "ext4"))
+                                      ;; Not needed for bootable usb but needed for final system
+                                      (file-system
+                                       (device (file-system-label "guix-gnu"))
+                                       (mount-point "/gnu")
+                                       (type "xfs"))
+                                      data-drive
+                                      (file-system
+                                       (device (%projects-bind-mount))
+                                       (mount-point "/home/gregj/projects")
+                                       (type "none")
+                                       (flags '(bind-mount))
+                                       (dependencies (list data-drive)))
+                                      (file-system
+                                       (device (%backgrounds-bind-mount))
+                                       (mount-point "/home/gregj/backgrounds")
+                                       (type "none")
+                                       (flags '(bind-mount))
+                                       (dependencies (list data-drive)))
+                                      (file-system
+                                       (device (file-system-label "EFI"))
+                                       (type "vfat")
+                                       (mount-point "/boot/efi"))
+                                      (file-system
+                                       (mount-point "/tmp")
+                                       (device "none")
+                                       (type "tmpfs")
+                                       (check? #f))
+                                      %base-file-systems)))
   #+end_src
   #+begin_src scheme :tangle ~/.config/guix/manifests/code.scm :mkdirp yes
     ;; developer tools
