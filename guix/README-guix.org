@@ -83,6 +83,10 @@
     (use-modules (gnu packages xfce))
     (use-modules (gnu system)) ; for sudoers
     (use-modules (gnu packages emacs-xyz))
+    (use-modules (gnu packages version-control))
+    (use-modules (gnu packages package-management))
+    (use-modules (gnu packages vim))
+    (use-modules (gnu packages fonts))
     (use-modules (gnu services ))
     (use-modules (gnu services networking))
     (use-modules (gnu packages emacs))
@@ -91,7 +95,13 @@
     (use-modules (gnu packages ssh))
     (use-modules (gnu packages compton))
     (use-modules (gnu packages gnome))
-    (use-modules (gnu packages xdisorg));
+    (use-modules (gnu packages image-viewers))
+    (use-modules (gnu packages xorg))
+    (use-modules (gnu packages wm))
+    (use-modules (gnu packages rsync))
+    (use-modules (gnu packages freedesktop))
+    (use-modules (gnu packages file))
+    (use-modules (gnu packages xdisorg))
                                             ;    (use-service-modules nix)
     (use-service-modules desktop networking ssh xorg)
 
@@ -112,25 +122,25 @@
     ;; fix up my touchpad for laptops
     (define %xorg-libinput-config
       "Section \"InputClass\"
-      Identifier \"libinput touchpad gorto\"
-      Driver \"libinput\"
-      MatchDevicePath \"/dev/input/event*\"
-      MatchIsTouchpad \"on\"
+          Identifier \"libinput touchpad gorto\"
+          Driver \"libinput\"
+          MatchDevicePath \"/dev/input/event*\"
+          MatchIsTouchpad \"on\"
 
-      Option \"NaturalScrolling\" \"on\"
-      Option \"Tapping\" \"on\"
-      # Option \"TappingDrag\" \"on\"
-      Option \"DisableWhileTyping\" \"on\"
-      Option \"MiddleEmulation\" \"on\"
-      Option \"ScrollMethod\" \"twofinger\"
-    EndSection
-    # Section \"InputClass\"
-    #   Identifier \"Keyboards\"
-    #   Driver \"libinput\"
-    #   MatchDevicePath \"/dev/input/event*\"
-    #   MatchIsKeyboard \"on\"
-    # EndSection
-    ")
+          Option \"NaturalScrolling\" \"on\"
+          Option \"Tapping\" \"on\"
+          # Option \"TappingDrag\" \"on\"
+          Option \"DisableWhileTyping\" \"on\"
+          Option \"MiddleEmulation\" \"on\"
+          Option \"ScrollMethod\" \"twofinger\"
+        EndSection
+        # Section \"InputClass\"
+        #   Identifier \"Keyboards\"
+        #   Driver \"libinput\"
+        #   MatchDevicePath \"/dev/input/event*\"
+        #   MatchIsKeyboard \"on\"
+        # EndSection
+        ")
 
     ;;
     (define %my-desktop-services
@@ -202,6 +212,21 @@
         picom
         upower
         xscreensaver
+        git
+        flatpak
+        vim
+        font-hack
+        feh
+        wmctrl
+        xrandr
+        autorandr
+        arandr
+        rofi
+        emacs-guix
+        polybar
+        rsync
+        xdg-utils
+        file
         (specification->package "nss-certs"))
        %base-packages))
 
@@ -217,10 +242,10 @@
         ;; Enable the build service for Nix package manager
         ;;        (service nix-service-type)
         (service docker-service-type)
-        (service libvirt-service-type
-                 (libvirt-configuration
-                  (unix-sock-group "libvirt")
-                  (tls-port "16555")))
+        ;; (service libvirt-service-type
+        ;;          (libvirt-configuration
+        ;;           (unix-sock-group "libvirt")
+        ;;           (tls-port "16555")))
 
         (set-xorg-configuration
          (xorg-configuration
