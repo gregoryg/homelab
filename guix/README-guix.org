@@ -432,6 +432,8 @@
        ;; "python-google-api-client"
        "python-jupyter-server"
        ;; "python-google"
+       "python-jupyterlab-widgets"
+       "python-pandas"
        ))
   #+end_src
 ** Multimedia
