@@ -35,9 +35,9 @@ unfocused = ${xrdb:foreground}
 background = ${colors.background}
 foreground = ${colors.foreground}
 fixed-center = true
-font-0 = Hack Nerd Font:fontformat=truetype:pixelsize=10;1
+font-0 = Hack:fontformat=truetype:pixelsize=10;1
 font-1 = Material Design Icons Desktop:fontformat=truetype:pixelsize=10:antialias=true;1
-font-2 = "Font Awesome:size=14;2"
+font-2 = "FontAwesome:size=14;2"
 font-3 = "Cantarell:size=18:weight=bold;2"
 font-4 = "Fira Mono:size=13;-3"
 
