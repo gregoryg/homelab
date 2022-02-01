@@ -22,8 +22,7 @@
   + System-wide path =/var/lib/flatpak=
   + Local path =~/.local/share/flatpak= (and maybe =~/.var/app=)
 
-  Since I don't have much need for multi-user capability, I may as well use system-wide as
-  the default on my systems.
+  I have decided to use the =--user= installs
 
   Add flathub:
   #+begin_src bash
@@ -44,7 +43,7 @@
   only the subset of things you care about at the moment rather than triggering recompiles
   and downloads of the entire system.
 
-* Guix complete system to-dos [53%]
+* Guix complete system to-dos [43%]
 ** TODO add cifs and nfs mounts to /etc/fstab
 ** DONE Bind mounts
 ** DONE figger it out re: libinput and tap-to-touch+scrolling
@@ -78,10 +77,15 @@
    doing =guix reconfigure=??
 ** TODO Fix python environment for unread Gmail in polybar
 ** TODO CUPS and lpr
+** TODO ssh-agent for user session
+   + have GDM start it?
+** TODO Make special-install binaries repeatable
+** TODO Set default US Keyboard layout (not altgr-intl)
 
 * System configuration
 
   #+begin_src scheme :tangle ~/config.scm
+                (use-modules (srfi srfi-1)) ; for 'remove
                 (use-modules (gnu ) (nongnu packages linux))
                 (use-modules (gnu packages xfce))
                 (use-modules (gnu system)) ; for sudoers
