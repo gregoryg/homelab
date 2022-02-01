@@ -113,6 +113,7 @@
     (use-modules (gnu packages file))
     (use-modules (gnu packages gnupg))
     (use-modules (gnu packages samba))
+    (use-modules (gnu packages music))
     (use-modules (gnu packages gnome-xyz))
     (use-modules (gnu packages kde-frameworks))
     ;; (use-modules (gnu packages python-web))
@@ -258,6 +259,7 @@
         setxkbmap
         the-silver-searcher
         cifs-utils
+        playerctl
         (specification->package "nss-certs"))
        %base-packages))
 
@@ -403,7 +405,6 @@
        "libnotify"
        "lm-sensors"
        "papirus-icon-theme"
-       "playerctl"
        ;; "rbw"  ;; bitwarden cli
        ;; "slim" ;; alternative DM
        "speedtest-cli"
