@@ -95,6 +95,7 @@
                 (use-modules (gnu packages vim))
                 (use-modules (gnu packages dunst))
                 (use-modules (gnu packages fonts))
+                (use-modules (gnu packages code)) ; the silver searcher
                 (use-modules (gnu services ))
                 (use-modules (gnu services networking))
                 (use-modules (gnu packages emacs))
@@ -111,6 +112,7 @@
                 (use-modules (gnu packages freedesktop))
                 (use-modules (gnu packages file))
                 (use-modules (gnu packages gnupg))
+                (use-modules (gnu packages samba))
                 (use-modules (gnu packages gnome-xyz))
                 (use-modules (gnu packages kde-frameworks))
     ;; (use-modules (gnu packages python-web))
@@ -142,6 +144,7 @@
 
                       Option \"NaturalScrolling\" \"on\"
                       Option \"Tapping\" \"on\"
+                      Option \"ClickMethod\" \"clickfinger\"
                       # Option \"TappingDrag\" \"on\"
                       Option \"DisableWhileTyping\" \"on\"
                       Option \"MiddleEmulation\" \"on\"
@@ -252,6 +255,9 @@
                     oxygen-icons
                     elementary-xfce-icon-theme
                     tango-icon-theme
+                    setxkbmap
+                    the-silver-searcher
+                    cifs-utils
                     (specification->package "nss-certs"))
                    %base-packages))
 
@@ -262,12 +268,12 @@
                     ;; Copy current config to /etc/config.scm
                     (simple-service 'config-file etc-service-type
                                     `(("config.scm" ,this-file)))
-                    (service slim-service-type
-                             (slim-configuration
-                              (xorg-configuration
-                               (xorg-configuration
-                                (keyboard-layout keyboard-layout)
-                                (extra-config (list %xorg-libinput-config))))))
+                    ;; (service slim-service-type
+                    ;;          (slim-configuration
+                    ;;           (xorg-configuration
+                    ;;            (xorg-configuration
+                    ;;             (keyboard-layout keyboard-layout)
+                    ;;             (extra-config (list %xorg-libinput-config))))))
                     (service gnome-desktop-service-type)
                     (service openssh-service-type)
                     ;; Enable the build service for Nix package manager
@@ -281,7 +287,9 @@
                     (set-xorg-configuration
                      (xorg-configuration
                       (keyboard-layout keyboard-layout)
-                      (extra-config (list %xorg-libinput-config)))))
+                      (extra-config (list %xorg-libinput-config))))
+                    )
+                   ;; (modify-services %my-desktop-services (delete gdm-service-type))
                    %my-desktop-services
                    ;; %desktop-services
                    ))
@@ -309,6 +317,29 @@
                                        (type "none")
                                        (flags '(bind-mount))
                                        (dependencies (list data-drive)))
+                                      (file-system
+                                       (device "//172.16.17.5/archive")
+                                       ;; (title 'device)
+                                       ;; (options "username=gregj,uid=1000,gid=998,credentials=/home/gregj/.config/.smbfile,user")
+                                       (options "username=gregj,uid=1000,gid=998,domain=domain,user,rw,noauto")
+                                       (mount-point "/data/archive")
+                                       (type "cifs")
+                                       (mount? #f)
+                                       (create-mount-point? #t))
+                                      (file-system
+                                       (device "//172.16.17.5/attach")
+                                       ;; (title 'device)
+                                       ;; (options "username=gregj,uid=1000,gid=998,credentials=/home/gregj/.config/.smbfile,user")
+                                       (options "username=gregj,uid=1000,gid=998,domain=domain,user,rw,mfsymlinks,noauto")
+                                       (mount-point "/data/attach")
+                                       (type "cifs")
+                                       (mount? #f)
+                                       (create-mount-point? #t))
+
+                                      ;; (setuid-programs (cons (file-append cifs-utils "/sbin/mount.cifs")
+                                      ;;                        %setuid-programs))
+
+
                                       (file-system
                                        (device (file-system-label "EFI"))
                                        (type "vfat")
