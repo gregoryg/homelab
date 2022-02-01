@@ -17,6 +17,7 @@
    #+end_src
    #+name: bash-additions
    #+begin_src bash
+     export PATH=$PATH:~/bin:~/.local/bin
      # Eternal bash history.
      # ---------------------
      # Undocumented feature which sets the size to "unlimited".
