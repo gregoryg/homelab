@@ -433,6 +433,18 @@
        ;; "python-google"
        ))
   #+end_src
+** Multimedia
+   #+begin_src scheme :tangle ~/.config/guix/manifests/multimedia.scm
+     ;; Video and audio editing and special players
+     (specifications->manifest
+      '(
+        "vlc"
+        "eom"
+        "obs"
+        "kdenlive"
+
+       ))
+   #+end_src
 
 * Flatpak thangs
 ** Firefox - org.mozilla.firefox
