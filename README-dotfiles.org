@@ -42,11 +42,27 @@
      export PS1
 
      ## GJG stuff
+     ## Set up Flatpak env vars
+     export XDG_DATA_DIRS=$XDG_DATA_DIRS:/var/lib/flatpak/exports/share:/home/gregj/.local/share/flatpak/exports/share
+
+     ## Set up Guix profiles if the exist
+
+     for i in $(guix package --list-profiles); do
+         echo $i
+         . $i/etc/profile
+         which cowsay
+         echo
+     done
+
      ## Use the lightweight bash-powerline
      export SYMBOL_GIT_BRANCH=''
      source ~/projects/coding/scripting/bash-powerline/bash-powerline.sh
 
      ## Additional aliases
+     alias sudo='sudo ' # https://askubuntu.com/a/22043 - make aliases available in sudo
+     alias vi=vim
+     alias finger=pinky
+     alias python=python3
      alias h='history 100'
      alias k='kubectl'
      alias kn='kubectl config set-context --current --namespace '
