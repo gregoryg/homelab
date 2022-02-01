@@ -351,6 +351,9 @@
                                        (check? #f))
                                       %base-file-systems)))
   #+end_src
+
+* Profiles
+** Developer - code
   #+begin_src scheme :tangle ~/.config/guix/manifests/code.scm :mkdirp yes
     ;; developer tools
     (specifications->manifest
@@ -365,3 +368,117 @@
       "virt-manager"
       ))
   #+end_src
+
+** Megillah
+  #+begin_src scheme :tangle ~/.config/guix/manifests/megillah.scm
+    ;; the whole dang thing
+    (specifications->manifest
+     '(
+       "gcc-toolchain"
+       "make"
+       "texinfo"
+       "file"
+       "python"
+       "docker-cli"
+       "curl"
+       "libvirt"
+       "virt-manager"
+       "acpi"
+       "aspell"
+       "brightnessctl"
+       "cmake"
+       "cowsay"
+       "curl"
+       ;; "emacs-desktop-environment"
+       ;; "emacs-emacsql-sqlite3"
+       ;; "emacs-sqlite"
+       ;; "emacs-vterm"
+       "espeak"
+       "font-google-material-design-icons"
+       "fortune-mod"
+       "gnupg"
+       "hicolor-icon-theme"
+       "htop"
+       "jq"
+       "libnotify"
+       "lm-sensors"
+       "papirus-icon-theme"
+       "playerctl"
+       ;; "rbw"  ;; bitwarden cli
+       ;; "slim" ;; alternative DM
+       "speedtest-cli"
+       "tree"
+       ;; "ungoogled-chromium"
+       "upower"
+       "vim-guix-vim"
+       "xdg-desktop-portal"
+       "xdg-desktop-portal-gtk"
+       "xdotool"
+       "xev"
+       "xmodmap"
+       "xterm"
+       "xwininfo"
+       ))
+  #+end_src
+** Python
+  #+begin_src scheme :tangle ~/.config/guix/manifests/python.scm
+    ;; Python and Jupyter goodies
+    (specifications->manifest
+     '(
+       "python"
+       "python-pip"
+       "python-ipython"
+       ;; "python-google-api-client"
+       "python-jupyter-server"
+       ;; "python-google"
+       ))
+  #+end_src
+
+* Flatpak thangs
+** Firefox - org.mozilla.firefox
+  + I am using Firefox simply because Mozilla are supporting the flatpak distribution
+    method.  Neither Google nor Microsoft (for Edge) are supporting it
+  + Go to preferences to allow DRM content - otherwise there will be no audio on YouTube videos
+** Discord - com.discordapp.Discord
+** Slack - com.slack.Slack
+** Signal Desktop - org.signal.Signal
+** Spotify - com.spotify.Client
+** Visual Studio Code - OSS - com.visualstudio.code-oss
+** Zoom - us.zoom.Zoom
+ + Run Zoom once, exit, then edit ~/.var/app/us.zoom.Zoom/config/zoomus.conf
+   Set =enableMiniWindow=false=
+* Binaries that are not packaged
+  Some binaries for now will have to be downloaded and stored in my user directory.
+
+  The intent of this section is to make the process repeatable and automated
+
+** Kubectl
+  Ref: [[https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/][Install and Set Up kubectl on Linux | Kubernetes]]
+
+  #+begin_src bash :results output replace
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    # download sha256
+    curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+    # check binary - should report "OK"
+    echo "$(<kubectl.sha256)  kubectl" | sha256sum --check
+    rm -vf kubectl.sha256
+    chmod a+rx kubectl
+    mv -v kubectl ~/bin/
+  #+end_src
+
+  #+RESULTS:
+  :
+  : kubectl: OK
+  : removed 'kubectl.sha256'
+  : copied 'kubectl' -> '/home/gregj/bin/kubectl'
+  : removed 'kubectl'
+
+** Azure CLI
+  + ref: [[https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=script][Install the Azure CLI on Linux | Microsoft Docs]]
+  Unfortunately, this script cannot run without prompting.
+  #+begin_src bash :results output replace
+    # Install script uses python
+    # curl https://azurecliprod.blob.core.windows.net/install | bash
+  #+end_src
+
+**
