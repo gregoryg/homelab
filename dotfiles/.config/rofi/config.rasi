@@ -6,5 +6,5 @@
 //@theme "/run/current-system/profile/share/rofi/themes/gruvbox-dark-soft.rasi"
 //@theme "/run/current-system/profile/share/rofi/themes/docu.rasi"
 //@theme "/run/current-system/profile/share/rofi/themes/fancy.rasi"
-@theme "/run/current-system/profile/share/rofi/themes/iggy.rasi"
-// @theme "/home/gregj/.config/rofi/sniglet.rasi"
+// @theme "/run/current-system/profile/share/rofi/themes/iggy.rasi"
+@theme "/home/gregj/.config/rofi/iggy.rasi"
