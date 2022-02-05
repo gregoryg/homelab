@@ -193,27 +193,27 @@
     ;; fix up my touchpad for laptops
     (define %xorg-libinput-config
       "Section \"InputClass\"
-                      Identifier \"libinput touchpad gorto\"
-                      Driver \"libinput\"
-                      MatchDevicePath \"/dev/input/event*\"
-                      MatchIsTouchpad \"on\"
+          Identifier \"libinput touchpad gorto\"
+          Driver \"libinput\"
+          MatchDevicePath \"/dev/input/event*\"
+          MatchIsTouchpad \"on\"
 
-                      Option \"NaturalScrolling\" \"on\"
-                      Option \"Tapping\" \"on\"
-                      Option \"ClickMethod\" \"clickfinger\"
-                      # Option \"TappingDrag\" \"on\"
-                      Option \"DisableWhileTyping\" \"on\"
-                      Option \"MiddleEmulation\" \"on\"
-                      Option \"ScrollMethod\" \"twofinger\"
-                    EndSection
-                    # Section \"InputClass\"
-                    #   Identifier \"Keyboards\"
-                    #   Driver \"libinput\"
-                    #   MatchDevicePath \"/dev/input/event*\"
-                    #   MatchIsKeyboard \"on\"
-                    # EndSection
-                    ")
-
+          Option \"NaturalScrolling\" \"on\"
+          Option \"Tapping\" \"on\"
+          Option \"ClickMethod\" \"clickfinger\"
+          # Option \"TappingDrag\" \"on\"
+          Option \"DisableWhileTyping\" \"on\"
+          Option \"MiddleEmulation\" \"on\"
+          Option \"ScrollMethod\" \"twofinger\"
+       EndSection
+       Section \"InputClass\"
+          Identifier \"libinput pointer gorto\"
+          MatchIsPointer \"on\"
+          MatchDevicePath \"/dev/input/event*\"
+          Driver \"libinput\"
+          Option \"NaturalScrolling\" \"off\"
+          Option \"AccelSpeed\" \"0.3\"
+        EndSection")
     ;;
     (define %my-desktop-services
       (modify-services %desktop-services
