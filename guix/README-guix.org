@@ -43,9 +43,8 @@
   only the subset of things you care about at the moment rather than triggering recompiles
   and downloads of the entire system.
 
-* Guix complete system to-dos [43%]
-** TODO add cifs and nfs mounts to /etc/fstab
-** DONE Bind mounts
+* Guix complete system to-dos [86%]
+** DONE Add cifs bind mounts
 ** DONE figger it out re: libinput and tap-to-touch+scrolling
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2022-01-29 Sat 08:40]
@@ -63,25 +62,60 @@
 :LOGBOOK:
 - State "DONE"       from "TODO"       [2022-01-29 Sat 08:42]
 :END:
-** DONE kubectl (just downloaded and moved to =.local/bin=
-** TODO JupyterLab with R and Python kernels, pyTigerGraph etc
+** DONE kubectl (just downloaded and moved to =~/bin=)
+** DONE JupyterLab with R and Python kernels, pyTigerGraph etc
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2022-02-04 Fri 16:44]
+   :END:
+   Steps:
+   1. Install all requisite R packages (into a profile, preferably)
+      #+begin_src bash
+        guix package -i r gcc-toolchain gfortran-toolchain r-devtools r-irkernel
+      #+end_src
+   2. Activate the profile, then use R REPL to install the kernel
+      #+begin_src R
+        IRkernel::installspec()
+      #+end_src
+   3. Fire up JupyterLab from that profile
+      #+begin_src bash
+        run-jupyterlab.sh
+      #+end_src
 ** DONE NOPASSWD sudo
 ** CANCELLED udev permissions so I can adjust backlight
 :LOGBOOK:
 - State "CANCELLED"  from "TODO"       [2022-01-29 Sat 08:43] \\
   Just started magically working :shrug:
 :END:
-** TODO Change rofi theme
+** DONE Change rofi theme
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2022-02-03 Thu 07:40]
+   :END:
 ** TODO Document and add method for updating =channels.scm=
    How do I get updated hashes for =.config/guix/channels.scm=?  Does it get updated when
    doing =guix reconfigure=??
-** TODO Fix python environment for unread Gmail in polybar
-** TODO CUPS and lpr
+** DONE Fix python environment for unread Gmail in polybar
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2022-02-03 Thu 07:40]
+   :END:
+   Fix was to use =pip3=
+** DONE CUPS and lpr
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2022-02-04 Fri 15:42]
+   :END:
+   + =lpstat -e= shows all available destinations
+   +
 ** TODO ssh-agent for user session
    + have GDM start it?
-** TODO Make special-install binaries repeatable
-** TODO Set default US Keyboard layout (not altgr-intl)
-
+** DONE Make special-install binaries repeatable
+   :LOGBOOK:
+   - State "DONE"       from "STARTED"    [2022-02-03 Thu 07:43]
+   - State "STARTED"    from "TODO"       [2022-02-03 Thu 07:41]
+   :END:
+** DONE Set default US Keyboard layout (not altgr-intl)
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2022-02-03 Thu 07:41]
+   :END:
+   Simply omit the second parameter, i.e. =(keyboard-layout (keyboard-layout "us"))=
 * System configuration
 
   #+begin_src scheme :tangle ~/config.scm
@@ -98,8 +132,10 @@
     (use-modules (gnu packages code)) ; the silver searcher
     (use-modules (gnu services ))
     (use-modules (gnu services networking))
+    (use-modules (gnu services virtualization))
     (use-modules (gnu packages emacs))
     (use-modules (gnu services docker))
+    (use-modules (gnu services cups))
     (use-modules (gnu services ssh ))
     (use-modules (gnu packages ssh))
     (use-modules (gnu packages compton))
@@ -115,6 +151,8 @@
     (use-modules (gnu packages samba))
     (use-modules (gnu packages music))
     (use-modules (gnu packages gnome-xyz))
+    (use-modules (gnu packages cups))
+    (use-modules (gnu packages pulseaudio))
     (use-modules (gnu packages kde-frameworks))
     ;; (use-modules (gnu packages python-web))
     (use-modules (gnu packages xdisorg))
@@ -189,7 +227,7 @@
      (initrd-modules (append (list "vmd")
                              %base-initrd-modules))
 
-     (keyboard-layout (keyboard-layout "us" "altgr-intl"))
+     (keyboard-layout (keyboard-layout "us"))
 
      ;; This will be what is used on the target machine
      (bootloader (bootloader-configuration
@@ -214,7 +252,7 @@
      (users (cons* (user-account
                     (name "gregj")
                     (group "users")
-                    (supplementary-groups '("wheel" "netdev" "audio" "lp" "video" "docker" "kvm"))
+                    (supplementary-groups '("wheel" "netdev" "audio" "lp" "video" "docker" "kvm" "libvirt"))
                     ;; TODO: Default to name?
                     (home-directory "/home/gregj"))
                    %base-user-accounts))
@@ -260,6 +298,11 @@
         the-silver-searcher
         cifs-utils
         playerctl
+        cups
+        ;; gtk+:bin
+        pavucontrol
+        ;; xdg-desktop-portal
+        ;; xdg-desktop-portal-gtk
         (specification->package "nss-certs"))
        %base-packages))
 
@@ -281,10 +324,16 @@
         ;; Enable the build service for Nix package manager
         ;;        (service nix-service-type)
         (service docker-service-type)
-        ;; (service libvirt-service-type
-        ;;          (libvirt-configuration
-        ;;           (unix-sock-group "libvirt")
-        ;;           (tls-port "16555")))
+        (service cups-service-type
+                 (cups-configuration
+                  (web-interface? #t)
+                  (extensions
+                   (list cups-filters hplip-minimal))))
+        (service libvirt-service-type
+                 (libvirt-configuration
+                  (unix-sock-group "libvirt")
+                  (listen-tcp? #t)))
+                  ;; (tls-port "16555")))
 
         (set-xorg-configuration
          (xorg-configuration
@@ -361,13 +410,13 @@
     (specifications->manifest
      '(
        "gcc-toolchain"
+       "cmake"
        "make"
-       "texinfo"
        "file"
-       "python"
        "docker-cli"
        "curl"
        "virt-manager"
+       "qemu"
        ))
   #+end_src
 
@@ -376,19 +425,13 @@
     ;; the whole dang thing
     (specifications->manifest
      '(
-       "gcc-toolchain"
-       "make"
-       "texinfo"
        "file"
-       "python"
        "docker-cli"
        "curl"
        "libvirt"
-       "virt-manager"
        "acpi"
        "aspell"
        "brightnessctl"
-       "cmake"
        "cowsay"
        "curl"
        ;; "emacs-desktop-environment"
@@ -412,8 +455,6 @@
        ;; "ungoogled-chromium"
        "upower"
        "vim-guix-vim"
-       "xdg-desktop-portal"
-       "xdg-desktop-portal-gtk"
        "xdotool"
        "xev"
        "xmodmap"
@@ -421,7 +462,8 @@
        "xwininfo"
        ))
   #+end_src
-** Python
+** Python AND R
+   Python and R are beasts
   #+begin_src scheme :tangle ~/.config/guix/manifests/python.scm
     ;; Python and Jupyter goodies
     (specifications->manifest
@@ -429,11 +471,18 @@
        "python"
        "python-pip"
        "python-ipython"
+       "python-pandas"
        ;; "python-google-api-client"
        "python-jupyter-server"
        ;; "python-google"
        "python-jupyterlab-widgets"
-       "python-pandas"
+       "openssl"
+       "r-openssl"
+       "r"
+       "gcc-toolchain"
+       "gfortran-toolchain"
+       "r-devtools" ; required for R kernel install in Jupyter
+       "r-irkernel" ; required for R kernel install in Jupyter
        ))
   #+end_src
 ** Multimedia
@@ -445,7 +494,7 @@
         "eom"
         "obs"
         "kdenlive"
-
+        "pavucontrol"
        ))
    #+end_src
 
@@ -462,6 +511,8 @@
 ** Zoom - us.zoom.Zoom
  + Run Zoom once, exit, then edit ~/.var/app/us.zoom.Zoom/config/zoomus.conf
    Set =enableMiniWindow=false=
+ + Add MIME handler =x-scheme-handler/zoommtg=us.zoom.Zoom.desktop= to
+   =~/.config/mimeapps.list=
 * Binaries that are not packaged
   Some binaries for now will have to be downloaded and stored in my user directory.
 
@@ -488,6 +539,14 @@
   : copied 'kubectl' -> '/home/gregj/bin/kubectl'
   : removed 'kubectl'
 
+** Helm
+   #+begin_src bash
+     curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+     chmod 700 get_helm.sh
+     HELM_INSTALL_DIR=~/bin ./get_helm.sh
+     rm -v get_helm.sh
+   #+end_src
+
 ** Azure CLI
   + ref: [[https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=script][Install the Azure CLI on Linux | Microsoft Docs]]
   Unfortunately, this script cannot run without prompting.
@@ -496,4 +555,30 @@
     # curl https://azurecliprod.blob.core.windows.net/install | bash
   #+end_src
 
-**
+** Google Cloud CLI
+   + ref: [[https://cloud.google.com/sdk/docs/install][Installing the gcloud CLI  |  Google Cloud]]
+   #+begin_src bash
+     cd ~
+     curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-371.0.0-linux-x86_64.tar.gz
+     tar xf google-cloud-sdk-371.0.0-linux-x86_64.tar.gz
+     rm -v google-cloud-sdk-371.0.0-linux-x86_64.tar.gz
+     echo 'export PATH=$PATH:~/google-cloud-sdk/bin' >> ~/.bashrc
+   #+end_src
+* Package info by profile
+  #+name: all-profiles
+  #+begin_src bash :results output table replace
+    echo 'System /run/current-system/profile'
+    for p in $(guix package --list-profiles); do
+        pname=$(basename ${p})
+        echo "${pname} ${p}"
+    done
+  #+end_src
+
+  #+RESULTS: all-profiles
+  | System        | /run/current-system/profile                 |
+  | code          | /home/gregj/.guix-extra-profiles/code       |
+  | megillah      | /home/gregj/.guix-extra-profiles/megillah   |
+  | multimedia    | /home/gregj/.guix-extra-profiles/multimedia |
+  | python        | /home/gregj/.guix-extra-profiles/python     |
+  | current       | /home/gregj/.config/guix/current            |
+  | .guix-profile | /home/gregj/.guix-profile                   |

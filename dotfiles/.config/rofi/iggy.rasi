@@ -57,7 +57,7 @@ listview, inputbar, message {
   border-radius: 10px;
   background-color: black/70%;
 
-  columns: 4;
+  columns: 1;
   lines:   4;
 }
 listview {
@@ -69,8 +69,8 @@ listview {
 element {
     border:  0;
     padding:      10px;
-    font:         "Mono 8";
-    orientation: vertical;
+    font:         "Mono 16";
+    orientation: horizontal;
 }
 element-icon {
   size: 6em;
@@ -85,7 +85,8 @@ element  selected {
 
 element-text, element-icon {
   font:             inherit;
-  horizontal-align: 0.5;
+  horizontal-align: 0.2;
+  vertical-align: 0.5;
 }
 
 wrapper-mode-switcher {
