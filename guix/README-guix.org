@@ -1,3 +1,17 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:t
+#+options: todo:t |:t
+#+title: README-guix
+#+date: <2022-02-04 Fri>
+#+author: Gregory Grubbs
+#+email: gregory.grubbs@gmail.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 27.2 (Org mode 9.5.2)
+#+cite_export:
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
 * refs
   + [[https://willschenk.com/articles/2019/installing_guix_on_nuc/][Installing guix on IntelNUC]]
   + [[https://boilingsteam.com/i-love-arch-but-gnu-guix-is-my-new-distro/][I Love Arch, But GNU Guix Is My New Distro - Boiling Steam]]
@@ -104,7 +118,10 @@
    :END:
    + =lpstat -e= shows all available destinations
    +
-** TODO ssh-agent for user session
+** DONE ssh-agent for user session
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2022-02-04 Fri 18:02]
+   :END:
    + have GDM start it?
 ** DONE Make special-install binaries repeatable
    :LOGBOOK:
@@ -320,7 +337,10 @@
         ;;             (keyboard-layout keyboard-layout)
         ;;             (extra-config (list %xorg-libinput-config))))))
         (service gnome-desktop-service-type)
-        (service openssh-service-type)
+        (service openssh-service-type
+                 (openssh-configuration
+                  (x11-forwarding? #t)
+                  (allow-agent-forwarding? #t)))
         ;; Enable the build service for Nix package manager
         ;;        (service nix-service-type)
         (service docker-service-type)
