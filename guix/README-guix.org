@@ -43,7 +43,7 @@
   only the subset of things you care about at the moment rather than triggering recompiles
   and downloads of the entire system.
 
-* Guix complete system to-dos [86%]
+* Guix complete system to-dos [93%]
 ** DONE Add cifs bind mounts
 ** DONE figger it out re: libinput and tap-to-touch+scrolling
 :LOGBOOK:
