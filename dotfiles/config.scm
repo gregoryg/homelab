@@ -158,9 +158,11 @@
   (append
    (list
     xfce
-    (emacs-exwm-transform1
-     (specification->package "emacs-exwm"))
-    ;; emacs-next
+    ;; (emacs-exwm-transform1
+    ;;  (specification->package "emacs-exwm"))
+    emacs-exwm
+    emacs-vterm
+    emacs-guix
     picom
     upower
     xscreensaver
