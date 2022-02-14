@@ -62,7 +62,7 @@
                # --cluster-version "1.20.10-gke.301" \
              # --max-pods-per-node "110" \
 
-      gcloud beta container --project "tigergraph-sales" clusters create "gg-tigerk8s" \
+      KUBECONFIG=~/.kube/config-files/gke-gg-tigerk8s.yaml gcloud beta container --project "tigergraph-sales" clusters create "gg-tigerk8s" \
              --zone "us-west3-a" \
              --labels="owner=greg_grubbs" \
              --no-enable-basic-auth \
@@ -119,6 +119,10 @@
              --max-unavailable-upgrade 0 \
              --enable-shielded-nodes \
              --node-locations "us-central1-c"
+    #+end_src
+  + Nuke said cluster
+    #+begin_src bash
+      gcloud beta container --project "tigergraph-sales" clusters delete "gg-tigerk8s" --zone "us-west3-a"
     #+end_src
 * Single-node Rancher
   #+begin_src bash
