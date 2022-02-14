@@ -301,15 +301,15 @@
    + TODO: Investigate reserving host network IPs
      #+begin_src bash :session homelab-sh
        # use new namespace metallb-system
-       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
-       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/metallb.yaml
+       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
+       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
        # On first install only
        kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
      #+end_src
 
    + Give MetalLB a pool of IPs
      + Here I'm using a pool from the primary home network
-       #+begin_src yaml :tangle manifests/metallb-pool-cm.yaml
+       #+begin_src yaml :tangle manifests/metallb-pool-cm.yaml :mkdirp yes
          apiVersion: v1
          kind: ConfigMap
          metadata:
