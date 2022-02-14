@@ -20,6 +20,7 @@ window {
   background-color: darkblue;
 
   background-image: url("jbmDjmFjSDHoKJ.jpg", width);
+  // opacity: 0.1;
 }
 
 mainbox {
@@ -58,7 +59,7 @@ listview, inputbar, message {
   background-color: black/70%;
 
   columns: 1;
-  lines:   4;
+  lines:   5;
 }
 listview {
   border:       0px 5px 5px 5px;

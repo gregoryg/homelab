@@ -7,4 +7,16 @@
 //@theme "/run/current-system/profile/share/rofi/themes/docu.rasi"
 //@theme "/run/current-system/profile/share/rofi/themes/fancy.rasi"
 // @theme "/run/current-system/profile/share/rofi/themes/iggy.rasi"
+configuration {
+
+//	modi: "drun,calc:qalc,window,run";
+	modi: "drun,window,run";
+	width: 800;
+	show-icons: true;
+	icon-theme: "papirus";
+	lines: 4;
+	fake-transparency: true;
+	sidebar-mode: true;
+}
+// @import "/usr/share/rofi/themes/rounded-nord-dark.rasi"
 @theme "/home/gregj/.config/rofi/iggy.rasi"
