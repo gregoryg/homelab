@@ -1,6 +1,4 @@
-(use-modules (srfi srfi-1)) ; for 'remove
 (use-modules (gnu ) (nongnu packages linux))
-(use-modules (gnu packages xfce))
 (use-modules (guix transformations))
 (use-modules (gnu system)) ; for sudoers
 (use-modules (gnu packages emacs-xyz))
@@ -10,6 +8,7 @@
 (use-modules (gnu packages dunst))
 (use-modules (gnu packages fonts))
 (use-modules (gnu packages code)) ; the silver searcher
+(use-modules (gnu packages xfce)) ; some icon theme
 (use-modules (gnu services ))
 (use-modules (gnu services networking))
 (use-modules (gnu services virtualization))
@@ -20,7 +19,7 @@
 (use-modules (gnu packages ssh))
 (use-modules (gnu packages compton))
 (use-modules (gnu packages gnome))
-(use-modules (gnu packages image-viewers))
+(use-modules (gnu packages image-viewers)) ; feh
 (use-modules (gnu packages xorg))
 (use-modules (gnu packages wm))
 (use-modules (gnu packages python))
@@ -34,7 +33,7 @@
 (use-modules (gnu packages gnome-xyz))
 (use-modules (gnu packages cups))
 (use-modules (gnu packages pulseaudio))
-(use-modules (gnu packages kde-frameworks))
+(use-modules (gnu packages kde-frameworks)) ; some icon theme
 ;; (use-modules (gnu packages python-web))
 (use-modules (gnu packages xdisorg))
                                         ;    (use-service-modules nix)
@@ -92,7 +91,7 @@
 ;; tell emacs-exwm package to use emacs-next package
 (define emacs-exwm-transform1
   (options->transformation
-   '((with-input . "emacs=emacs-next"))))
+   '((with-input . "emacs=emacs-native-comp"))))
 (define %my-desktop-services
   (modify-services %desktop-services
                    ;; Configure the substitute server for the Nonguix repo
@@ -157,48 +156,50 @@
  (packages
   (append
    (list
-    xfce
-    ;; (emacs-exwm-transform1
-    ;;  (specification->package "emacs-exwm"))
-    emacs-exwm
-    emacs-vterm
-    emacs-guix
-    picom
-    upower
-    xscreensaver
-    git
-    flatpak
-    vim
-    font-hack
-    feh
-    wmctrl
-    xrandr
-    autorandr
-    arandr
-    rofi
-    emacs-guix
-    polybar
-    rsync
+    (emacs-exwm-transform1
+     (specification->package "emacs-exwm"))
+   picom
+   xscreensaver
+   upower
+   font-hack
+   feh
+   wmctrl
+   xrandr
+   autorandr
+   arandr
+   rofi
+   polybar
+   dunst
+   libnotify
+   setxkbmap
     xdg-utils
+    ;; gtk+:bin
     `(,gtk+ "bin")
-    file
-    dunst
-    libnotify
-    python
-    ;; python-google-api-client
     pinentry
     pinentry-gtk2
+
+    ;; emacs-exwm
+    ;; emacs-guix
+    flatpak
+    git
+    emacs-no-x-toolkit
+    vim
+    rsync
+    ;; `(,gtk+ "bin")
+    file
+    python
+    ;; python-google-api-client
+    the-silver-searcher
+    cifs-utils
+    playerctl
+    cups
+    ;; one or more icon theme may be required by GNOME
     adwaita-icon-theme
     papirus-icon-theme
     hicolor-icon-theme
     oxygen-icons
     elementary-xfce-icon-theme
     tango-icon-theme
-    setxkbmap
-    the-silver-searcher
-    cifs-utils
-    playerctl
-    cups
     ;; gtk+:bin
     (specification->package "pavucontrol")
     ;; xdg-desktop-portal

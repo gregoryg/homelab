@@ -247,205 +247,122 @@
 
   #+RESULTS: all-profiles
   #+begin_src org
-  Sat Feb  5 03:49:56 PM MST 2022
-  ,** System profile /run/current-system/profile
-  | Package|Version |Output|Path|
-  |-
-  |adwaita-icon-theme  |40.1.1          |out|/gnu/store/pa63xsg2mr4dlli42yj7q35wp3pfg148-adwaita-icon-theme-40.1.1|
-  |arandr              |0.1.10          |out|/gnu/store/ygywkjs2vi0rkxr9hpjvzvg105jckzsk-arandr-0.1.10|
-  |autorandr           |1.10.1          |out|/gnu/store/rnrwi429jzn0wnwcj9hzdnclqgp2xjjb-autorandr-1.10.1|
-  |avahi               |0.8             |out|/gnu/store/fhnc090x87p8jg7lin9lhcrqymnk6b0k-avahi-0.8|
-  |bash                |5.1.8           |out|/gnu/store/d99ykvj3axzzidygsmdmzxah4lvxd6hw-bash-5.1.8|
-  |bash-completion     |2.8             |out|/gnu/store/kzv8id43y5nxzzmj34w9lsw9irx6s7l6-bash-completion-2.8|
-  |bzip2               |1.0.8           |out|/gnu/store/gzmwrl6cb8nxmc68hpgqzblng2kamkgc-bzip2-1.0.8|
-  |cifs-utils          |6.14            |out|/gnu/store/8ivf0lzdw212d1p07jf28dyc033sdswk-cifs-utils-6.14|
-  |coreutils           |8.32            |out|/gnu/store/8fpk2cja3f07xls48jfnpgrzrljpqivr-coreutils-8.32|
-  |cups                |2.3.3op2        |out|/gnu/store/c29k18jilzbvl68w5q7k1d735ndfv5m2-cups-2.3.3op2|
-  |diffutils           |3.8             |out|/gnu/store/q5knqf7nsds4g6vavacblzg9md809xw2-diffutils-3.8|
-  |docker-cli          |19.03.15        |out|/gnu/store/iw2ibhrvqn52ii69pqb9ybnssi7xkx1v-docker-cli-19.03.15|
-  |dunst               |1.7.3           |out|/gnu/store/0c18iylnly3siifljk87fkvvmd891pjx-dunst-1.7.3|
-  |e2fsprogs           |1.46.4          |out|/gnu/store/x3s5m3fa44glly9hhx00xqmnlsy8virj-e2fsprogs-1.46.4|
-  |elementary-xfce-icon-theme|0.15.2          |out|/gnu/store/zdq9h6akx6c3lyl44fznxlf9gz9wfhhq-elementary-xfce-icon-theme-0.15.2|
-  |elogind             |246.10          |out|/gnu/store/4hlncbkyw80lacy5pwjmpnwkv66hjijj-elogind-246.10|
-  |emacs-exwm          |0.26            |out|/gnu/store/bv1krkb568884yid78fwaw5s1xviv1d0-emacs-exwm-0.26|
-  |emacs-guix          |0.5.2-5.c9aef52 |out|/gnu/store/y2gdqnq40zbh15b2jg2fmz51g34svdmk-emacs-guix-0.5.2-5.c9aef52|
-  |eudev               |3.2.11          |out|/gnu/store/618dzzdi6sdpw3121xfdxpjqnmprp80y-eudev-3.2.11|
-  |feh                 |3.7.2           |out|/gnu/store/fg37z8qh2dls5wfhjkaww8adpqx4rp01-feh-3.7.2|
-  |file                |5.39            |out|/gnu/store/gb2g39kl9k87w6kfjksgprrca4p51igg-file-5.39|
-  |findutils           |4.8.0           |out|/gnu/store/0wnqkvxm4swkhggvhr2lbggvixqqywqi-findutils-4.8.0|
-  |flatpak             |1.12.3          |out|/gnu/store/hnwpzwshaq2nfvmdvlsg2fcp8b45c4hg-flatpak-1.12.3|
-  |font-abattis-cantarell|0.303           |out|/gnu/store/lfnbm88rb1jnjw6pdkblw47zwfnx7637-font-abattis-cantarell-0.303|
-  |font-hack           |3.003           |out|/gnu/store/l5g366dsav861glzfgwk9kz68rgpglzj-font-hack-3.003|
-  |gawk                |5.1.0           |out|/gnu/store/55q02v1a3qz8n7rlhy3jva9qjkfwj8y0-gawk-5.1.0|
-  |git                 |2.34.0          |out|/gnu/store/h2i92kahynfi0m0kl83a67f7czi61bd1-git-2.34.0|
-  |gnome               |41.0            |out|/gnu/store/mnqcw5fznpvgwxdk9kwnsci0brngvr4s-gnome-41.0|
-  |grep                |3.6             |out|/gnu/store/hrgqa7m498wfavq4awai3xz86ifkjxdr-grep-3.6|
-  |gtk+                |3.24.30         |bin|/gnu/store/iqz5n6bs7i3j562syhhih3kvq2jlwrn2-gtk+-3.24.30-bin|
-  |guile               |3.0.7           |out|/gnu/store/cnfsv9ywaacyafkqdqsv2ry8f01yr7a9-guile-3.0.7|
-  |guile-colorized     |0.1             |out|/gnu/store/x332qf5c3rmvspxai48j2fbx75dxan48-guile-colorized-0.1|
-  |guile-readline      |3.0.7           |out|/gnu/store/2nidr0m9g2339xlalqp8k57hz5qjnmdg-guile-readline-3.0.7|
-  |guix                |1.3.0-23.a27e47f|out|/gnu/store/aqvbp2rc3kpga27q8l8yvq99f1a3ixgd-guix-1.3.0-23.a27e47f|
-  |guix-icons          |0.1             |out|/gnu/store/5zb1pxffbn751i55w2c3fz93mahv79fs-guix-icons-0.1|
-  |gzip                |1.10            |out|/gnu/store/0c1yfbxyv877mlgychfgvmk5ha2jqh52-gzip-1.10|
-  |hicolor-icon-theme  |0.17            |out|/gnu/store/br6l1aacxz7jw6wxafdh55xgxraqf3p5-hicolor-icon-theme-0.17|
-  |inetutils           |2.0             |out|/gnu/store/1wc9sy8hm0x7l7n93j67c2z82m3rx7ph-inetutils-2.0|
-  |info-reader         |6.7             |out|/gnu/store/kzs09cisd3w2wff23w6zz8i446p7ddfz-info-reader-6.7|
-  |iproute2            |5.15.0          |out|/gnu/store/35lj2sn5p6wfd8h1j11hb2mcvria3cfl-iproute2-5.15.0|
-  |isc-dhcp            |4.4.2-P1        |out|/gnu/store/gp434b1x67ca98znly13h3fzc6spj80p-isc-dhcp-4.4.2-P1|
-  |iw                  |4.14            |out|/gnu/store/890z344dwa5kxc8zyp91r3x9psp9im08-iw-4.14|
-  |kbd                 |2.4.0           |out|/gnu/store/jl59j77hqljy3l7zpqqxqm72yvd7kzn8-kbd-2.4.0|
-  |kmod                |29              |out|/gnu/store/vh4g56m35wwlfg300s4qafykxjy09511-kmod-29|
-  |less                |590             |out|/gnu/store/dxxac3v1gswxbkl3gw2cql6vy73lih4w-less-590|
-  |libnotify           |0.7.9           |out|/gnu/store/hrhqqma3lygf4van70padwviwsp6l5a6-libnotify-0.7.9|
-  |libvirt             |7.9.0           |out|/gnu/store/8v5dj6rgh68dhrlv13cfc2a6xgrc6b88-libvirt-7.9.0|
-  |localed             |241             |out|/gnu/store/04izhn12hl85df45gdv6k90rrgzfglf6-localed-241|
-  |lzip                |1.22            |out|/gnu/store/nf5d5zfmqgx9lwi2i4bxvwq2128lirmh-lzip-1.22|
-  |man-db              |2.9.4           |out|/gnu/store/vg7g63qddkd8jxlhlm9j1wxxj8wnn2mx-man-db-2.9.4|
-  |mcron               |1.2.1           |out|/gnu/store/03bfgi532wyyyymcvjiksxl5lfv08d2a-mcron-1.2.1|
-  |mg                  |20210609        |out|/gnu/store/qhlj33xjav1fdiyq83s7s066lm8x71b5-mg-20210609|
-  |nano                |6.0             |out|/gnu/store/7d85ljbrdis8mrhf2zyf6dhrv2g1fmpl-nano-6.0|
-  |network-manager     |1.32.12         |out|/gnu/store/s6vwjbh19k5mxc9qm3h5c9xgx5nn8qai-network-manager-1.32.12|
-  |network-manager-applet|1.22.0          |out|/gnu/store/zgpcbsp476gwg50lb8wl76dm77q710s6-network-manager-applet-1.22.0|
-  |network-manager-openvpn|1.8.12          |out|/gnu/store/29d2dvbm82x6l0fhybvasdrnzk2gxqpk-network-manager-openvpn-1.8.12|
-  |nss-certs           |3.71            |out|/gnu/store/l0axwdizcc12n0kdicwlm7lcds7ym40d-nss-certs-3.71|
-  |nvi                 |1.81.6          |out|/gnu/store/q9x2diypn2lg5qv4nfpcawgmb66l3csp-nvi-1.81.6|
-  |openssh             |8.8p1           |out|/gnu/store/gyw2pa5yixb0cp2b8iq58qldgq5xh14n-openssh-8.8p1|
-  |oxygen-icons        |5.70.0          |out|/gnu/store/wfnpfj637vy79iligi1x8j1rrdwv025f-oxygen-icons-5.70.0|
-  |papirus-icon-theme  |20210101        |out|/gnu/store/2llbzji4rwrhfyjrlvlci4x1jj6rsaf3-papirus-icon-theme-20210101|
-  |patch               |2.7.6           |out|/gnu/store/mp0syh29rjknflaiv0hkpdlb2mjk0rlx-patch-2.7.6|
-  |pavucontrol         |5.0             |out|/gnu/store/kqxqs4jhg4zb1grym75b91b3rbn78lcq-pavucontrol-5.0|
-  |pciutils            |3.7.0           |out|/gnu/store/dbj1i7q1cprbx6ar3q35z2a9g6hphzgm-pciutils-3.7.0|
-  |picom               |8.2             |out|/gnu/store/xq3yprx5lqqry665bw3y1l5ydps8vjfq-picom-8.2|
-  |pinentry            |1.2.0           |out|/gnu/store/vpv8913dbclky7knca4ld04vxps1dqrb-pinentry-1.2.0|
-  |pinentry-gtk2       |1.2.0           |out|/gnu/store/ai5fpnwlbg23084r23n7cni1crykl761-pinentry-gtk2-1.2.0|
-  |playerctl           |2.2.1           |out|/gnu/store/qx3ayw5qsgp9z83cfdml97fgxwvlfk4i-playerctl-2.2.1|
-  |polybar             |3.5.7           |out|/gnu/store/qwgcyvz60y94v4kfdxq4imrm0znrvy1s-polybar-3.5.7|
-  |procps              |3.3.16          |out|/gnu/store/m2wmfwk2m4390dwbnjm6ps5y4c9pchi5-procps-3.3.16|
-  |psmisc              |23.4            |out|/gnu/store/p3ff5am32my6b6pld73hvf4rl7bs1wiw-psmisc-23.4|
-  |python              |3.9.9           |out|/gnu/store/r7chl322a4gy2hbyczdpfvfqxggf3hjn-python-3.9.9|
-  |qemu                |6.2.0           |out|/gnu/store/z9cw9zi5cafzmllszq71b0yxkkc5gbv1-qemu-6.2.0|
-  |rofi                |1.7.2           |out|/gnu/store/kqr20433jagxfcfpqlg46hj7amvr1lyh-rofi-1.7.2|
-  |rottlog             |0.72.2          |out|/gnu/store/1y9c6bh0qbpslqs5r5pv08ckpyzd2pxm-rottlog-0.72.2|
-  |rsync               |3.2.3           |out|/gnu/store/i5gaf146kav61qwxa7xcsjfnkac0gzvx-rsync-3.2.3|
-  |sed                 |4.8             |out|/gnu/store/zhd6blbfz40xp62i4d1rcgbyrpkynbkc-sed-4.8|
-  |setxkbmap           |1.3.2           |out|/gnu/store/h3m4i95112ka2qq2klig1j78d5scwag5-setxkbmap-1.3.2|
-  |shadow              |4.9             |out|/gnu/store/2lis8khrdk0zzjzs5ydi8rs5h6f6wjr7-shadow-4.9|
-  |shepherd            |0.8.1           |out|/gnu/store/vza48khbaq0fdmcsrn27xj5y5yy76z6l-shepherd-0.8.1|
-  |sudo                |1.9.8p2         |out|/gnu/store/bs09czclf1xdr67kkri2l6h87xpr2kcl-sudo-1.9.8p2|
-  |tango-icon-theme    |0.8.90          |out|/gnu/store/cms8zqsfppwjbkd9g5pzprnhr6yypafk-tango-icon-theme-0.8.90|
-  |tar                 |1.34            |out|/gnu/store/8z1q7vjxylm6l4ibsywd4h6m6jv6zqm4-tar-1.34|
-  |the-silver-searcher |2.2.0           |out|/gnu/store/7723f86lsqpns3abm2q8c9sm1f60pm5q-the-silver-searcher-2.2.0|
-  |udisks              |2.8.4           |out|/gnu/store/ykf0y3lrp9ym6ayma4y5yx06hkdcyj0q-udisks-2.8.4|
-  |upower              |0.99.13         |out|/gnu/store/pkb1gqzz5n9cfkii4whxb7x1rav8slxi-upower-0.99.13|
-  |usbutils            |014             |out|/gnu/store/1h5aswwb9wgz1k4gzijqllhnrfmzz3l7-usbutils-014|
-  |util-linux-with-udev|2.37.2          |out|/gnu/store/crl1dqz19z26fy1w9rf9k84a5fpvzjm4-util-linux-with-udev-2.37.2|
-  |vim                 |8.2.3995        |out|/gnu/store/my61pl17hy1gj7vkgmv3a3bgvrly0qk3-vim-8.2.3995|
-  |wget                |1.21.1          |out|/gnu/store/xy2dv1i9kfgc91rkcw7a450kzkbaq4qv-wget-1.21.1|
-  |which               |2.21            |out|/gnu/store/af9svhgvcy0xzphpv4fq17g8zm40x675-which-2.21|
-  |wireless-tools      |30.pre9         |out|/gnu/store/sabh4fds7ffkgnv4wfsp641wplyfi561-wireless-tools-30.pre9|
-  |wmctrl              |1.07            |out|/gnu/store/28vaklq03a3dfdjmgkhvs9l38dqnk73j-wmctrl-1.07|
-  |wpa-supplicant      |2.10            |out|/gnu/store/fksd4sj607rw4rfkavpv5bx2sla0a16a-wpa-supplicant-2.10|
-  |xdg-utils           |1.1.3           |out|/gnu/store/sykp9i7bs3bg31hc8mnc6rpib9hjdpli-xdg-utils-1.1.3|
-  |xfce                |4.16.0          |out|/gnu/store/qn09mc9bakncxywy537dfnwc18n5fpnh-xfce-4.16.0|
-  |xrandr              |1.5.1           |out|/gnu/store/6b9zqbk30794nq9cfvhfw12681i6asiy-xrandr-1.5.1|
-  |xscreensaver        |5.45            |out|/gnu/store/m6wd3pq2l98142i0g0pagb4x10qdv8dx-xscreensaver-5.45|
-  |xz                  |5.2.5           |out|/gnu/store/aggsb6j1svxp70xlll4rqnx5f2pzz794-xz-5.2.5|
-  ,** Profile /home/gregj/.guix-extra-profiles/code
-  | Package|Version |Output|Path|
-  |-
-  |cmake        |3.21.4  |out|/gnu/store/1mzpyycpi4xma2iwn4qjh500457r666h-cmake-3.21.4|
-  |curl         |7.79.1  |out|/gnu/store/3m22s291nl8mdynimpn39k2ypyx342ig-curl-7.79.1|
-  |docker-cli   |19.03.15|out|/gnu/store/iw2ibhrvqn52ii69pqb9ybnssi7xkx1v-docker-cli-19.03.15|
-  |file         |5.41    |out|/gnu/store/f7riixqrc407brwd07v0yddzszl5i3va-file-5.41|
-  |gcc-toolchain|11.2.0  |out|/gnu/store/irv4as6rp1vqna5i6h32iwqc8aj2dr9y-gcc-toolchain-11.2.0|
-  |make         |4.3     |out|/gnu/store/xijziz8r87baiz87vc9sm04lwadwf4ls-make-4.3|
-  |openjdk      |12.33   |jdk|/gnu/store/1vnyrxn59gfy04ncm6y0hnyqkpz8c0n1-openjdk-12.33-jdk|
-  |qemu         |6.2.0   |out|/gnu/store/z9cw9zi5cafzmllszq71b0yxkkc5gbv1-qemu-6.2.0|
-  |virt-manager |3.2.0   |out|/gnu/store/gvxisn1p3y9pshg4jym9pis757ia0gi6-virt-manager-3.2.0|
-  ,** Profile /home/gregj/.guix-extra-profiles/emacs
-  | Package|Version |Output|Path|
-  |-
-  |emacs-exwm       |0.26               |out|/gnu/store/wypmwybr6qk88386wz6bgbria61jvfvj-emacs-exwm-0.26|
-  |emacs-guix       |0.5.2-5.c9aef52    |out|/gnu/store/y2gdqnq40zbh15b2jg2fmz51g34svdmk-emacs-guix-0.5.2-5.c9aef52|
-  |emacs-native-comp|28.0.91-195.f393d0d|out|/gnu/store/7nmfa1l5y2vjx763w98133rhnirx13w4-emacs-native-comp-28.0.91-195.f393d0d|
-  |emacs-vterm      |0.0.1-0.a670b78    |out|/gnu/store/31ixvnrxjj0w82jy2fixh9rb796mm6hj-emacs-vterm-0.0.1-0.a670b78|
-  ,** Profile /home/gregj/.guix-extra-profiles/megillah
-  | Package|Version |Output|Path|
-  |-
-  |acpi                |1.7         |out|/gnu/store/b43pafni7ips5c28c7kdh91vnjard049-acpi-1.7|
-  |aspell              |0.60.8      |out|/gnu/store/xyz0ljdw4m25k8vhnl8261ywq7dvmr49-aspell-0.60.8|
-  |brightnessctl       |0.5.1       |out|/gnu/store/vlkg4cjz4ng1w074yxrszxh0q6d570gv-brightnessctl-0.5.1|
-  |cmake               |3.21.4      |out|/gnu/store/xw27p0kpd7hf96chj3wdk17mscsvzagc-cmake-3.21.4|
-  |cowsay              |3.04        |out|/gnu/store/1z9g5a0z94wa9yiripk8761359myicq9-cowsay-3.04|
-  |curl                |7.79.1      |out|/gnu/store/4mccszg7y0pbpc0anjv4h8mzbc5fzgiq-curl-7.79.1|
-  |docker-cli          |19.03.15    |out|/gnu/store/iw2ibhrvqn52ii69pqb9ybnssi7xkx1v-docker-cli-19.03.15|
-  |espeak              |1.48.04     |out|/gnu/store/d5nfchb17jlr1m9z8mcv50jr2dy5v9rs-espeak-1.48.04|
-  |file                |5.41        |out|/gnu/store/f7riixqrc407brwd07v0yddzszl5i3va-file-5.41|
-  |font-google-material-design-icons|3.0.1       |out|/gnu/store/yz98ll7a23g8rpi36migzdcpg71klv6a-font-google-material-design-icons-3.0.1|
-  |fortune-mod         |3.12.0      |out|/gnu/store/4m5g9g637ygq9m6cixdvny8bh6jvxgg6-fortune-mod-3.12.0|
-  |gcc-toolchain       |11.2.0      |out|/gnu/store/irv4as6rp1vqna5i6h32iwqc8aj2dr9y-gcc-toolchain-11.2.0|
-  |gnupg               |2.2.32      |out|/gnu/store/rkbx4b9lig59mn4zrfwrc3yydvfdqm07-gnupg-2.2.32|
-  |hicolor-icon-theme  |0.17        |out|/gnu/store/br6l1aacxz7jw6wxafdh55xgxraqf3p5-hicolor-icon-theme-0.17|
-  |htop                |3.1.2       |out|/gnu/store/9dpw3919g2y141wnnm17nrf8j0msqaqj-htop-3.1.2|
-  |jq                  |1.6         |out|/gnu/store/7bmwfzspv7y3z5mh4r8l1ilr80dgl78r-jq-1.6|
-  |libnotify           |0.7.9       |out|/gnu/store/r41296m9biilhvxw00s262jb554pbhzp-libnotify-0.7.9|
-  |libvirt             |7.9.0       |out|/gnu/store/vbry9pgal81k71pla51m1xsf03l8gvg7-libvirt-7.9.0|
-  |lm-sensors          |3.6.0       |out|/gnu/store/gwp4w3mwf3lrkq2qbj2i0cx5cm14z9cj-lm-sensors-3.6.0|
-  |make                |4.3         |out|/gnu/store/xijziz8r87baiz87vc9sm04lwadwf4ls-make-4.3|
-  |papirus-icon-theme  |20210101    |out|/gnu/store/2llbzji4rwrhfyjrlvlci4x1jj6rsaf3-papirus-icon-theme-20210101|
-  |python              |3.9.9       |out|/gnu/store/pzkv9hr4xh73jbk5mwpxq8x2xcbjrkqa-python-3.9.9|
-  |speedtest-cli       |2.1.3       |out|/gnu/store/xk5wmgsrp0kcfy37wjk252q3nq6hnb6b-speedtest-cli-2.1.3|
-  |texinfo             |6.7         |out|/gnu/store/22n2s0vfvqg9v0as9h7fpdn1i9dmryvi-texinfo-6.7|
-  |tree                |2.0.1       |out|/gnu/store/63v8b8mxic0k0xqyf20rz0rpqm0x3mcx-tree-2.0.1|
-  |upower              |0.99.13     |out|/gnu/store/y4l9pxik3y2q8x2zarvchkfg3gx9vg3r-upower-0.99.13|
-  |vim-guix-vim        |0.3.1       |out|/gnu/store/xipmvfhab06jb52chvh8567q8b3g183s-vim-guix-vim-0.3.1|
-  |virt-manager        |3.2.0       |out|/gnu/store/8irwnr6d3z9mag70qy84bnxkw8pvlh75-virt-manager-3.2.0|
-  |xdotool             |3.20160805.1|out|/gnu/store/nlgzvrj9aqp2wskjjb1p5sk81lfq6dzc-xdotool-3.20160805.1|
-  |xev                 |1.2.4       |out|/gnu/store/ycn24mx4cmbq2nb8q6z5ydvcz66b6rsr-xev-1.2.4|
-  |xmodmap             |1.0.10      |out|/gnu/store/hhjbq5cay4j1l7h745n0dbfw8rmlv1yn-xmodmap-1.0.10|
-  |xterm               |370         |out|/gnu/store/6n26zldrd83scg58789pjd4lm4knqzp1-xterm-370|
-  |xwininfo            |1.1.5       |out|/gnu/store/rx12x07w30i50bscadgrvjbvfv3ap8kn-xwininfo-1.1.5|
-  ,** Profile /home/gregj/.guix-extra-profiles/multimedia
-  | Package|Version |Output|Path|
-  |-
-  |eom        |1.24.1 |out|/gnu/store/g68lg255hyp52ifryz1dz13i364n9fb1-eom-1.24.1|
-  |kdenlive   |21.08.3|out|/gnu/store/bf2v436cc46wrrqhjynr8i5y98cj5d54-kdenlive-21.08.3|
-  |obs        |27.1.3 |out|/gnu/store/jxa710sdip9p7ba883fn6i64q8phvkqi-obs-27.1.3|
-  |pavucontrol|5.0    |out|/gnu/store/kqxqs4jhg4zb1grym75b91b3rbn78lcq-pavucontrol-5.0|
-  |vlc        |3.0.16 |out|/gnu/store/rgzzv23rwa2g4rfcrig1snpp2mw6x9hq-vlc-3.0.16|
-  ,** Profile /home/gregj/.guix-extra-profiles/python
-  | Package|Version |Output|Path|
-  |-
-  |gcc-toolchain       |11.2.0|out|/gnu/store/irv4as6rp1vqna5i6h32iwqc8aj2dr9y-gcc-toolchain-11.2.0|
-  |gfortran-toolchain  |10.3.0|out|/gnu/store/glkrwmfxhqq11j526isr6iqslz1if7fx-gfortran-toolchain-10.3.0|
-  |openssl             |3.0.1 |out|/gnu/store/jx6jqfha732h3znyq02xsysr17z001c5-openssl-3.0.1|
-  |python              |3.9.9 |out|/gnu/store/r7chl322a4gy2hbyczdpfvfqxggf3hjn-python-3.9.9|
-  |python-ipython      |7.27.0|out|/gnu/store/gpc0ans003h84hsklxa51kqdzj59xjsr-python-ipython-7.27.0|
-  |python-jupyterlab-widgets|1.0.0 |out|/gnu/store/z2p1d24cwzaj1h24kh6p0bvmsr1qhlcp-python-jupyterlab-widgets-1.0.0|
-  |python-jupyter-server|1.10.2|out|/gnu/store/lq4kaz8yrqdrpfb4b63lzwbnr9d1m3wc-python-jupyter-server-1.10.2|
-  |python-pandas       |1.3.5 |out|/gnu/store/r4jvs9as72wcbklh8prlpac84dy9kzvk-python-pandas-1.3.5|
-  |python-pip          |20.2.4|out|/gnu/store/cswx4fw52pfk3fg3chp86bi62p7kh3gq-python-pip-20.2.4|
-  |r                   |4.1.2 |out|/gnu/store/gqxvc4m2cjf2mc9bqwi107j2d5x9pckz-r-4.1.2|
-  |r-devtools          |2.4.3 |out|/gnu/store/9w9bn079kigfr4scq44yr4ijawjmx62b-r-devtools-2.4.3|
-  |r-irkernel          |1.3   |out|/gnu/store/glylg88a4jxz7px8iavfkf1fs0ic0fyy-r-irkernel-1.3|
-  |r-openssl           |1.4.6 |out|/gnu/store/z2z2x348n3f5q0wbqzfl9spz3f3sp5yd-r-openssl-1.4.6|
-  ,** Profile /home/gregj/.config/guix/current
-  | Package|Version |Output|Path|
-  |-
-  |emacs-exwm|0.26   |out|/gnu/store/wypmwybr6qk88386wz6bgbria61jvfvj-emacs-exwm-0.26|
-  |flat      |ef4714c|out|/gnu/store/rzwqi9bav83nmgpqqn8hsn5sqp3p6wn2-flat|
-  |guix      |787b13a|out|/gnu/store/mcsxjkk43wsr21gi8lqf7wqp7n0xgr6f-guix-787b13a5d|
-  |nonguix   |3480f10|out|/gnu/store/mzp4galm4mar9prh81y5ny4sa8aalmqn-nonguix|
-  ,** Profile /home/gregj/.guix-profile
-  | Package|Version |Output|Path|
-  |-
-  |bind                |9.16.25       |out  |/gnu/store/w1klbxfq274fdhwbrcn8418462dmcgs9-bind-9.16.25|
-  |bind                |9.16.25       |utils|/gnu/store/jqsfm7dylj021417b4f306aqly5pn7ak-bind-9.16.25-utils|
-  |font-microsoft-arial|2.82          |out  |/gnu/store/4wb8hbgwal96rbll4djsl7xd4rfdxb4g-font-microsoft-arial-2.82|
-  |gtk+                |3.24.30       |bin  |/gnu/store/iqz5n6bs7i3j562syhhih3kvq2jlwrn2-gtk+-3.24.30-bin|
-  |openssl             |3.0.1         |out  |/gnu/store/jx6jqfha732h3znyq02xsysr17z001c5-openssl-3.0.1|
-  |qemu                |6.2.0         |out  |/gnu/store/z9cw9zi5cafzmllszq71b0yxkkc5gbv1-qemu-6.2.0|
-  |r-rlang             |1.0.0         |out  |/gnu/store/3jy3dm73ck17s01xxj525yk7sk8a6i7s-r-rlang-1.0.0|
-  |ungoogled-chromium  |97.0.4692.99-1|out  |/gnu/store/fz2lc61gix66nrik7y2lpff4hvc2xr6l-ungoogled-chromium-97.0.4692.99-1|
-  |xfce4-screenshooter |1.9.9         |out  |/gnu/store/5sv829qpipdpljl97n8w6527zn9qsl1a-xfce4-screenshooter-1.9.9|
+    Thu Feb 10 01:31:36 PM MST 2022
+    ,** System profile /run/current-system/profile
+    | Package                    |          Version | Output | Path                                                                          |
+    |----------------------------+------------------+--------+-------------------------------------------------------------------------------|
+    | adwaita-icon-theme         |           40.1.1 | out    | /gnu/store/pa63xsg2mr4dlli42yj7q35wp3pfg148-adwaita-icon-theme-40.1.1         |
+    | arandr                     |           0.1.10 | out    | /gnu/store/ygywkjs2vi0rkxr9hpjvzvg105jckzsk-arandr-0.1.10                     |
+    | autorandr                  |           1.10.1 | out    | /gnu/store/rnrwi429jzn0wnwcj9hzdnclqgp2xjjb-autorandr-1.10.1                  |
+    | avahi                      |              0.8 | out    | /gnu/store/fhnc090x87p8jg7lin9lhcrqymnk6b0k-avahi-0.8                         |
+    | bash                       |            5.1.8 | out    | /gnu/store/d99ykvj3axzzidygsmdmzxah4lvxd6hw-bash-5.1.8                        |
+    | bash-completion            |              2.8 | out    | /gnu/store/kzv8id43y5nxzzmj34w9lsw9irx6s7l6-bash-completion-2.8               |
+    | bzip2                      |            1.0.8 | out    | /gnu/store/gzmwrl6cb8nxmc68hpgqzblng2kamkgc-bzip2-1.0.8                       |
+    | cifs-utils                 |             6.14 | out    | /gnu/store/5mr9ry7hbhb1px5bfgjsppfb4kmx63q5-cifs-utils-6.14                   |
+    | coreutils                  |             8.32 | out    | /gnu/store/8fpk2cja3f07xls48jfnpgrzrljpqivr-coreutils-8.32                    |
+    | cups                       |         2.3.3op2 | out    | /gnu/store/c29k18jilzbvl68w5q7k1d735ndfv5m2-cups-2.3.3op2                     |
+    | diffutils                  |              3.8 | out    | /gnu/store/q5knqf7nsds4g6vavacblzg9md809xw2-diffutils-3.8                     |
+    | docker-cli                 |         19.03.15 | out    | /gnu/store/iw2ibhrvqn52ii69pqb9ybnssi7xkx1v-docker-cli-19.03.15               |
+    | dunst                      |            1.7.3 | out    | /gnu/store/g0a2sbanbbncp29da84jrk9d8s4zjp8x-dunst-1.7.3                       |
+    | e2fsprogs                  |           1.46.4 | out    | /gnu/store/x3s5m3fa44glly9hhx00xqmnlsy8virj-e2fsprogs-1.46.4                  |
+    | elementary-xfce-icon-theme |           0.15.2 | out    | /gnu/store/zdq9h6akx6c3lyl44fznxlf9gz9wfhhq-elementary-xfce-icon-theme-0.15.2 |
+    | elogind                    |           246.10 | out    | /gnu/store/4hlncbkyw80lacy5pwjmpnwkv66hjijj-elogind-246.10                    |
+    | emacs-exwm                 |             0.26 | out    | /gnu/store/clvab7bpyklbwvfp8aw94pf84y1fi1rr-emacs-exwm-0.26                   |
+    | emacs-guix                 |  0.5.2-5.c9aef52 | out    | /gnu/store/wkbiz9f3cjrp3q5si21hzf9xbjp6hzbc-emacs-guix-0.5.2-5.c9aef52        |
+    | eudev                      |           3.2.11 | out    | /gnu/store/618dzzdi6sdpw3121xfdxpjqnmprp80y-eudev-3.2.11                      |
+    | feh                        |            3.7.2 | out    | /gnu/store/fg37z8qh2dls5wfhjkaww8adpqx4rp01-feh-3.7.2                         |
+    | file                       |             5.39 | out    | /gnu/store/gb2g39kl9k87w6kfjksgprrca4p51igg-file-5.39                         |
+    | findutils                  |            4.8.0 | out    | /gnu/store/0wnqkvxm4swkhggvhr2lbggvixqqywqi-findutils-4.8.0                   |
+    | flatpak                    |           1.12.3 | out    | /gnu/store/hnwpzwshaq2nfvmdvlsg2fcp8b45c4hg-flatpak-1.12.3                    |
+    | font-abattis-cantarell     |            0.303 | out    | /gnu/store/lfnbm88rb1jnjw6pdkblw47zwfnx7637-font-abattis-cantarell-0.303      |
+    | font-hack                  |            3.003 | out    | /gnu/store/l5g366dsav861glzfgwk9kz68rgpglzj-font-hack-3.003                   |
+    | gawk                       |            5.1.0 | out    | /gnu/store/55q02v1a3qz8n7rlhy3jva9qjkfwj8y0-gawk-5.1.0                        |
+    | git                        |           2.34.0 | out    | /gnu/store/h2i92kahynfi0m0kl83a67f7czi61bd1-git-2.34.0                        |
+    | gnome                      |             41.0 | out    | /gnu/store/vlkmj3kxma4bl240k2nv31srjfh1vhg5-gnome-41.0                        |
+    | grep                       |              3.6 | out    | /gnu/store/hrgqa7m498wfavq4awai3xz86ifkjxdr-grep-3.6                          |
+    | gtk+                       |          3.24.30 | bin    | /gnu/store/iqz5n6bs7i3j562syhhih3kvq2jlwrn2-gtk+-3.24.30-bin                  |
+    | guile                      |            3.0.7 | out    | /gnu/store/cnfsv9ywaacyafkqdqsv2ry8f01yr7a9-guile-3.0.7                       |
+    | guile-colorized            |              0.1 | out    | /gnu/store/x332qf5c3rmvspxai48j2fbx75dxan48-guile-colorized-0.1               |
+    | guile-readline             |            3.0.7 | out    | /gnu/store/2nidr0m9g2339xlalqp8k57hz5qjnmdg-guile-readline-3.0.7              |
+    | guix                       | 1.3.0-23.a27e47f | out    | /gnu/store/aqvbp2rc3kpga27q8l8yvq99f1a3ixgd-guix-1.3.0-23.a27e47f             |
+    | guix-icons                 |              0.1 | out    | /gnu/store/5zb1pxffbn751i55w2c3fz93mahv79fs-guix-icons-0.1                    |
+    | gzip                       |             1.10 | out    | /gnu/store/0c1yfbxyv877mlgychfgvmk5ha2jqh52-gzip-1.10                         |
+    | hicolor-icon-theme         |             0.17 | out    | /gnu/store/br6l1aacxz7jw6wxafdh55xgxraqf3p5-hicolor-icon-theme-0.17           |
+    | inetutils                  |              2.0 | out    | /gnu/store/1wc9sy8hm0x7l7n93j67c2z82m3rx7ph-inetutils-2.0                     |
+    | info-reader                |              6.7 | out    | /gnu/store/kzs09cisd3w2wff23w6zz8i446p7ddfz-info-reader-6.7                   |
+    | iproute2                   |           5.15.0 | out    | /gnu/store/35lj2sn5p6wfd8h1j11hb2mcvria3cfl-iproute2-5.15.0                   |
+    | isc-dhcp                   |         4.4.2-P1 | out    | /gnu/store/3barrqbfx824jcrw3zqjwvg0sdnmq7yq-isc-dhcp-4.4.2-P1                 |
+    | iw                         |             4.14 | out    | /gnu/store/890z344dwa5kxc8zyp91r3x9psp9im08-iw-4.14                           |
+    | kbd                        |            2.4.0 | out    | /gnu/store/jl59j77hqljy3l7zpqqxqm72yvd7kzn8-kbd-2.4.0                         |
+    | kmod                       |               29 | out    | /gnu/store/vh4g56m35wwlfg300s4qafykxjy09511-kmod-29                           |
+    | less                       |              590 | out    | /gnu/store/dxxac3v1gswxbkl3gw2cql6vy73lih4w-less-590                          |
+    | libnotify                  |            0.7.9 | out    | /gnu/store/hrhqqma3lygf4van70padwviwsp6l5a6-libnotify-0.7.9                   |
+    | libvirt                    |            7.9.0 | out    | /gnu/store/8v5dj6rgh68dhrlv13cfc2a6xgrc6b88-libvirt-7.9.0                     |
+    | localed                    |              241 | out    | /gnu/store/04izhn12hl85df45gdv6k90rrgzfglf6-localed-241                       |
+    | lzip                       |             1.22 | out    | /gnu/store/nf5d5zfmqgx9lwi2i4bxvwq2128lirmh-lzip-1.22                         |
+    | man-db                     |            2.9.4 | out    | /gnu/store/vg7g63qddkd8jxlhlm9j1wxxj8wnn2mx-man-db-2.9.4                      |
+    | mcron                      |            1.2.1 | out    | /gnu/store/03bfgi532wyyyymcvjiksxl5lfv08d2a-mcron-1.2.1                       |
+    | mg                         |         20210609 | out    | /gnu/store/qhlj33xjav1fdiyq83s7s066lm8x71b5-mg-20210609                       |
+    | nano                       |              6.0 | out    | /gnu/store/7d85ljbrdis8mrhf2zyf6dhrv2g1fmpl-nano-6.0                          |
+    | network-manager            |          1.32.12 | out    | /gnu/store/aa51ia1s3idqx5axiix8mwfa4f6ma9rl-network-manager-1.32.12           |
+    | network-manager-applet     |           1.22.0 | out    | /gnu/store/kj8dz3dlkn03v7wg59x3ascyjy4a3wdh-network-manager-applet-1.22.0     |
+    | network-manager-openvpn    |           1.8.12 | out    | /gnu/store/5pz34y6m341mk6hycbfdlh0vflfil6wi-network-manager-openvpn-1.8.12    |
+    | nss-certs                  |             3.71 | out    | /gnu/store/l0axwdizcc12n0kdicwlm7lcds7ym40d-nss-certs-3.71                    |
+    | nvi                        |           1.81.6 | out    | /gnu/store/q9x2diypn2lg5qv4nfpcawgmb66l3csp-nvi-1.81.6                        |
+    | openssh                    |            8.8p1 | out    | /gnu/store/gyw2pa5yixb0cp2b8iq58qldgq5xh14n-openssh-8.8p1                     |
+    | oxygen-icons               |           5.70.0 | out    | /gnu/store/wfnpfj637vy79iligi1x8j1rrdwv025f-oxygen-icons-5.70.0               |
+    | papirus-icon-theme         |         20210101 | out    | /gnu/store/2llbzji4rwrhfyjrlvlci4x1jj6rsaf3-papirus-icon-theme-20210101       |
+    | patch                      |            2.7.6 | out    | /gnu/store/mp0syh29rjknflaiv0hkpdlb2mjk0rlx-patch-2.7.6                       |
+    | pavucontrol                |              5.0 | out    | /gnu/store/kqxqs4jhg4zb1grym75b91b3rbn78lcq-pavucontrol-5.0                   |
+    | pciutils                   |            3.7.0 | out    | /gnu/store/dbj1i7q1cprbx6ar3q35z2a9g6hphzgm-pciutils-3.7.0                    |
+    | picom                      |                9 | out    | /gnu/store/hxdrwvzl1jb3ym0j17l2jjs613qg2kxi-picom-9                           |
+    | pinentry                   |            1.2.0 | out    | /gnu/store/vpv8913dbclky7knca4ld04vxps1dqrb-pinentry-1.2.0                    |
+    | pinentry-gtk2              |            1.2.0 | out    | /gnu/store/ai5fpnwlbg23084r23n7cni1crykl761-pinentry-gtk2-1.2.0               |
+    | playerctl                  |            2.2.1 | out    | /gnu/store/qx3ayw5qsgp9z83cfdml97fgxwvlfk4i-playerctl-2.2.1                   |
+    | polybar                    |            3.5.7 | out    | /gnu/store/qwgcyvz60y94v4kfdxq4imrm0znrvy1s-polybar-3.5.7                     |
+    | procps                     |           3.3.16 | out    | /gnu/store/m2wmfwk2m4390dwbnjm6ps5y4c9pchi5-procps-3.3.16                     |
+    | psmisc                     |             23.4 | out    | /gnu/store/p3ff5am32my6b6pld73hvf4rl7bs1wiw-psmisc-23.4                       |
+    | python                     |            3.9.9 | out    | /gnu/store/r7chl322a4gy2hbyczdpfvfqxggf3hjn-python-3.9.9                      |
+    | qemu                       |            6.2.0 | out    | /gnu/store/z9cw9zi5cafzmllszq71b0yxkkc5gbv1-qemu-6.2.0                        |
+    | rofi                       |            1.7.3 | out    | /gnu/store/jy0qbd848wl1bwwvddr932bxgiqb8g25-rofi-1.7.3                        |
+    | rottlog                    |           0.72.2 | out    | /gnu/store/1y9c6bh0qbpslqs5r5pv08ckpyzd2pxm-rottlog-0.72.2                    |
+    | rsync                      |            3.2.3 | out    | /gnu/store/i5gaf146kav61qwxa7xcsjfnkac0gzvx-rsync-3.2.3                       |
+    | sed                        |              4.8 | out    | /gnu/store/zhd6blbfz40xp62i4d1rcgbyrpkynbkc-sed-4.8                           |
+    | setxkbmap                  |            1.3.2 | out    | /gnu/store/h3m4i95112ka2qq2klig1j78d5scwag5-setxkbmap-1.3.2                   |
+    | shadow                     |              4.9 | out    | /gnu/store/2lis8khrdk0zzjzs5ydi8rs5h6f6wjr7-shadow-4.9                        |
+    | shepherd                   |            0.8.1 | out    | /gnu/store/vza48khbaq0fdmcsrn27xj5y5yy76z6l-shepherd-0.8.1                    |
+    | sudo                       |          1.9.8p2 | out    | /gnu/store/bs09czclf1xdr67kkri2l6h87xpr2kcl-sudo-1.9.8p2                      |
+    | tango-icon-theme           |           0.8.90 | out    | /gnu/store/cms8zqsfppwjbkd9g5pzprnhr6yypafk-tango-icon-theme-0.8.90           |
+    | tar                        |             1.34 | out    | /gnu/store/8z1q7vjxylm6l4ibsywd4h6m6jv6zqm4-tar-1.34                          |
+    | the-silver-searcher        |            2.2.0 | out    | /gnu/store/7723f86lsqpns3abm2q8c9sm1f60pm5q-the-silver-searcher-2.2.0         |
+    | udisks                     |            2.8.4 | out    | /gnu/store/parlmfm5c1bldr1jwn6rqvxk99lbiifs-udisks-2.8.4                      |
+    | upower                     |          0.99.13 | out    | /gnu/store/pkb1gqzz5n9cfkii4whxb7x1rav8slxi-upower-0.99.13                    |
+    | usbutils                   |              014 | out    | /gnu/store/1h5aswwb9wgz1k4gzijqllhnrfmzz3l7-usbutils-014                      |
+    | util-linux-with-udev       |           2.37.2 | out    | /gnu/store/crl1dqz19z26fy1w9rf9k84a5fpvzjm4-util-linux-with-udev-2.37.2       |
+    | vim                        |         8.2.4306 | out    | /gnu/store/yh38gk93s09gh9i1cxi9b3r7i1sv8k76-vim-8.2.4306                      |
+    | wget                       |           1.21.1 | out    | /gnu/store/xy2dv1i9kfgc91rkcw7a450kzkbaq4qv-wget-1.21.1                       |
+    | which                      |             2.21 | out    | /gnu/store/af9svhgvcy0xzphpv4fq17g8zm40x675-which-2.21                        |
+    | wireless-tools             |          30.pre9 | out    | /gnu/store/sabh4fds7ffkgnv4wfsp641wplyfi561-wireless-tools-30.pre9            |
+    | wmctrl                     |             1.07 | out    | /gnu/store/28vaklq03a3dfdjmgkhvs9l38dqnk73j-wmctrl-1.07                       |
+    | wpa-supplicant             |             2.10 | out    | /gnu/store/fksd4sj607rw4rfkavpv5bx2sla0a16a-wpa-supplicant-2.10               |
+    | xdg-utils                  |            1.1.3 | out    | /gnu/store/sykp9i7bs3bg31hc8mnc6rpib9hjdpli-xdg-utils-1.1.3                   |
+    | xfce                       |           4.16.0 | out    | /gnu/store/dsanihw4rbz461z3zwkm89msfal74x0x-xfce-4.16.0                       |
+    | xrandr                     |            1.5.1 | out    | /gnu/store/6b9zqbk30794nq9cfvhfw12681i6asiy-xrandr-1.5.1                      |
+    | xscreensaver               |             5.45 | out    | /gnu/store/m6wd3pq2l98142i0g0pagb4x10qdv8dx-xscreensaver-5.45                 |
+    | xz                         |            5.2.5 | out    | /gnu/store/aggsb6j1svxp70xlll4rqnx5f2pzz794-xz-5.2.5                          |
+    ,** Profile /home/gregj/.config/guix/current
+    | Package | Version | Output | Path                                                       |
+    |---------+---------+--------+------------------------------------------------------------|
+    | flat    | ece373b | out    | /gnu/store/33s80zw729m1b7ycpimn8dbj214kpn21-flat           |
+    | guix    | f97fe92 | out    | /gnu/store/nrw9p83j8y8wmn7jq766fpsf7a988l88-guix-f97fe92b5 |
+    | nonguix | 364446c | out    | /gnu/store/hrpycjb36jjj45bq8zxlbsj9nd0kdk0l-nonguix        |
+    ,** Profile /home/gregj/.guix-profile
+    | Package           | Version             | Output | Path                                                                              |
+    |-------------------+---------------------+--------+-----------------------------------------------------------------------------------|
+    | alacritty         | 0.9.0               | out    | /gnu/store/8iv257h2120dv8a7sp8kpwrlxyvvszxd-alacritty-0.9.0                       |
+    | curl              | 7.79.1              | out    | /gnu/store/3m22s291nl8mdynimpn39k2ypyx342ig-curl-7.79.1                           |
+    | emacs-guix        | 0.5.2-5.c9aef52     | out    | /gnu/store/wkbiz9f3cjrp3q5si21hzf9xbjp6hzbc-emacs-guix-0.5.2-5.c9aef52            |
+    | emacs-native-comp | 28.0.91-196.ab2f275 | out    | /gnu/store/80ik3nj85n5xvha4lpwxmw527mv5xlbb-emacs-native-comp-28.0.91-196.ab2f275 |
+    | emacs-vterm       | 0.0.1-0.a670b78     | out    | /gnu/store/31ixvnrxjj0w82jy2fixh9rb796mm6hj-emacs-vterm-0.0.1-0.a670b78           |
+    | htop              | 3.1.2               | out    | /gnu/store/9dpw3919g2y141wnnm17nrf8j0msqaqj-htop-3.1.2                            |
   #+end_src
