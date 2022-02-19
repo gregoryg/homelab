@@ -182,6 +182,9 @@
      cat /etc/fstab
    #+end_src
 
+   #+begin_src bash
+     sudo apt -y install cifs-utils
+   #+end_src
 ** Polybar
    There's no need to tangle the config files for Polybar.  So we'll just link them and
    maintain the changes in this repo
