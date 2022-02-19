@@ -1218,7 +1218,7 @@
 * R kernel in Jupyter
   + [[https://richpauloo.github.io/2018-05-16-Installing-the-R-kernel-in-Jupyter-Lab/][Installing the R kernel in Jupyter Lab]]
     #+begin_src bash
-      sudo apt install libcurl4-nss-dev
+      sudo apt -y install python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev libcurl4-nss-dev
     #+end_src
     #+begin_src R
       install.packages('devtools')
