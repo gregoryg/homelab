@@ -13,6 +13,7 @@
           curl \
           wget \
           libtool \
+          libtool-bin \
           texinfo \
           build-essential \
           xorg-dev \
