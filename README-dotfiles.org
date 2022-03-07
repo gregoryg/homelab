@@ -194,6 +194,12 @@
      sudo apt -y install polybar
    #+end_src
 
+   I use a Python program to report unread threads in Polybar - make sure the python
+   dependencies are installed
+   #+begin_src bash
+     pip install google-api-python-client google-auth-oauthlib google-auth
+   #+end_src
+
 ** Zoom
    On EXWM I do not want the mini-window to appear.  It become a small floating window
    that must be clicked on to maximize, and is much easier to navigate as a normal window
