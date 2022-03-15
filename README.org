@@ -301,10 +301,13 @@
    + TODO: Investigate reserving host network IPs
      #+begin_src bash :session homelab-sh
        # use new namespace metallb-system
-       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
-       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
+       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.12.1/manifests/namespace.yaml
+       kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.12.1/manifests/metallb.yaml
+
+       # kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
+       # kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
        # On first install only
-       kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+       # kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
      #+end_src
 
    + Give MetalLB a pool of IPs
@@ -323,6 +326,24 @@
                addresses:
                - 172.16.17.230-172.16.17.250
        #+end_src
+*** HELM Method for MetallLB
+    + First have a =values.yaml= file ready
+      #+begin_src yaml :tangle /tmp/metallb-values.yaml
+        configInline:
+          address-pools:
+          - name: default
+            protocol: layer2
+            addresses:
+            - 172.16.17.230-172.16.17.250
+      #+end_src
+    + Now use Helm to do the thang
+      #+begin_src bash
+        helm repo add metallb https://metallb.github.io/metallb
+        helm install --namespace metallb-system --create-namespace metallb metallb/metallb -f /tmp/metallb-values.yaml
+      #+end_src
+
+      #+RESULTS:
+
 ** Prepare for complex apps - Helm and Kudo
 *** Helm
     + Install the Helm 3.x client from [[https://github.com/helm/helm/releases][Helm releases]]
