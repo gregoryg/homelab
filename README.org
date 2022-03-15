@@ -1247,10 +1247,23 @@
          --namespace sparky \
          --create-namespace
   #+end_src
+* Python Virtual Environments
+  Virtual environments are required because Python is such a damned mess.
+
+ + Ref: [[https://docs.python.org/3/tutorial/venv.html][12. Virtual Environments and Packages — Python 3.10.2 documentation]]
+** Create a set of directories for venvs under =.local=
+   #+begin_src bash
+     sudo apt -y install python3-venv
+     mkdir -p ~/.local/python-venvs/
+     cd ~/.local/python-venvs/
+     python3 -m venv jupyter
+     source ~/.local/python-venvs/jupyter/bin/activate
+   #+end_src
+
 * R kernel in Jupyter
   + [[https://richpauloo.github.io/2018-05-16-Installing-the-R-kernel-in-Jupyter-Lab/][Installing the R kernel in Jupyter Lab]]
     #+begin_src bash
-      sudo apt -y install python3-pip python3-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev libcurl4-nss-dev
+      sudo apt -y install libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev libcurl4-nss-dev
     #+end_src
     #+begin_src R
       install.packages('devtools')
