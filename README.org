@@ -1162,6 +1162,14 @@
      #+begin_src conf
        options snd_hda_intel power_save=0 power_save_controller=0
      #+end_src
+* Firefox touchscreen scrolling
+  + Ref: [[https://askubuntu.com/a/994483/104280][Ubuntu 16 and touchscreen scrolling in FireFox - Ask Ubuntu]]
+  + Change config param in Firefox from 2 to 1
+    about:config
+    param: dom.w3c_touch_events.enabled=1
+  + Add env var to (believe it or not) =/etc/security/pam_env.conf=
+    MOZ_USE_XINPUT2 DEFAULT=1
+
 * Monitoring for RabbitMQ
   It may be necessary to create a Longhorn Volume/PVC named =data-rabbit-rabbitmq-0=
 #+begin_src bash
