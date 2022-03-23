@@ -60,6 +60,7 @@
 
      ## Additional aliases
      alias sudo='sudo ' # https://askubuntu.com/a/22043 - make aliases available in sudo
+     alias e='emacsclient -n'
      alias vi=vim
      alias finger=pinky
      alias python=python3
