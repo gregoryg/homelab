@@ -5,7 +5,7 @@
   #+end_src
 
 * Install development tools and required libraries
-** Ubuntu
+** Debian and Ubuntu
    #+begin_src bash
      # Essential packages for compiling Emacs and many other source packages
      sudo apt install -y  autoconf \
@@ -19,6 +19,7 @@
           xorg-dev \
           fonts-hack \
           libmagickwand-dev \
+	  libgccjit-11-dev \
           libgtk2.0-dev \
           libjpeg-dev \
           libncurses5-dev \
