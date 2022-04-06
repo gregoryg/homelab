@@ -7,7 +7,7 @@ ha: 1
 # The name of the StatefulSet (deployment) within the specified namespace
 name: tigergraph
 # Pod Management Policy may be set to Parallel for faster deployment (not recommended)
-podManagementPolicy: OrderedReady
+podManagementPolicy: Parallel
 
 image:
   repository: docker.tigergraph.com/tigergraph-k8s
@@ -15,20 +15,20 @@ image:
   pullPolicy: IfNotPresent
   # pullPolicy: Never
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "3.3.0"
+  tag: "3.5.1"
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
 serviceAccount:
-  # Specifies whether a service account should be created
-  create: false
+  # The service account is used by the Installer job and the gui labeler cron job
+  create: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: "tigergraph-installer"
 
 podAnnotations: {}
 
@@ -107,7 +107,7 @@ ingestVolume:
   size: "2Gi"
 dataVolume:
   name: "tigergraph-data"
-  mountPath: "/tgdata"
+  mountPath: "/home/tigergraph/tigergraph/data"
   storageClass: "longhorn"
   accessMode: ReadWriteOnce
   size: "56Gi"
