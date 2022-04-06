@@ -1368,6 +1368,32 @@
          }
       #+end_src
 
+*** Installer script for the tigergraph-k8s image
+    Run this standalone on the "m1" pod
+    #+begin_src bash
+      export LICENSE=""
+      export HA=1
+      if [[ ! -f /home/tigergraph/tigergraph/data/installation_flag ]] && [[ $(ls -A /home/tigergraph/tigergraph/data/|grep -v lost|tail -1) ]]; then
+          echo 'found lagacy data, skip installation'
+      else
+          touch /home/tigergraph/tigergraph/data/installation_flag;
+          export PATH=/home/tigergraph/tigergraph/app/cmd:$PATH;
+          cp /tmp/init_tg_cfg /tmp/tg_cfg;
+          sed -i 's/\=/\: /g' /tmp/tg_cfg;
+          echo >> /tmp/tg_cfg;
+          jq -j '.System | "System.AppRoot: ",.AppRoot' ~/.tg.cfg >> /tmp/tg_cfg;
+          echo >> /tmp/tg_cfg;
+          if [[ -z "$LICENSE" ]]; then
+              jq -j '.System | "System.License: ",.License' ~/.tg.cfg >> /tmp/tg_cfg;
+          else
+              echo "System.License: ${LICENSE}" >> /tmp/tg_cfg;
+          fi;
+          gadmin config init -i /tmp/tg_cfg --file /tmp/tg.cfg --ha ${HA};
+          cp --remove-destination /tmp/tg.cfg ~/.tg.cfg;
+          gadmin init cluster -y --skip-stop;
+          rm /home/tigergraph/tigergraph/data/installation_flag;
+      fi
+    #+end_src
 *** DONE Learn some Tigergraph
     DEADLINE: <2021-06-19 Sat 18:55>
     :LOGBOOK:
