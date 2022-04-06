@@ -127,6 +127,25 @@
      #+begin_src bash
        gcloud beta container --project "tigergraph-sales" clusters delete "gg-tigerk8s" --zone "us-west3-a"
      #+end_src
+*** Add a node pool
+    #+begin_src bash
+      gcloud beta container --project "tigergraph-sales" node-pools create "bigpool" \
+             --cluster "gg-synthea" \
+             --zone "us-west1-b" \
+             --node-version "1.21.9-gke.1002" \
+             --machine-type "e2-highmem-16" \
+             --image-type "COS_CONTAINERD" \
+             --disk-type "pd-standard" \
+             --disk-size "100" \
+             --metadata disable-legacy-endpoints=true \
+             --scopes "https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" \
+             --num-nodes "6" \
+             --enable-autoupgrade \
+             --enable-autorepair \
+             --max-surge-upgrade 1 \
+             --max-unavailable-upgrade 0 \
+             --max-pods-per-node "110"
+    #+end_src
 * Single-node Rancher
   #+begin_src bash
     IP=nn.nn.nn.nn # reserved IP
