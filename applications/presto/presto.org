@@ -7,3 +7,6 @@
 
   #+RESULTS:
   : [1] 654
+* Some newer material for Presto on K8s
+  + [[https://ahana.io/blog/presto-on-kubernetes/][Hands-on Presto Tutorial: How to run Presto on Kubernetes]]
+  + 
