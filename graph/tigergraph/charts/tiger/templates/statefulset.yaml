@@ -60,7 +60,7 @@ spec:
           {{- toYaml .Values.securityContext | nindent 12 }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        command: ["/bin/sleep", "24d"]
+        # command: ["/bin/sleep", "24d"]
         ports:
         - containerPort: 9000
           name: rest
@@ -86,12 +86,15 @@ spec:
           name: {{ .Values.dataVolume.name  }}
         - mountPath: {{ .Values.ingestVolume.mountPath | quote }}
           name: {{ .Values.ingestVolume.name  }}
+        - mountPath: /tmp/init_tg_cfg
+          name: config-volume
+          subPath: init_tg_cfg
         lifecycle:
           postStart:
             exec:
               command:
-              - /bin/bash
-              - -c
+              - "/bin/bash"
+              - "-c"
               - |
                 (
                   if [ "$(ls -A /home/tigergraph/tigergraph/data/|grep -v lost|tail -1)" ]; then
@@ -111,11 +114,19 @@ spec:
                     gadmin start all --with-config /home/tigergraph/.tg.cfg;
                   else
                     sudo chown -R tigergraph:tigergraph /home/tigergraph/tigergraph/data;
+                    tg_cfg=$(find /home/tigergraph/tigergraph/app/ -name .tg.cfg|head -n 1)
+                    ln -sf $tg_cfg .tg.cfg
                   fi
                 ) > /tmp/init.log 2>&1 &
                 disown -a
                 exit 0
-                "
+      volumes:
+      - name: config-volume
+        configMap:
+          name: tg-config
+          items:
+          - key: init_tg_cfg
+            path: init_tg_cfg
 
   volumeClaimTemplates:
   - metadata:
