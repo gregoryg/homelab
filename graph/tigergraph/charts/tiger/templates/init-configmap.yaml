@@ -7,12 +7,7 @@ metadata:
     {{- include "tiger.labels" . | nindent 4 }}
 data:
   init_tg_cfg: |
-    System.HostList=[
-    {{ $count := (.Values.replicaCount | add1 | int ) }}
-    {{- range $k, $v := untilStep 1 $count 1 }}
-    {"ID":"m{{ $v }}":, "Hostname": "tigergraph-{{ $k }}", "Region":""}{{ if ne ($v | add1) $count }},{{end}}
-    {{- end }}
-    ]
+    System.HostList=[{{ $count := (.Values.replicaCount | add1 | int ) }}{{- range $k, $v := untilStep 1 $count 1 }}{"ID":"m{{ $v }}", "Hostname": "tigergraph-{{ $k }}.tigergraph", "Region":""}{{ if ne ($v | add1) $count }},{{end}}{{- end }}]
     System.SSH.User.Username=tigergraph
     System.SSH.User.Password=tigergraph
     System.SSH.User.Privatekey=/home/tigergraph/.ssh/tigergraph_rsa
