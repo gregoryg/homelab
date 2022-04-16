@@ -68,7 +68,7 @@ questions:
 - variable: ingestVolume.create
   group: "Optional ingest volume"
   type: boolean
-  default: "false"
+  default: false
   description: "Optionally mount a persistnt volume on all StatefulSet pods to help with data ingest"
   label: "Mount optional ingest volume"
   show_subquestion_if: true
