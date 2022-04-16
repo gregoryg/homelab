@@ -27,7 +27,7 @@ helm install tigergraph .
 Example installing into newly created namespace and overriding values with `--set``
 
 ```sh
-helm install tigergraph --namespace tiger --create-namespace --set replicaCount=3,image.tag=3.3.0 .
+helm install tigergraph --namespace tiger --create-namespace --set replicaCount=3,image.tag=3.5.1 .
 ```
 
 # Documentation
