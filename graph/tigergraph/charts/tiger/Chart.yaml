@@ -1,7 +1,8 @@
 apiVersion: v2
-name: TigerGraph
+name: tigergraph
 description: A Helm chart for TigerGraph 3.2.0 and later
-
+annotations:
+  catalog.cattle.io/display-name: TigerGraph
 type: application
 
 # This is the chart version. This version number should be incremented each time you make changes
