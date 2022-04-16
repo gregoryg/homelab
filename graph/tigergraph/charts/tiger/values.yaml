@@ -115,11 +115,14 @@ dataVolume:
   storageClass: "longhorn"
   accessMode: ReadWriteOnce
   size: "56Gi"
-# ingestVolume:
-#   name: "data-ingest"
-#   mountPath: "/home/tigergraph/mydata"
-#   storageClass: "longhorn"
-#   accessMode: ReadWriteOnce
-#   size: "2Gi"
+# ingestVolume may optionally be added to assist in data ingest
+# to use, set ingestVolume.create: true
+ingestVolume:
+  create: true
+  name: "data-ingest"
+  mountPath: "/home/tigergraph/mydata"
+  storageClass: "longhorn"
+  accessMode: ReadWriteOnce
+  size: "22Gi"
 # Place the data set in data/ dir of this chart
-dataset: customer_data.tar.gz
+# dataset: customer_data.tar.gz

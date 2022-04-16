@@ -65,6 +65,34 @@ questions:
   default: ReadWriteOnce
   type: string
   label: Access mode
+- variable: ingestVolume.create
+  group: "Optional ingest volume"
+  type: boolean
+  default: "false"
+  description: "Optionally mount a persistnt volume on all StatefulSet pods to help with data ingest"
+  label: "Mount optional ingest volume"
+  show_subquestion_if: true
+  subquestions:
+  - variable: ingestVolume.mountPath
+    type: string
+    default: "/home/tigergraph/mydata"
+    description: "Mount point for ingest volume"
+    label: "ingest mount point"
+  - variable: ingestVolume.size
+    type: string
+    default: "22Gi"
+    description: "Size of ingest volume"
+    label: "size"
+  - variable: ingestVolume.storageClass
+    type: string
+    default: "longhorn"
+    description: "Storage class for ingest volume - use empty string for default storage class"
+    label: "storage class"
+  - variable: ingestVolume.accessMode
+    type: string
+    description: "Access mode for ingest volume, usually ReadWriteOnce"
+    label: "access mode"
+
 # - variable: autoscaling.enabled
 #   group: "Auto-scaling"
 #   default: "false"
