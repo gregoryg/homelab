@@ -106,17 +106,20 @@ affinity: {}
 #   podAntiAffinity: true
 
 
-ingestVolume:
-  name: "data-ingest"
-  mountPath: "/home/tigergraph/mydata"
-  storageClass: "longhorn"
-  accessMode: ReadWriteOnce
-  size: "2Gi"
+
+# Persistnt volumes
+# dataVolume will be mounted to the default TigerGraph DataRoot at /home/tigergraph/tigergraph/data
 dataVolume:
   name: "tigergraph-data"
   mountPath: "/home/tigergraph/tigergraph/data"
   storageClass: "longhorn"
   accessMode: ReadWriteOnce
   size: "56Gi"
+# ingestVolume:
+#   name: "data-ingest"
+#   mountPath: "/home/tigergraph/mydata"
+#   storageClass: "longhorn"
+#   accessMode: ReadWriteOnce
+#   size: "2Gi"
 # Place the data set in data/ dir of this chart
 dataset: customer_data.tar.gz

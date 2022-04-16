@@ -84,8 +84,6 @@ spec:
         volumeMounts:
         - mountPath: {{ .Values.dataVolume.mountPath | quote }}
           name: {{ .Values.dataVolume.name  }}
-        - mountPath: {{ .Values.ingestVolume.mountPath | quote }}
-          name: {{ .Values.ingestVolume.name  }}
         - mountPath: /tmp/init_tg_cfg
           name: config-volume
           subPath: init_tg_cfg
@@ -145,19 +143,3 @@ spec:
       resources:
         requests:
           storage: "{{ .Values.dataVolume.size }}"
-  - metadata:
-      name: {{ .Values.ingestVolume.name  }}
-    spec:
-      accessModes:
-        - {{ .Values.ingestVolume.accessMode | quote }}
-    {{- if .Values.ingestVolume.storageClass }}
-    {{- if (eq "-" .Values.ingestVolume.storageClass) }}
-      storageClassName: ""
-    {{- else }}
-      storageClassName: "{{ .Values.ingestVolume.storageClass }}"
-    {{- end }}
-    {{- end }}
-      resources:
-        requests:
-          storage: "{{ .Values.ingestVolume.size }}"
-     # restartPolicy: Always

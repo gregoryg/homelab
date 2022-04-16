@@ -9,7 +9,6 @@ spec:
   type: LoadBalancer
   selector:
     app: tigergraph
-    guiserver: running
   ports:
   - port: 14240
     name: graphstudio

@@ -46,26 +46,44 @@ questions:
   type: string
   description: Minimum Memory to reserve
   label: Memory with Mi or Gi
-- variable: autoscaling.enabled
-  group: "Auto-scaling"
-  default: "false"
-  description: "Scale # of pods automatically based on CPU usage"
-  type: boolean
-  label: "Horizontal pod auto-scaling enabled"
-  show_subquestion_if: true
-  subquestions:
-  - variable: autoscaling.minReplicas
-    # group: "Min/Max pods"
-    default: 1
-    type: int
-    min: 1
-    max: 20
-    label: "Minimum number of pods (replicas)"
-  - variable: autoscaling.maxReplicas
-    # group: "Min/Max pods"
-    default: 20
-    type: int
-    min: 2
-    max: 100
-    label: "Maximum number of pods (replicas)"
-  
+
+- variable: dataVolume.size
+  group: "Data volume"
+  description: "Size of TigerGraph DataRoot, mounted to all StatefulSet pods"
+  default: 56Gi
+  type: string
+  label: Size of persistent volume
+- variable: dataVolume.storageClass
+  group: "Data volume"
+  description: "Storage class used for TigerGraph DataRoot"
+  default: "longhorn"
+  type: string
+  label: Storage class name or empty for default
+- variable: dataVolume.accessMode
+  group: "Data volume"
+  description: "Access mode for DataRoot volume, usually ReadWriteOnce"
+  default: ReadWriteOnce
+  type: string
+  label: Access mode
+# - variable: autoscaling.enabled
+#   group: "Auto-scaling"
+#   default: "false"
+#   description: "Scale # of pods automatically based on CPU usage"
+#   type: boolean
+#   label: "Horizontal pod auto-scaling enabled"
+#   show_subquestion_if: true
+#   subquestions:
+#   - variable: autoscaling.minReplicas
+#     # group: "Min/Max pods"
+#     default: 1
+#     type: int
+#     min: 1
+#     max: 20
+#     label: "Minimum number of pods (replicas)"
+#   - variable: autoscaling.maxReplicas
+#     # group: "Min/Max pods"
+#     default: 20
+#     type: int
+#     min: 2
+#     max: 100
+#     label: "Maximum number of pods (replicas)"
