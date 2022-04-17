@@ -63,7 +63,11 @@ questions:
   group: "Data volume"
   description: "Access mode for DataRoot volume, usually ReadWriteOnce"
   default: ReadWriteOnce
-  type: string
+  type: enum
+  options:
+  - "ReadWriteOnce"
+  - "ReadWriteMany"
+  - "ReadWriteOncePod"
   label: Access mode
 - variable: ingestVolume.create
   group: "Optional ingest volume"
@@ -89,7 +93,11 @@ questions:
     description: "Storage class for ingest volume - use empty string for default storage class"
     label: "storage class"
   - variable: ingestVolume.accessMode
-    type: string
+    type: enum
+    options:
+    - "ReadWriteOnce"
+    - "ReadWriteMany"
+    - "ReadWriteOncePod"
     description: "Access mode for ingest volume, usually ReadWriteOnce"
     label: "access mode"
 
