@@ -100,9 +100,9 @@ tolerations: []
 affinity: {}
 # podSpec:
 #   # Anti Affinity
-#   # If set to true then an anti-affinity rule is applied to prevent database pods with the same `neo4j.name` running on a single Kubernetes node.
+#   # If set to true then an anti-affinity rule is applied to prevent database pods with the same `xxx.name` running on a single Kubernetes node.
 #   # If set to false then no anti-affinity rules are applied
-#   # If set to an object then that object is used for the Neo4j podAntiAffinity
+#   # If set to an object then that object is used for the xxx podAntiAffinity
 #   podAntiAffinity: true
 
 
