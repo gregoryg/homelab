@@ -97,6 +97,12 @@ nodeSelector: {}
 
 tolerations: []
 
+# Simplest means to select what nodes to schedule on
+# nodeSelector: {}
+nodeSelector:
+  label: disktype
+  value: ssd
+
 affinity: {}
 # podSpec:
 #   # Anti Affinity
@@ -105,14 +111,12 @@ affinity: {}
 #   # If set to an object then that object is used for the xxx podAntiAffinity
 #   podAntiAffinity: true
 
-
-
-# Persistnt volumes
+# Persistent volumes
 # dataVolume will be mounted to the default TigerGraph DataRoot at /home/tigergraph/tigergraph/data
 dataVolume:
   name: "tigergraph-data"
   mountPath: "/home/tigergraph/tigergraph/data"
-  storageClass: "longhorn"
+  storageClass: ""
   accessMode: ReadWriteOnce
   size: "56Gi"
 # ingestVolume may optionally be added to assist in data ingest
@@ -121,7 +125,7 @@ ingestVolume:
   create: true
   name: "data-ingest"
   mountPath: "/home/tigergraph/mydata"
-  storageClass: "longhorn"
+  storageClass: ""
   accessMode: ReadWriteOnce
   size: "22Gi"
 # Place the data set in data/ dir of this chart

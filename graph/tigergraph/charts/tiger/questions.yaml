@@ -47,6 +47,23 @@ questions:
   description: Minimum Memory to reserve
   label: Memory with Mi or Gi
 
+- variable: nodeSelector
+  group: "Node selector"
+  type: boolean
+  default: false
+  description: "A simple means to schedule on nodes with a specific label"
+  label: "Use node selector"
+  show_subquestion_if: true
+  subquestions:
+  - variable: nodeSelector.label
+    type: string
+    description: "Label key"
+    label: "Key"
+  - variable: nodeSelector.value
+    type: string
+    description: "Label value"
+    label: "Value"
+    
 - variable: dataVolume.size
   group: "Data volume"
   description: "Size of TigerGraph DataRoot, mounted to all StatefulSet pods"
@@ -69,6 +86,7 @@ questions:
   - "ReadWriteMany"
   - "ReadWriteOncePod"
   label: Access mode
+
 - variable: ingestVolume.create
   group: "Optional ingest volume"
   type: boolean
