@@ -680,6 +680,13 @@
      WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo systemctl restart docker'
 
    #+end_src
+* k3s
+  As of OpenSSH server 9.x, there is a change needed to make SSH work with k3s
+  in =/etc/ssh/sshd_config= make sure you have the following settings
+  #+begin_src conf
+    PubkeyAuthentication yes
+    PubkeyAcceptedKeyTypes=+ssh-rsa
+  #+end_src
 * Networking
   :PROPERTIES:
   :tangle-dir: 02-pod-networking/
