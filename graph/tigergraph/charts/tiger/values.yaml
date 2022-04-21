@@ -104,17 +104,18 @@ nodeSelector: {}
 #   value: ssd
 
 affinity: {}
-# Fancier matches than simple label=value requires affinity
+# Fancier node selection than simple label=value requires affinity
 ## An example that runs only on non-control plane nodes (k3s and k3d)
-affinity:
-  nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-      - matchExpressions:
-          - key: node-role.kubernetes.io/control-plane
-            operator: NotIn
-            values:
-            - true
+# affinity:
+#   nodeAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       nodeSelectorTerms:
+#       - matchExpressions:
+#           - key: node-role.kubernetes.io/control-plane
+#             operator: NotIn
+#             values:
+#             - true
+
 # podSpec:
 #   # Anti Affinity
 #   # If set to true then an anti-affinity rule is applied to prevent database pods with the same `xxx.name` running on a single Kubernetes node.
