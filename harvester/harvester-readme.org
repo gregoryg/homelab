@@ -811,52 +811,6 @@
      #+end_src
 
 
-* Prep to access k3os
-  #+name: harvester-ingress-hostname
-  |protomolecule|
-  #+name: harvester-ingress-domain
-  |magichome|
-  #+name: harvester-ingress-ip
-  |172.16.17.16|
-
-  #+begin_src bash :session sh1 :var hhostname=harvester-ingress-hostname :var hdomain=harvester-ingress-domain :var hip=harvester-ingress-ip
-    ssh-keygen -R ${hhostname}
-    ssh-keygen -R ${hhostname}.${hdomain}
-    ssh-keygen -R ${hip}
-    cat ~/.ssh/k8s-local.pub | ssh -o StrictHostKeyChecking=no rancher@${hhostname} "cat - >> .ssh/authorized_keys"
-    cat ~/.ssh/id_rsa.pub    | ssh -o StrictHostKeyChecking=no rancher@${hhostname}.${hdomain} "cat - >> .ssh/authorized_keys"
-    ssh -o StrictHostKeyChecking=no ${hip} hostname
-
-    echo "export PROMPT_DIRTRIM=2
-    if [ -z \"${SSH_CONNECTION}\" ] ; then
-        PS1=\"\u@\h \w $ \"
-    else
-        PS1=\"/ssh:\u@\h \w $ \"
-    fi
-    export PS1
-    source <(kubectl completion bash)
-    complete -F __start_kubectl k
-    alias k='kubectl'
-    alias kn='kubectl config set-context --current --namespace '
-    alias kx='kubectl config get-contexts'
-    " | ssh rancher@${hhostname} "cat - >> .bashrc"
-
-    echo 'source ~/.bashrc' | ssh rancher@${hhostname} "cat - >> .bash_profile"
-
-  #+end_src
-  #+begin_src bash :session sh1 :var hhostname=harvester-ingress-hostname :var hdomain=harvester-ingress-domain :var hip=harvester-ingress-ip
-    scp -o StrictHostKeyChecking=no rancher@${hhostname}:/etc/rancher/k3s/k3s.yaml gregj@glados:/tmp/
-    sed -i.bak 's,default,protomolecule,g' /tmp/k3s.yaml
-    sed -i.bak "s,127.0.0.1,${hip},g" /tmp/k3s.yaml
-    kubectl config delete-cluster protomolecule
-    kubectl config delete-context protomolecule
-    kubectl config unset current-context
-    # rename the user that remains
-    sed -i.bak "s,protomolecule,pleaseDELETEME"
-    KUBECONFIG=~/.kube/config:/tmp/k3s.yaml kubectl config view --flatten > /tmp/config
-    mv -v /tmp/config ~/.kube/
-    kubectl get nodes
-  #+end_src
 
 * Virtualization - prepare bootable image using QEMU
   Ref: [[https://docs.openstack.org/image-guide/centos-image.html][OpenStack Docs: Example: CentOS image]]
