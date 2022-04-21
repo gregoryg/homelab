@@ -19,7 +19,7 @@
           xorg-dev \
           fonts-hack \
           libmagickwand-dev \
-	  libgccjit-11-dev \
+          libgccjit-11-dev \
           libgtk2.0-dev \
           libjpeg-dev \
           libncurses5-dev \
