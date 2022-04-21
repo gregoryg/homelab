@@ -1146,6 +1146,12 @@
    #+begin_src bash
      xdg-settings set default-web-browser microsoft-edge.desktop
    #+end_src
+* SSL - the bane of my existence
+  Why is this so hard?  Let's make it easier
+  + ref: [[https://www.withoutthesarcasm.com/letsencrypt-for-private-networks/][Let's Encrypt for Private Networks - Without The Sarcasm]]
+  + [[https://github.com/acmesh-official/acme.sh/wiki/dnsapi][dnsapi · acmesh-official/acme.sh Wiki · GitHub]]
+    + I use Cloudflare, so this seems the best option
+
 
 * Dell XPS 13" 2 in 1 Laptop - Linux stuff
 ** Buzzing from headphone jack when nothing is playing
