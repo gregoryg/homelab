@@ -63,7 +63,7 @@ questions:
     type: string
     description: "Label value"
     label: "Value"
-    
+
 - variable: dataVolume.size
   group: "Data volume"
   description: "Size of TigerGraph DataRoot, mounted to all StatefulSet pods"
@@ -73,7 +73,6 @@ questions:
 - variable: dataVolume.storageClass
   group: "Data volume"
   description: "Storage class used for TigerGraph DataRoot"
-  default: "longhorn"
   type: string
   label: Storage class name or empty for default
 - variable: dataVolume.accessMode
@@ -107,7 +106,6 @@ questions:
     label: "size"
   - variable: ingestVolume.storageClass
     type: string
-    default: "longhorn"
     description: "Storage class for ingest volume - use empty string for default storage class"
     label: "storage class"
   - variable: ingestVolume.accessMode
