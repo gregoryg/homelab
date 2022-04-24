@@ -31,7 +31,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       # serviceAccountName: {{ include "tiger.serviceAccountName" . }}
-      {{- if .Values.nodeSelector.label }}
+      {{- if empty .Values.nodeSelector.label }}
+      {{- else }}
       nodeSelector:
         {{ .Values.nodeSelector.label }}: {{ .Values.nodeSelector.value }}
       {{- end }}
