@@ -50,7 +50,7 @@ questions:
 - variable: nodeSelector
   group: "Node selector"
   type: boolean
-  default: false
+  default: {}
   description: "A simple means to schedule on nodes with a specific label"
   label: "Use node selector"
   show_subquestion_if: true
