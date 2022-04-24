@@ -32,6 +32,7 @@ spec:
       {{- end }}
       # serviceAccountName: {{ include "tiger.serviceAccountName" . }}
       {{- if empty .Values.nodeSelector.label }}
+      nodeSelector: {}
       {{- else }}
       nodeSelector:
         {{ .Values.nodeSelector.label }}: {{ .Values.nodeSelector.value }}
