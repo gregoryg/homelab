@@ -146,7 +146,8 @@
              --max-unavailable-upgrade 0 \
              --max-pods-per-node "110"
     #+end_src
-* Single-node Rancher
+* Rancher
+** Single-node Rancher
   #+begin_src bash
     IP=nn.nn.nn.nn # reserved IP
     gcloud beta compute --project=rancher-dev instances create gg-rancher-25-leap \
