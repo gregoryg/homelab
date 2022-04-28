@@ -1076,7 +1076,15 @@
          persistentVolumeClaim:
            claimName: data-k8s-pv
    #+end_src
-
+* Cert manager
+  #+begin_src bash
+    helm repo add jetstack https://charts.jetstack.io
+    helm repo update
+    helm upgrade -i --create-namespace --atomic cert-manager jetstack/cert-manager \
+         --namespace cert-manager \
+         --set installCRDs=true \
+         --version v1.6.1
+  #+end_src
 * Cracking the structure of Rancher application ingress URLs
   + Examples of working parent-authenticated URLs
     + Rancher Server
