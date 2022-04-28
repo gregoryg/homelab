@@ -221,9 +221,9 @@
       #+end_src
 **** Install Rancher on the cluster
      #+begin_src bash
-       kubectl create ns cattle-system
        helm install rancher rancher-latest/rancher \
             --namespace cattle-system \
+            --create-namespace \
             --set hostname=rancher.example.com
      #+end_src
      + To get the =cattle-cluster-agent= Deployment to resolve my =rancher.example.com=
