@@ -160,6 +160,15 @@
 ** Slack - com.slack.Slack
 ** Signal Desktop - org.signal.Signal
 ** Spotify - com.spotify.Client
+** Steam - com.valvesoftware.Steam
+   For game =.desktop= shortcuts, open up the xdg directories.  Open up any library
+   folders used as well
+   #+begin_src bash
+     flatpak --user override --filesystem=/data/Steam com.valvesoftware.Steam
+     flatpak --user override --filesystem=xdg-data/icons com.valvesoftware.Steam
+     flatpak --user override --filesystem=xdg-data/applications com.valvesoftware.Steam
+     flatpak --user override --filesystem=xdg-desktop com.valvesoftware.Steam
+   #+end_src
 ** Visual Studio Code - OSS - com.visualstudio.code-oss
 ** Zoom - us.zoom.Zoom
  + Run Zoom once, exit, then edit ~/.var/app/us.zoom.Zoom/config/zoomus.conf
