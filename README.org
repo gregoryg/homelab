@@ -1351,6 +1351,29 @@
      jdbcDF.show()
    #+end_src
 * Graph databases
+** Neo4j
+*** Helm install in Kubernetes
+    #+begin_src bash
+      helm upgrade -i  neo4j . -f values.yaml \
+           --set core.service.type=LoadBalancer \
+           --set imageTag: "community" \
+           --set core.persistentVolume.size=20Gi \
+           --set core.persistentVolume.storageClass=longhorn \
+           --set readReplica.persistentVolume.size=20Gi \
+           --set readReplica.persistentVolume.storageClass=longhorn \
+           --namespace neo4j \
+           --create-namespace
+    #+end_src
+** Stardog
+*** Helm install
+    #+begin_src bash
+      helm upgrade -i stardog . -f values.yaml \
+           --set image.tag="7.9.0-java11-preview" \
+           --set persistence.storageClass="longhorn",persistence.size="50Gi" \
+           --set securityContext.enabled=true \
+           --set securityContext.runAsUser=1000,securityContext.runAsGroup=1000,securityContext.fsGroup=1000 \
+           --set zookeeper.persistence.storageClass=longhorn
+    #+end_src
 ** Tigergraph
 *** Tigergraph Download and Installation instructions
     + [[https://docs.tigergraph.com/admin/admin-guide/install-and-config/install][Detailed Instructions]]
