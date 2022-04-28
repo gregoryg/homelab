@@ -6,7 +6,7 @@ metadata:
     {{- include "tiger.selectorLabels" . | nindent 4 }}
   name: tg-gui-service
 spec:
-  type: LoadBalancer
+  type: {{ .Values.uiService.type }}
   selector:
     app: tigergraph
   ports:
