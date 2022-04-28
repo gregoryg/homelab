@@ -976,6 +976,27 @@
    #+end_src
 * Storage
 ** NFS
+   + ref: [[https://github.com/PhilipSchmid/k8s-home-lab#persistent-storage-using-nfs-subdir-external-provisioner][GitHub - PhilipSchmid/k8s-home-lab: Setup for a K8s home lab running on a sin...]]
+   + =nfs-common= must be installed on all k8s nodes
+     #+begin_src yaml :tangle /tmp/nfs-values.yaml
+       nfs:
+         server: 172.16.17.5
+         path: /volume3/ISOs
+
+       storageClass:
+         create: true
+         defaultClass: false
+         name: nfs
+         accessModes: ReadWriteMany
+     #+end_src
+     #+begin_src bash
+       helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+       helm repo update
+       helm upgrade -i --create-namespace --atomic nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+            --version 4.0.14 \
+            --namespace nfs-subdir-provisioner \
+            -f /tmp/nfs-values.yaml
+     #+end_src
    #+begin_src yaml
      apiVersion: v1
      kind: PersistentVolume
