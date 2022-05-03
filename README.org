@@ -32,6 +32,10 @@
      (switch-to-buffer-other-window "README.org")
    #+end_src
 
+* Home Lab resources and inspiration
+  + /r/homelab
+  + /r/selfhosted
+  + [[https://haydenjames.io/home-lab-beginners-guide-hardware/][Home Lab Beginners guide - Hardware]]
 * Binaries and config
 ** Cow me, baby
    Assure =fortune= and =cowsay= are installed
