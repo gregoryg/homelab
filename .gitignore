@@ -8,3 +8,4 @@ src
 notebooks/credentials.json
 notebooks/token.json
 notebooks/CREDENTIALS.config
+dotfiles/.config/obs-studio/logs/
