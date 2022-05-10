@@ -168,6 +168,7 @@
      flatpak --user override --filesystem=xdg-data/icons com.valvesoftware.Steam
      flatpak --user override --filesystem=xdg-data/applications com.valvesoftware.Steam
      flatpak --user override --filesystem=xdg-desktop com.valvesoftware.Steam
+     flatpak --user override --filesystem=/data/music com.spotify.Client
    #+end_src
 ** Visual Studio Code - OSS - com.visualstudio.code-oss
 ** Zoom - us.zoom.Zoom
