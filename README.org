@@ -1389,6 +1389,29 @@
            --set securityContext.runAsUser=1000,securityContext.runAsGroup=1000,securityContext.fsGroup=1000 \
            --set zookeeper.persistence.storageClass=longhorn
     #+end_src
+*** SPARQL query API with LSP
+    + Install LSP server ref: [[https://github.com/stardog-union/stardog-language-servers][GitHub - stardog-union/stardog-language-servers: Language Servers for Stardog...]]
+      #+begin_src bash
+        npm install -g sparql-language-server
+      #+end_src
+    + Set =sparql-default-base-url= to http://<server>:5820/<database>/query
+    + Update LSP mode to use language server
+      #+begin_src emacs-lisp
+        (add-to-list 'lsp-language-id-configuration '(sparql-mode . ".sparql"))
+      #+end_src
+    + Load =ob-sparql= if not already included in =org-babel-load-languages=
+      #+begin_src emacs-lisp
+        (load-library "ob-sparql")
+      #+end_src
+    + Test using music database
+      #+begin_src sparql
+        SELECT ?s ?song
+        WHERE {
+            ?s:sings ?song .
+        }
+        LIMIT 5
+      #+end_src
+
 ** Tigergraph
 *** Tigergraph Download and Installation instructions
     + [[https://docs.tigergraph.com/admin/admin-guide/install-and-config/install][Detailed Instructions]]
