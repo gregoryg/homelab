@@ -1208,6 +1208,13 @@
      #+begin_src conf
        options snd_hda_intel power_save=0 power_save_controller=0
      #+end_src
+* Find the dang printer
+  Oh it can be quite the trick finding a working URL
+
+  #+begin_src bash
+    sudo lpinfo -v -l
+    sudo system-config-printer
+  #+end_src
 * Firefox touchscreen scrolling
   + Ref: [[https://askubuntu.com/a/994483/104280][Ubuntu 16 and touchscreen scrolling in FireFox - Ask Ubuntu]]
   + Change config param in Firefox from 2 to 1
