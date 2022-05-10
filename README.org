@@ -1375,6 +1375,10 @@
            --namespace neo4j \
            --create-namespace
     #+end_src
+** Quine
+   Quite interesting - a simple running of a =jar= file gives a Web UI
+   + ref [[https://quine.io/docs/getting-started/quick-start][Quick Start]]
+   +
 ** Stardog
 *** Helm install
     #+begin_src bash
