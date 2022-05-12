@@ -94,7 +94,7 @@
      #+end_src
    + basic cluster
      #+begin_src bash
-       gcloud beta container --project "tigergraph-sales" clusters create "cluster-1-clone-1" \
+       KUBECONFIG=~/.kube/config-files/gke-gg-basic.yaml gcloud beta container --project "tigergraph-sales" clusters create "gg-basic" \
               --zone "us-central1-c" \
               --no-enable-basic-auth \
               --cluster-version "1.20.10-gke.301" \
@@ -737,6 +737,11 @@
      helm repo update
      helm install my-release bitnami/rabbitmq
    #+end_src
+   + [[https://minikube.sigs.k8s.io/docs/start/][minikube start | minikube]]
+   #+begin_src bash
+     KUBECONFIG=~/.kube/config-files/minikube.yaml minikube start
+   #+end_src
+* Minikube for testing
 * HA k3s
    Make it simple from the get-go with token on first server cmd line
    #+begin_src bash
