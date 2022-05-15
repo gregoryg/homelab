@@ -1399,18 +1399,35 @@
       #+begin_src emacs-lisp
         (add-to-list 'lsp-language-id-configuration '(sparql-mode . ".sparql"))
       #+end_src
+
+      #+RESULTS:
+      : ((sparql-mode . .sparql) (.*\.vue$ . vue) (.*\.tsx$ . typescriptreact) (.*\.ts$ . typescript) (.*\.jsx$ . javascriptreact) (.*\.js$ . javascript) (.*\.xml$ . xml) (.*\.hx$ . haxe) (.*\.lua$ . lua) (.*\.sql$ . sql) (.*\.html$ . html) (.*\.css . css) (.*/settings.json$ . jsonc) (.*\.json$ . json) (.*\.jsonc$ . jsonc) (.*\.php$ . php) (.*\.svelte$ . svelte) (.*\.ebuild$ . shellscript) (.*/PKGBUILD$ . shellscript) (.*\.ttcn3$ . ttcn3) (ada-mode . ada) (nxml-mode . xml) (sql-mode . sql) (vimrc-mode . vim) (sh-mode . shellscript) (ebuild-mode . shellscript) (pkgbuild-mode . shellscript) (scala-mode . scala) (julia-mode . julia) (clojure-mode . clojure) (clojurec-mode . clojure) (clojurescript-mode . clojurescript) (java-mode . java) (jdee-mode . java) (groovy-mode . groovy) (python-mode . python) (cython-mode . python) (lsp--render-markdown . markdown) (rust-mode . rust) (rustic-mode . rust) (kotlin-mode . kotlin) (css-mode . css) (less-mode . less) (less-css-mode . less) (lua-mode . lua) (sass-mode . sass) (ssass-mode . sass) (scss-mode . scss) (scad-mode . openscad) (xml-mode . xml) (c-mode . c) (c++-mode . cpp) (objc-mode . objective-c) (html-mode . html) (sgml-mode . html) (mhtml-mode . html) (go-dot-mod-mode . go.mod) (go-mode . go) (graphql-mode . graphql) (haskell-mode . haskell) (hack-mode . hack) (php-mode . php) (powershell-mode . powershell) (powershell-mode . PowerShell) (json-mode . json) (jsonc-mode . jsonc) (rjsx-mode . javascript) (js2-mode . javascript) (js-mode . javascript) (typescript-mode . typescript) (fsharp-mode . fsharp) (reason-mode . reason) (caml-mode . ocaml) (tuareg-mode . ocaml) (swift-mode . swift) (elixir-mode . elixir) (conf-javaprop-mode . spring-boot-properties) (yaml-mode . spring-boot-properties-yaml) (ruby-mode . ruby) (enh-ruby-mode . ruby) (fortran-mode . fortran) (f90-mode . fortran) (elm-mode . elm) (dart-mode . dart) (erlang-mode . erlang) (dockerfile-mode . dockerfile) (csharp-mode . csharp) (csharp-tree-sitter-mode . csharp) (plain-tex-mode . plaintex) (latex-mode . latex) (v-mode . v) (vhdl-mode . vhdl) (verilog-mode . verilog) (terraform-mode . terraform) (ess-julia-mode . julia) (ess-r-mode . r) (crystal-mode . crystal) (nim-mode . nim) (dhall-mode . dhall) (cmake-mode . cmake) (purescript-mode . purescript) (gdscript-mode . gdscript) (perl-mode . perl) (cperl-mode . perl) (robot-mode . robot) (racket-mode . racket) (nix-mode . nix) (prolog-mode . prolog) (vala-mode . vala) (actionscript-mode . actionscript) (d-mode . d) (zig-mode . zig) (text-mode . plaintext) (markdown-mode . markdown) (gfm-mode . markdown) (beancount-mode . beancount) (conf-toml-mode . toml) (org-mode . org) (org-journal-mode . org) (nginx-mode . nginx) (magik-mode . magik) (idris-mode . idris) (idris2-mode . idris2))
+
     + Load =ob-sparql= if not already included in =org-babel-load-languages=
       #+begin_src emacs-lisp
         (load-library "ob-sparql")
       #+end_src
+
+      #+RESULTS:
+      : t
+
     + Test using music database
-      #+begin_src sparql
+      #+begin_src sparql :url http://172.16.17.16:5820/music/query/
         SELECT ?s ?song
         WHERE {
-            ?s:sings ?song .
+          ?s :sings ?song .
         }
         LIMIT 5
       #+end_src
+
+      #+RESULTS:
+      | s                                  | song                                                           |
+      |------------------------------------+----------------------------------------------------------------|
+      | http://api.stardog.com/David_Bowie | http://api.stardog.com/%22Heroes%22_(David_Bowie_song)         |
+      | http://api.stardog.com/David_Bowie | http://api.stardog.com/Beauty_and_the_Beast_(David_Bowie_song) |
+      | http://api.stardog.com/David_Bowie | http://api.stardog.com/Blackout_(David_Bowie_song)             |
+      | http://api.stardog.com/David_Bowie | http://api.stardog.com/Joe_the_Lion                            |
+      | http://api.stardog.com/David_Bowie | http://api.stardog.com/Moss_Garden                             |
 
 ** Tigergraph
 *** Tigergraph Download and Installation instructions
