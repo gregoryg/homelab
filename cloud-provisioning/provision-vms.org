@@ -123,9 +123,57 @@
               --enable-shielded-nodes \
               --node-locations "us-central1-c"
      #+end_src
+   + Private cluster with outbound internet access via CloudNAT
+     + ref: [[https://cloud.google.com/nat/docs/gke-example][Example GKE setup  |  Cloud NAT  |  Google Cloud]]
+
+   + gcloud
+     #+begin_src bash
+       # Create VPC net and subnet
+       gcloud compute networks create gg-k8s-private-net \
+              --subnet-mode custom
+       # Specify subnet prefix for your first region
+       gcloud compute networks subnets create subnet-us-east-192 \
+              --network gg-k8s-private-net \
+              --region us-west3 \
+              --range 192.168.1.0/24
+       # # Create a firewall rule that allows SSH connections
+       # gcloud compute firewall-rules create allow-ssh \
+       #     --network gg-k8s-private-net \
+       #     --source-ranges 35.235.240.0/20 \
+       #     --allow tcp:22
+       # Create NAT router
+       gcloud compute routers create nat-router \
+           --network gg-k8s-private-net \
+           --region us-west3
+       # Add a configuration to the router
+       gcloud compute routers nats create nat-config \
+           --router-region us-west3 \
+           --router nat-router \
+           --nat-all-subnet-ip-ranges \
+           --auto-allocate-nat-external-ips
+       # Create the cluster! Private that can access internet
+       time KUBECONFIG=~/.kube/config-files/gke-nat-test.yaml gcloud container clusters create gg-tester \
+            --zone us-west3-a \
+            --labels="owner=greg_grubbs" \
+            --no-enable-basic-auth \
+            --release-channel "regular" \
+            --machine-type "n1-highmem-8" \
+            --disk-type "pd-standard" \
+            --disk-size "100" \
+            --network "projects/stardog-presales/global/networks/gg-k8s-private-net" \
+            --subnetwork "projects/stardog-presales/regions/us-west3/subnetworks/subnet-us-east-192" \
+            --no-enable-master-authorized-networks \
+            --enable-ip-alias \
+            --enable-private-nodes \
+            --master-ipv4-cidr 172.16.0.0/28 \
+            --scopes "https://www.googleapis.com/auth/compute","https://www.googleapis.com/auth/devstorage.read_only","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/monitoring","https://www.googleapis.com/auth/servicecontrol","https://www.googleapis.com/auth/service.management.readonly","https://www.googleapis.com/auth/trace.append" \
+            --num-nodes "3" \
+            --addons HorizontalPodAutoscaling,HttpLoadBalancing,GcePersistentDiskCsiDriver
+     #+end_src
+
    + Nuke said cluster
      #+begin_src bash
-       gcloud beta container --project "tigergraph-sales" clusters delete "gg-tigerk8s" --zone "us-west3-a"
+       gcloud beta container --project "tigergraph-sales" clusters delete "gg-tester" --zone "us-west3-a"
      #+end_src
 *** Add a node pool
     #+begin_src bash
