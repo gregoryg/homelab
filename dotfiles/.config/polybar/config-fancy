@@ -82,7 +82,7 @@ offset-y = 58px
 
 [bar/floating]
 inherit="bar/base_floating"
-modules-left = exwm-workspace vpn gmail_unread
+modules-left = exwm-workspace gmail_unread
 modules-center =  playerctl
 ; modules-left = floating_popup_button pavucontrol_button_sep
 ; modules-right = sensors_cpu_pc  memory pulseaudio-control
