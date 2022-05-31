@@ -1184,11 +1184,33 @@
    #+begin_src bash
      xdg-settings set default-web-browser microsoft-edge.desktop
    #+end_src
-* SSL - the bane of my existence
+* SSL/TLS - the bane of my existence
   Why is this so hard?  Let's make it easier
   + ref: [[https://www.withoutthesarcasm.com/letsencrypt-for-private-networks/][Let's Encrypt for Private Networks - Without The Sarcasm]]
   + [[https://github.com/acmesh-official/acme.sh/wiki/dnsapi][dnsapi · acmesh-official/acme.sh Wiki · GitHub]]
     + I use Cloudflare, so this seems the best option
+  + Cloudflare's =origin-ca-issuer=
+    + [[https://github.com/cloudflare/origin-ca-issuer][GitHub - cloudflare/origin-ca-issuer]]
+  + The following steps worked [2022-05-31 Tue]
+    + On the Rancher cluster
+      + Install cert-manager
+      #+begin_src bash
+        helm upgrade -i --create-namespace --atomic cert-manager jetstack/cert-manager \
+             --namespace cert-manager \
+             --set installCRDs=true \
+             --version v1.7.0
+      #+end_src
+      + Install Rancher with cert-manager as ingress
+        #+begin_src bash
+          helm install rancher rancher-latest/rancher \
+               --namespace cattle-system \
+               --create-namespace \
+               --set hostname=ixnay.hombre.com \
+               --set ingress.tls.source=letsEncrypt \
+               --set letsEncrypt.email=ixnay.hombre@poodle.com
+        #+end_src
+    + Chrome may need cookies cleared, restart or whatever - try in incognito tab if you
+      get "certificate is valid, but site is unsafe"
 
 
 * Dell XPS 13" 2 in 1 Laptop - Linux stuff
