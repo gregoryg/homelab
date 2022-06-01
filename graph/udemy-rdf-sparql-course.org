@@ -1,0 +1,1243 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:nil
+#+options: todo:t |:t
+#+title: Udemy course RDF and SPARQL
+#+date: <2022-05-18 Wed>
+#+author: Gregory Grubbs
+#+email: gregory.grubbs@gmail.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 28.1.50 (Org mode 9.5.3)
+#+cite_export:
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
+#+startup: overview
+* Setup for interactive querying and data manipulation
+  Ref: Endpoints for REST API [[https://stardog-union.github.io/http-docs/][API Reference | ReDoc]]
+
+  The course uses BlazeGraph, which happily accepts combinations of DML and DDL type
+  statements.  The =ob-sparql= used in the following code blocks works *only* for queries
+  using the =/query= endpoint.  Some data manipulation can be done on the =/update= endpoint
+
+
+** Variables for host, database, default endpoint
+   #+name: svals
+   | base-url              | db           | default-endpoint | tramp-path                       | cmd-path         | working-path |
+   |-----------------------+--------------+------------------+----------------------------------+------------------+--------------|
+   | http://localhost:5820 | looney-tunes | query            | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
+   #+begin_src emacs-lisp :var url=svals[2,0] :var db=svals[2,1] endpoint=svals[2,2]
+     db
+   #+end_src
+
+  + ref: [[https://stardog-union.github.io/http-docs/#tag/SPARQL][Stardog HTTP SPARQL API Reference | ReDoc]]
+  #+begin_src emacs-lisp :var url=svals[2,0] :var db=svals[2,1] :var endpoint=svals[2,2] :var tpath=svals[2,3] :results silent
+    (let ((fullurl (concat  "/" db "/" endpoint "/" )))
+      ;; (message "My lovely url is %s\n" fullurl)
+      (setq-local org-babel-default-header-args:sparql
+                  (cons `(:url  . ,fullurl)
+                        (assq-delete-all :url org-babel-default-header-args:sparql))))
+    (setq-local org-babel-default-header-args:bash
+                (cons `(:dir . ,tpath)
+                      (assq-delete-all :dir org-babel-default-header-args:bash)))
+  #+end_src
+
+  #+begin_src sparql
+    SELECT * WHERE { ?s ?p ?o } LIMIT 2
+  #+end_src
+
+* DONE Started Complete Udemy course RDF and SPARQL
+  :LOGBOOK:
+  - State "DONE"       from              [2022-06-01 Wed 08:26]
+  CLOCK: [2022-05-16 Mon 14:32]--[2022-05-16 Mon 17:55] =>  3:23
+  CLOCK: [2022-05-15 Sun 19:15]--[2022-05-15 Sun 19:25] =>  0:10
+  CLOCK: [2022-05-15 Sun 18:00]--[2022-05-15 Sun 19:14] =>  1:14
+  CLOCK: [2022-05-15 Sun 08:30]--[2022-05-15 Sun 09:30] =>  1:00
+  - State "STARTED"    from "TODO"       [2022-05-14 Sat 16:27]
+  CLOCK: [2022-05-14 Sat 16:27]--[2022-05-14 Sat 18:11] =>  1:44
+  CREATED: [2022-05-14 Sat 16:26]
+  :END:
+
+  + ref https://www.udemy.com/course/rdf-and-sparql-essentials/learn/lecture/25429978
+  + RDF: Resource Description Framework
+  + this course does *not* cover
+    + web ontology language
+    + blank nodes
+    + graph visualizations or the building of knowledge graph applications
+  + "triple" and "statement" are interchangeable terms
+  + in RDF, nodes cannot exist by themselves, without edges
+  + There are 3 kinds of nodes in RDF
+    + IRI (Internationalized Resource Identifier)
+      + uniquely identify entities in a graph
+    + Literal
+      + plain data values like strings, integers, dates etc
+      + can indicate a data type defined in the XML Schema Datatypes (XSD)
+        #+begin_example
+          "1980-08-26"^^xsd:date
+        #+end_example
+    + Blank node
+      + avoid if possible - they don't carry persistent labels and make querying RDF data
+        more difficult
+    + Blazegraph is used in course
+* Looney Tunes Schema
+  #+begin_src ttl :tangle /tmp/looney-tunes-schema.ttl
+    PREFIX : <http://looneytunes-graph.com/>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    # Bugs Bunny
+    :Bugs_Bunny a :Looney_Tunes_Character ;
+      :name "Bugs Bunny" ;
+      :species "Hare" ;
+      :gender "Male" ;
+      :made_debut_appearance_in :A_Wild_Hare ;
+      :created_by :Tex_Avery ;
+      :personality_trait "Cunning" , "Charismatic" , "Smart" ;
+      :known_for_catchphrase "What's up, doc?" .
+
+    # A Wild Hare
+    :A_Wild_Hare a :Short ;
+      :release_date "1940-07-27"^^xsd:date .
+
+    # Tex Avery
+    :Tex_Avery a :Person ;
+      :name "Frederick Bean Avery" ;
+      :born_on "1908-02-26"^^xsd:date ;
+      :died_on "1980-08-26"^^xsd:date .# Daffy Duck
+    :Daffy_Duck a :Looney_Tunes_Character ;
+      :name "Daffy Damas Duck" ;
+      :species "American Black Duck" ;
+      :gender "Male" ;
+      :made_debut_appearance_in :Porkys_Duck_Hunt ;
+      :created_by :Tex_Avery ;
+      :personality_trait "Assertive" , "Unrestrained" , "Combative" ;
+      :known_for_catchphrase "You're despicable!" .
+
+    # Porky's Duck Hunt
+    :Porkys_Duck_Hunt a :Short ;
+      :release_date "1937-04-17"^^xsd:date .# Sylvester
+    :Sylvester a :Looney_Tunes_Character ;
+      :name "Sylvester James Pussycat, Sr." ;
+      :species "Tuxedo Cat" ;
+      :gender "Male" ;
+      :made_debut_appearance_in :Life_With_Feathers ;
+      :created_by :Friz_Freleng ;
+      :personality_trait "Proud" , "Persistent" , "Loser" ;
+      :known_for_catchphrase "Sufferin' Succotash" .
+
+    # Life With Feathers
+    :Life_With_Feathers a :Short ;
+      :release_date "1945-03-24"^^xsd:date .
+
+    # Friz Frelang
+    :Friz_Freleng a :Person ;
+      :name "Isadore Freleng" ;
+      :born_on "1905-08-21"^^xsd:date ;
+      :died_on "1995-05-26"^^xsd:date .
+
+    # Taz
+    :Taz a :Looney_Tunes_Character ;
+      :name "Tasmanian Devil" ;
+      :gender "Male" ;
+      :species "Tasmanian Devil" ;
+      :made_debut_appearance_in :Devil_May_Hare ;
+      :created_by :Robert_McKimson , :Sid_Marcus ;
+      :personality_trait "Dim-witted" , "Short-tempered" , "Impatient" .
+
+    # Devil May Hare
+    :Devil_May_Hare a :Short ;
+      :release_date "1954-06-19"^^xsd:date .
+
+    # Robert McKimson
+    :Robert_McKimson a :Person ;
+      :name "Robert Porter McKimson, Sr." ;
+      :born_on "1910-10-13"^^xsd:date ;
+      :died_on "1977-09-29"^^xsd:date .
+
+    # Sid Marcus
+    :Sid_Marcus a :Person ;
+      :name "Sidney Marcus" ;
+      :born_on "1877-10-14"^^xsd:date ;
+      :died_on "1979-01-31"^^xsd:date .
+  #+end_src
+  + =rdf:type= - a special predicate as in =:Bugs_Bunny :rdf:type :Looney_Tunes_Character=
+  +
+* SPARQL Queries (Section 4 and beyond in the course)
+** Section 4 basic queries
+*** Basic basic basic to see all in the database
+    #+begin_src sparql
+      SELECT ?s ?p ?o
+      WHERE { ?s ?p ?o }
+      LIMIT 10
+    #+end_src
+
+*** One-hop queries?
+**** Bugs' name
+    #+begin_src sparql
+      SELECT ?n
+      WHERE {
+        :Bugs_Bunny :name ?n .
+      }
+    #+end_src
+
+**** Bugs' creator
+    #+begin_src sparql
+      SELECT ?c
+      WHERE {
+        :Bugs_Bunny :created_by ?c .
+      }
+    #+end_src
+
+**** What are Bugs' personality traits?
+    #+begin_src sparql
+      SELECT ?t
+      WHERE {
+        :Sylvester :personality_trait ?t
+      }
+    #+end_src
+
+*** Two hop query pattern
+**** What is/are the name(s) of ??'s creator(s)?
+     #+begin_src sparql
+       PREFIX : <http://looneytunes-graph.com/>
+
+       # ?person is an intermediate hop, we're not using it in the results
+       SELECT ?n
+       WHERE {
+         :Taz :created_by ?person .
+         ?person :name ?n .
+
+       }
+     #+end_src
+
+**** What is the release date of ??'s debut appearance?
+     #+begin_src sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT ?d ?film
+       WHERE {
+         :Taz :made_debut_appearance_in ?film .
+         ?film :release_date ?d .
+       }
+     #+end_src
+
+**** Leaner query - what are the release dates of all our characters' debuts?
+     #+begin_src sparql :tangle /tmp/release-dates.sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT ?name ?d ?film
+       WHERE {
+         ?c a :Looney_Tunes_Character ;
+         :name ?name ;
+         :made_debut_appearance_in ?film .
+         ?film :release_date ?d .
+       }
+     #+end_src
+
+**** Challenge: query names of all characters' creators with creators' birth dates
+     #+begin_src sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT ?name ?d ?film
+       WHERE {
+         ?c a :Looney_Tunes_Character ;
+         :name ?name ;
+         :made_debut_appearance_in ?film .
+         ?film :release_date ?d .
+       }
+     #+end_src
+
+     #+begin_src sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT ?name ?d ?film
+       WHERE {
+         ?c :made_debut_appearance_in ?film ;
+         :name ?name .
+         ?film :release_date ?d .
+       }
+     #+end_src
+
+*** Counting
+
+**** Characters created by Tex Avery
+     #+begin_src sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT  ?n
+       WHERE {
+         ?c a :Looney_Tunes_Character ;
+         :created_by :Tex_Avery ;
+         :name ?n
+       }
+     #+end_src
+
+**** How many characters were created by Tex?
+     #+begin_src sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT  (count(?c) AS ?cCount)
+       WHERE {
+         ?c a :Looney_Tunes_Character ;
+         :created_by :Tex_Avery .
+       }
+     #+end_src
+
+**** Exercise: How many Looney Tunes characters are there in the graph?
+     #+begin_src sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT  (count(?c) AS ?cCount)
+       WHERE {
+         ?c a :Looney_Tunes_Character .
+
+       }
+     #+end_src
+
+*** Removing duplicates from the result set
+
+**** How many *types* of movies did the characters make debut appearances in?
+     + There is only one type of movie in our graph (:Short) - a simple query will add up
+       all the (same) type and give a misleading result
+     + Use =DISTINCT=
+     #+begin_src sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT  (count(DISTINCT ?mt) AS ?mtCount)
+       WHERE {
+         ?c :made_debut_appearance_in ?m .
+         ?m a ?mt  # movie is a movie type
+
+       }
+     #+end_src
+
+**** Exercise: Count distinct types of creators
+     #+begin_src sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT  (count(DISTINCT ?pt) AS ?ptCount)
+       WHERE {
+         ?c :created_by ?p .
+         ?p a ?pt .
+       }
+     #+end_src
+
+*** Check for existence of patterns
+
+**** Who does *not* have a catchphrase?  (missing that triple)
+     #+begin_src sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT  ?n ?phrase
+       WHERE {
+         ?c :known_for_catchphrase ?phrase ;
+         :name ?n
+       }
+     #+end_src
+
+     #+begin_src sparql
+       # What is the release date of ??'s debut appearance?
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT  ?n
+       WHERE {
+         ?c a :Looney_Tunes_Character ;
+         :name ?n
+         FILTER NOT EXISTS {
+           ?c :known_for_catchphrase ?phrase
+         }
+       }
+     #+end_src
+
+
+**** Exercise: Names of characters that have a catchphrase using a pointless FILTER
+     #+begin_src sparql
+       PREFIX : <http://looneytunes-graph.com/>
+
+       SELECT  ?n
+       WHERE {
+         ?c a :Looney_Tunes_Character ;
+         :name ?n
+         FILTER EXISTS {
+           ?c :known_for_catchphrase ?phrase
+         }
+       }
+     #+end_src
+
+** A bunch of random (aggregation?) queries that may or may not have a categorization
+
+*** List the characters who were co-created
+    #+begin_src sparql
+      # PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT DISTINCT  ?n
+      WHERE {
+        ?c a :Looney_Tunes_Character ;
+        :name ?n .
+        # ?c :created_by ?person1 .
+        # ?c :created_by ?person2 .
+        ?c :created_by ?person1, ?person2 .
+        FILTER ( ?person1 != ?person2 )
+      }
+
+    #+end_src
+
+
+
+
+
+*** Aggregation: Earliest and latest release dates of the movies
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT  (MIN (?d) AS ?earliest) (MAX(?d) AS ?latest)
+      WHERE {
+
+        ?m a :Short ;
+        :release_date ?d
+      }
+
+    #+end_src
+
+*** Binding variables: How old was Tex Avery when he died?
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT   ?n ?birthdate ?deathdate ?age
+      WHERE {
+        ?p a :Person ;
+        :name ?n ;
+        :born_on ?birthdate ;
+        :died_on ?deathdate .
+        BIND (year(?deathdate) - year(?birthdate) AS ?age)
+
+      }
+
+    #+end_src
+
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      select ?age where {
+        bind( "1799-12-14"^^<http://www.w3.org/2001/XMLSchema#date> as ?death )
+        bind( "1732-02-22"^^<http://www.w3.org/2001/XMLSchema#date> as ?birth )
+        bind( year(?death) - year(?birth) - if(month(?death)<month(?birth) || (month(?death)=month(?birth) && day(?death)<day(?birth)),1,0) as ?age )
+      }
+
+    #+end_src
+
+*** Who lived the longest?
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT   ?n ?birthdate ?deathdate ?age
+      WHERE {
+        ?p a :Person ;
+        :name ?n ;
+        :born_on ?birthdate ;
+        :died_on ?deathdate .
+        BIND (year(?deathdate) - year(?birthdate) AS ?age)
+      }
+      ORDER BY DESC (?age ) LIMIT 1
+
+    #+end_src
+
+*** Average age of all creators
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT   (AVG( ?age) AS ?avgAge)
+      WHERE {
+        ?p a :Person ;
+        :name ?n ;
+        :born_on ?birthdate ;
+        :died_on ?deathdate .
+        BIND (year(?deathdate) - year(?birthdate) AS ?age)
+      }
+
+    #+end_src
+
+*** running tests: more advanced use of BIND, with IF / COALESCE
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT ?n ?result
+      WHERE {
+        ?c a :Looney_Tunes_Character ;
+        :name ?n ;
+        :made_debut_appearance_in ?m .
+        ?m :release_date ?d
+        BIND (year(?d) AS ?releaseYear)
+        BIND (
+              COALESCE (
+                        IF(?releaseYear >= 1946 && ?releaseYear <= 1950, "Post-war", 1/0),
+                        IF(?releaseYear >= 1939 && ?releaseYear <= 1945, "WW II", 1/0),
+                        IF(?releaseYear >= 1918 && ?releaseYear <= 1938, "Interwar period", 1/0),
+                        "Other era"
+                        ) AS ?result
+              )
+      }
+      ORDER BY ASC(?n)
+
+    #+end_src
+
+*** Exercise: Testing birth year values of creators
+    + No duplicates, order by ascending birth year
+    + Birth year
+      + before 1900: "Born pre-1900"
+      + >= 1900: "Born post-1900"
+      + else: "N/A"
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT DISTINCT ?n ?bday ?result
+      WHERE {
+        ?c :created_by ?p .
+        ?p :born_on ?bday  ;
+        :name ?n
+        BIND (year(?bday) AS ?birthYear)
+        BIND (
+              COALESCE (
+                        IF(?birthYear < 1900, "Born pre-1900", 1/0),
+                        IF(?birthYear >= 1900, "Born post-1900", 1/0),
+                        "N/A"
+                        ) AS ?result
+              )
+      }
+      ORDER BY ASC(?n)
+
+    #+end_src
+
+*** matches with the OPTIONAL clause: what are all the catchphrases?
+    + Include characters that do not have catchphrase
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT ?n ?phrase
+      WHERE {
+        ?c a :Looney_Tunes_Character ;
+        :name ?n
+        OPTIONAL {
+          ?c :known_for_catchphrase ?phrase
+        }
+      }
+    #+end_src
+
+*** UNION clause: full list of all *names* in the database
+    This can easily be done without using a union, since =:name= is used in both
+    possible cases.  I'll show the solution given in the course after my nicer version
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT ?n
+      WHERE {
+        ?s :name ?n
+      }
+      ORDER BY ASC(?n)
+    #+end_src
+
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT ?n
+      WHERE {
+        { ?c a :Looney_Tunes_Character ;
+          :name ?n }
+        UNION
+        { ?c a :Person ;
+          :name ?n }
+      }
+      ORDER BY ASC(?n)
+    #+end_src
+
+*** Exercise: list all the date values present in the graph
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT ?s ?d
+      WHERE {
+        {
+          ?s :release_date ?d .
+        }
+        UNION
+        {
+          ?s :born_on ?d .
+        }
+        UNION
+        {
+          ?s :died_on ?d .
+        }
+      }
+      ORDER BY ?d
+    #+end_src
+
+*** MINUS clause - get all names excluding that of Taz (without FILTER)
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT ?n
+      WHERE {
+        ?c a :Looney_Tunes_Character ;
+        :name ?n
+        MINUS {
+          ?c :name "Tasmanian Devil"
+        }
+      }
+    #+end_src
+
+*** Grouping: count and group the personality traits for each character
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT ?n (COUNT(?trait) AS ?tc)
+      WHERE {
+        ?c :personality_trait ?trait ;
+        :name ?n .
+      }
+      GROUP BY ?n
+    #+end_src
+
+*** Exercise: count and group the creators for each character
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT ?n (COUNT(?p) AS ?tc)
+      WHERE {
+        ?c :created_by ?p ;
+        :name ?n .
+      }
+      GROUP BY ?n
+    #+end_src
+
+
+
+*** The DESCRIBE query
+**** First show all outgoing links from Bugs
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT  ?p ?o
+      WHERE {
+        :Bugs_Bunny ?p ?o
+      }
+    #+end_src
+
+**** Now ask: what are the incoming links to Bugs?
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT  ?s
+      WHERE {
+        ?s ?p :Bugs_Bunny
+      }
+    #+end_src
+
+**** DESCRIBE
+     #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+       DESCRIBE :Bugs_Bunny
+     #+end_src
+
+*** The ASK query: is it true that Bugs was created by Tex?
+    True/False answers
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+      ASK {
+        :Bugs_Bunny :created_by :Tex_Avery
+      }
+    #+end_src
+*** CONSTRUCT - returning sub-graphs
+    + SELECT returns tabular data
+    + ASK returns a boolean
+    + DESCRIBE surfaces a sub-graph
+    + CONSTRUCT surfaces a sub-graph
+**** Return RDF sub-graph with persons and the birth and death dates
+     #+begin_src sparql
+       PREFIX : <http://looneytunes-graph.com/>
+
+       CONSTRUCT
+       WHERE {
+         ?p a :Person ;
+         :born_on ?b ;
+         :died_on ?d .
+       }
+     #+end_src
+
+**** Create RDF sub-graph with persons and their average age
+     #+begin_src sparql
+       PREFIX : <http://looneytunes-graph.com/>
+
+       CONSTRUCT {
+         ?p :has_age ?age
+       }
+       WHERE {
+         ?p a :Person ;
+         :born_on ?b ;
+         :died_on ?d .
+
+         BIND ( year(?b) AS ?bYear)
+         BIND ( year(?d) AS ?dYear)
+         BIND ( (?dYear - ?bYear) AS ?age)
+       }
+     #+end_src
+
+**** Exercise: Sub-graph of Looney Tunes characters and their debut release year
+     #+begin_src sparql
+       PREFIX : <http://looneytunes-graph.com/>
+
+       CONSTRUCT {
+         ?c :debuted_in_year ?dYear
+       }
+       WHERE {
+         ?c :made_debut_appearance_in ?m ;
+         :name ?n .
+         ?m :release_date ?d .
+         BIND ( year(?d) AS ?dYear)
+       }
+     #+end_src
+** Property paths in SPARQL queries - Section 5
+*** Overview
+    + so far we have know what simple one-hop traversals we want to make.  But what if we
+      wanted to match nodes that are linked through paths of arbitrary links?
+    +
+*** Inverse paths - go backwards - like Person :reverse-created_by Character
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT ?c ?p
+      WHERE {
+        ?p ^:created_by ?c ;
+      }
+    #+end_src
+
+
+*** TODO Sequence paths - characters who are enemies of those who are in turn rivals of other characters
+
+    Compose and run a SPARQL query to find the names of the start and end nodes, via the
+    inverse of the path :rival_of followed by the inverse of the path :enemy_of
+
+    #+begin_src sparql :session  poodle
+      SELECT DISTINCT ?p
+      WHERE {
+        ?s ?p ?o
+      }
+      LIMIT 200
+    #+end_src
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+
+      SELECT ?c1n ?c2n
+      WHERE {
+         ?c1 ^:rival_of/^:enemy_of ?c2 ;
+              :name ?c1n .
+         ?c2 :name ?c2n
+      }
+    #+end_src
+
+*** Recursive paths - taking a route 0-n times
+    Add more data
+    #+begin_src ttl :tangle ~/Downloads/solution-knows-data.ttl
+      PREFIX : <http://looneytunes-graph.com/>
+      :Bugs_Bunny :knows :Daffy_Duck .
+      :Daffy_Duck :knows :Sylvester .
+      :Sylvester :knows :Taz .
+    #+end_src
+
+    #+begin_src sparql
+      # Who knows Taz - directly or transitively - through 0 or more occurences of "knows"
+      SELECT DISTINCT ?c
+      WHERE {
+        ?c :knows* :Taz
+      }
+    #+end_src
+
+    All 4 characters are shown because :Taz knows :Taz through zero hops!
+
+*** Recursive paths with some refinement
+    #+begin_src sparql
+      # Who knows Taz - directly or transitively - through ONE or more occurences of "knows"
+      SELECT DISTINCT ?c
+      WHERE {
+        ?c :knows+ :Taz
+      }
+    #+end_src
+
+*** Listing possible paths - all possible paths in a specific direction of travel
+    #+begin_src sparql
+      # e.g. all paths between :Bugs_Bunny and :Daffy_Duck
+      SELECT ?s ?p ?o
+      WHERE {
+        :Bugs_Bunny (:|!:)* ?s .
+        ?s ?p ?o .
+        ?o (:|!:)* :Daffy_Duck .
+      }
+    #+end_src
+
+    Same query using variables
+    #+begin_src sparql
+      # e.g. all paths between :Bugs_Bunny and :Daffy_Duck
+      SELECT ?s ?p ?o
+      WHERE {
+        VALUES ?start { :Sylvester }
+        VALUES ?end   { :Taz }
+
+        ?start (:|!:)* ?s .
+        ?s ?p ?o .
+        ?o (:|!:)* ?end
+      }
+    #+end_src
+
+** Section 6: SPARQL Update
+   This section requires using different query endpoints, so we will have to change the
+   =header-args= *or* use a shell session on the server to execute =stardog data=
+*** INSERT data
+    #+begin_src sparql :tangle /kube:stardog@stardog-stardog-0:tutorial-insert-data-sparql-update.sparql
+      PREFIX : <http://looneytunes-graph.com/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+      INSERT DATA {
+
+      # Bugs Bunny
+      :Bugs_Bunny a :Looney_Tunes_Character ;
+        :name "Bugs Bunny" ;
+        :species "Hare" ;
+        :gender "Male" ;
+        :made_debut_appearance_in :A_Wild_Hare ;
+        :created_by :Tex_Avery ;
+        :personality_trait "Cunning" , "Charismatic" , "Smart" ;
+        :known_for_catchphrase "What's up, doc?" .
+
+      # A Wild Hare
+      :A_Wild_Hare a :Short ;
+        :release_date "1940-07-27"^^xsd:date .
+
+      # Tex Avery
+      :Tex_Avery a :Person ;
+        :name "Frederick Bean Avery" ;
+        :born_on "1908-02-26"^^xsd:date ;
+        :died_on "1980-08-26"^^xsd:date .
+
+      # Daffy Duck
+      :Daffy_Duck a :Looney_Tunes_Character ;
+        :name "Daffy Damas Duck" ;
+        :species "American Black Duck" ;
+        :gender "Male" ;
+        :made_debut_appearance_in :Porkys_Duck_Hunt ;
+        :created_by :Tex_Avery ;
+        :personality_trait "Assertive" , "Unrestrained" , "Combative" ;
+        :known_for_catchphrase "You're despicable!" .
+
+      # Porky's Duck Hunt
+      :Porkys_Duck_Hunt a :Short ;
+        :release_date "1937-04-17"^^xsd:date .
+
+      # Sylvester
+      :Sylvester a :Looney_Tunes_Character ;
+        :name "Sylvester James Pussycat, Sr." ;
+        :species "Tuxedo Cat" ;
+        :gender "Male" ;
+        :made_debut_appearance_in :Life_With_Feathers ;
+        :created_by :Friz_Freleng ;
+        :personality_trait "Proud" , "Persistent" , "Loser" ;
+        :known_for_catchphrase "Sufferin' Succotash" .
+
+      # Life With Feathers
+      :Life_With_Feathers a :Short ;
+        :release_date "1945-03-24"^^xsd:date .
+
+      # Friz Frelang
+      :Friz_Freleng a :Person ;
+        :name "Isadore Freleng" ;
+        :born_on "1905-08-21"^^xsd:date ;
+        :died_on "1995-05-26"^^xsd:date .
+
+      # Taz
+      :Taz a :Looney_Tunes_Character ;
+        :name "Tasmanian Devil" ;
+        :gender "Male" ;
+        :species "Tasmanian Devil" ;
+        :made_debut_appearance_in :Devil_May_Hare ;
+        :created_by :Robert_McKimson , :Sid_Marcus ;
+        :personality_trait "Dim-witted" , "Short-tempered" , "Impatient" .
+
+      # Devil May Hare
+      :Devil_May_Hare a :Short ;
+        :release_date "1954-06-19"^^xsd:date .
+
+      # Robert McKimson
+      :Robert_McKimson a :Person ;
+        :name "Robert Porter McKimson, Sr." ;
+        :born_on "1910-10-13"^^xsd:date ;
+        :died_on "1977-09-29"^^xsd:date .
+
+      # Sid Marcus
+      :Sid_Marcus a :Person ;
+        :name "Sidney Marcus" ;
+        :born_on "1877-10-14"^^xsd:date ;
+        :died_on "1979-01-31"^^xsd:date .
+
+      }
+    #+end_src
+    #+begin_src bash
+      stardog  query execute looney-tunes tutorial-insert-data-sparql-update.sparql
+    #+end_src
+
+
+*** DELETE data
+
+*** INSERT data based on graph patterns (as opposed to triples)
+    #+begin_src sparql :tangle /kube:stardog@stardog-stardog-0:insert-reciprocal-predicates.sparql
+      # Insert new statements based on certain patterns, e.g. the predicate 'knows' is a reciprocal relation
+      PREFIX : <http://looneytunes-graph.com/>
+
+      INSERT {
+          ?c2 :knows ?c1
+      }
+      WHERE {
+          ?c1 :knows ?c2
+      }
+    #+end_src
+    #+begin_src bash :dir /kube:stardog@stardog-stardog-0:
+      stardog  query execute looney-tunes insert-reciprocal-predicates.sparql
+    #+end_src
+
+*** [Activity] Declaring reciprocal (symmetric) predicates
+    1. Compose and run a SPARQL INSERT query to make the predicate :rival_of reciprocal in
+       nature.
+
+    2. Compose and run a SPARQL INSERT query to make the predicate :enemy_of reciprocal in
+       nature.
+
+    3. Compose and run a SPARQL query to surface all the triples involving the above two
+       predicates.
+
+    #+begin_src sparql
+      # First the "before" view of the data
+      select *
+      where {
+        ?s :rival_of|:enemy_of ?o
+      }
+    #+end_src
+
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+      insert { ?c2 :rival_of ?c1 }
+      where  { ?c1 :rival_of ?c2 }
+    #+end_src
+
+    #+begin_src sparql
+      insert { ?c2 :enemy_of ?c1 }
+      where  { ?c1 :enemy_of ?c2 }
+    #+end_src
+    #+begin_src sparql
+      # And now the "after" view of the data
+      select *
+      where {
+        ?s :rival_of|:enemy_of ?o
+      }
+    #+end_src
+
+*** SPARQL INSERT
+    The enemy of my rival "could join" forces with me
+    #+begin_src bash
+      stardog query looney-tunes "INSERT {
+        ?c2 :could_join_forces_with ?c3 .
+        ?c3 :could_join_forces_with ?c2 .
+      }
+      WHERE {
+        ?c1 :rival_of ?c2 .
+        ?c3 :enemy_of ?c1 .
+      }"
+      # insert new statements based on existing patterns
+      # the enemy of my rival could join forces with me
+      INSERT {
+        ?c2 :could_join_forces_with ?c3 .
+        ?c3 :could_join_forces_with ?c2 .
+      }
+      WHERE {
+        ?c1 :rival_of ?c2 .
+        ?c3 :enemy_of ?c1 .
+      }
+    #+end_src
+    #+begin_src sparql
+      select *
+      where {
+        ?c1 :could_join_forces_with ?c2 .
+      }
+    #+end_src
+
+**** Test using ob-sparql - it works!
+     #+begin_src sparql :url http://localhost:5820/looney-tunes/update
+      INSERT {
+        ?c2 :will_poop ?c3 .
+        ?c3 :will_poop ?c2 .
+      }
+      WHERE {
+        ?c1 :rival_of ?c2 .
+        ?c3 :enemy_of ?c1 .
+      }
+     #+end_src
+
+     #+begin_src sparql
+       SELECT * WHERE { ?s :will_poop ?o }
+     #+end_src
+
+*** [Activity] The enemy of my rival could join forces with me
+    Make the same rule as above, BUT reciprocal!
+*** DELETE data based on graph patterns
+** Section 7: Named Graphs
+*** Overview (#77)
+    Named graphs provide a means of compartmentalizing triples and improving the
+    management of graph data.
+*** Creating named graphs
+    Let's wrap our triples we loaded earlier into a named graph clause
+    #+begin_src sparql :url http://localhost:5820/looney-tunes/update
+      PREFIX : <http://looneytunes-graph.com/>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+      :Looney_Tunes_Graph {
+
+        # Bugs Bunny
+        :Bugs_Bunny a :Looney_Tunes_Character ;
+          :name "Bugs Bunny" ;
+          :species "Hare" ;
+          :gender "Male" ;
+          :made_debut_appearance_in :A_Wild_Hare ;
+          :created_by :Tex_Avery ;
+          :personality_trait "Cunning" , "Charismatic" , "Smart" ;
+          :known_for_catchphrase "What's up, doc?" .
+
+        # A Wild Hare
+        :A_Wild_Hare a :Short ;
+          :release_date "1940-07-27"^^xsd:date .
+
+        # Tex Avery
+        :Tex_Avery a :Person ;
+          :name "Frederick Bean Avery" ;
+          :born_on "1908-02-26"^^xsd:date ;
+          :died_on "1980-08-26"^^xsd:date .# Daffy Duck
+        :Daffy_Duck a :Looney_Tunes_Character ;
+          :name "Daffy Damas Duck" ;
+          :species "American Black Duck" ;
+          :gender "Male" ;
+          :made_debut_appearance_in :Porkys_Duck_Hunt ;
+          :created_by :Tex_Avery ;
+          :personality_trait "Assertive" , "Unrestrained" , "Combative" ;
+          :known_for_catchphrase "You're despicable!" .
+
+        # Porky's Duck Hunt
+        :Porkys_Duck_Hunt a :Short ;
+          :release_date "1937-04-17"^^xsd:date .# Sylvester
+        :Sylvester a :Looney_Tunes_Character ;
+          :name "Sylvester James Pussycat, Sr." ;
+          :species "Tuxedo Cat" ;
+          :gender "Male" ;
+          :made_debut_appearance_in :Life_With_Feathers ;
+          :created_by :Friz_Freleng ;
+          :personality_trait "Proud" , "Persistent" , "Loser" ;
+          :known_for_catchphrase "Sufferin' Succotash" .
+
+        # Life With Feathers
+        :Life_With_Feathers a :Short ;
+          :release_date "1945-03-24"^^xsd:date .
+
+        # Friz Frelang
+        :Friz_Freleng a :Person ;
+          :name "Isadore Freleng" ;
+          :born_on "1905-08-21"^^xsd:date ;
+          :died_on "1995-05-26"^^xsd:date .
+
+        # Taz
+        :Taz a :Looney_Tunes_Character ;
+          :name "Tasmanian Devil" ;
+          :gender "Male" ;
+          :species "Tasmanian Devil" ;
+          :made_debut_appearance_in :Devil_May_Hare ;
+          :created_by :Robert_McKimson , :Sid_Marcus ;
+          :personality_trait "Dim-witted" , "Short-tempered" , "Impatient" .
+
+        # Devil May Hare
+        :Devil_May_Hare a :Short ;
+          :release_date "1954-06-19"^^xsd:date .
+
+        # Robert McKimson
+        :Robert_McKimson a :Person ;
+          :name "Robert Porter McKimson, Sr." ;
+          :born_on "1910-10-13"^^xsd:date ;
+          :died_on "1977-09-29"^^xsd:date .
+
+        # Sid Marcus
+        :Sid_Marcus a :Person ;
+          :name "Sidney Marcus" ;
+          :born_on "1877-10-14"^^xsd:date ;
+          :died_on "1979-01-31"^^xsd:date .
+      }
+    #+end_src
+    #+begin_src sparql
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX : <http://looneytunes-graph.com/>
+      PREFIX mfg: <http://myfavs-graph.com/>
+
+      mfg:My_Favourites_Graph {
+        :Bugs_Bunny mfg:has_an_appetite_for "Carrots" .
+        :Daffy_Duck mfg:has_an_appetite_for "Spaghetti & Meatballs" .
+        :Taz mfg:has_an_appetite_for :Bugs_Bunny .
+      }
+    #+end_src
+*** Query named graphs
+    #+begin_src sparql
+      PREFIX mfg: <http://myfavs-graph.com/>
+
+      select * FROM :My_Favourites_Graph WHERE { ?s ?p ?o }
+    #+end_src
+    #+begin_src sparql
+      SELECT * FROM mfg:My_Favourites_Graph WHERE { ?s mfg:has_an_appetite_for ?o }
+    #+end_src
+    #+begin_src sparql
+      PREFIX : <http://looneytunes-graph.com/>
+      PREFIX mfg: <http://myfavs-graph.com/>
+
+      SELECT ?c1 ?c2
+      FROM mfg:My_Favourites_Graph
+      WHERE {
+          ?c1 mfg:has_an_appetite_for ?c2
+          FILTER(isIRI(?c2))
+      }
+    #+end_src
+** Section 8: Exploring the graph schema
+*** Overview
+*** What are the types of things in the graph?
+    + Principle: give every IRI node a type (e.g. :Looney_Tunes_Character, :Person)
+    + we can use SPARQL queries to surface the schema
+    #+begin_src sparql
+      # What are the types of things in the graph?
+      SELECT DISTINCT ?t
+      WHERE {
+        ?s a ?t
+      }
+      ORDER BY ?t
+    #+end_src
+*** What are the predicates
+    #+begin_src sparql
+      select DISTINCT ?p
+      WHERE {
+        ?s ?p ?o
+      }
+      ORDER BY ?p
+    #+end_src
+
+*** What is the full vocabulary for the graph?
+    #+begin_src sparql
+      SELECT ?t ?p ?pType
+      WHERE {
+        ?s ?p ?o ;
+        a ?t
+        BIND (
+          COALESCE (
+            IF (isIRI(?o), "Resource Predicate", 1/0),
+            "Literal Predicate"
+          ) AS ?pType
+        )
+      }
+      GROUP BY ?t ?p ?pType
+      ORDER BY ASC(?t) ASC(?p)
+    #+end_src
+
+*** [Activity] Graph vocabulary
+** Section 9: Course wrap-up
+
+
+* playground
+** Query tool
+   Let's try do an emacs-based query tool
+
+   #+name: ohai
+   | Connection name | URL                      |
+   |-----------------+--------------------------|
+   | homelab         | http://172.16.17.17:5820 |
+   |                 |                          |
+   + Connect to a server, includingprevious connections
+     #+begin_src sparql :url http://172.16.17.16:5820/beissmich/query/
+       SELECT *
+       WHERE {
+         ?s ?p ?o
+       }
+     #+end_src
+** Use sessions to server
+   + Establish the session
+      #+begin_src bash :session stardog-sesh :dir /kube:stardog@stardog-stardog-0:/var/opt/stardog/
+     export PATH=$PATH:/opt/stardog/bin
+     #+end_src
+   + list databases
+     #+begin_src bash :session stardog-sesh :results replace raw
+       stardog-admin db list
+     #+end_src
+   + Let's load the good stuff
+     #+begin_src bash :session stardog-sesh
+       time stardog-admin db create -n Customer360 /tmp/Customer360_tag_stardog_api_context_local.ttl.gz
+     #+end_src
+   +
+* Clojure!
+#+PROPERTY: header-args:clojure :dir ~/projects/graph/stardog/stardog-clj
+** Define Stardog Server URL and DB name
+  #+name: stardog-server-url
+  |http://localhost:5820|
+  #+name: stardog-db
+  |looney-tunes|
+** Hook up =stardog-clj= and start a Cider session
+   Wait to evaluate Clojure code until REPL comes up!
+   #+begin_src emacs-lisp
+     (cider-jack-in-clj '(:project-dir "~/projects/graph/stardog/stardog-clj"))
+   #+end_src
+
+** Connect to DB
+   #+begin_src clojure :session clj :dir ~/projects/graph/stardog/stardog-clj  :var url=stardog-server-url[,0] :var db=stardog-db[,0]
+     (use 'clojure.pprint)
+     (use 'stardog.core)
+
+     (def c (connect {:db db :server url}))
+   #+end_src
+
+** Query and explore results
+   Note use of =(print-table)= and =:results table pp= to create Org Mode table
+   #+begin_src clojure :session clj
+     (def results (query c "select * where { ?s ?p ?o }" ))
+     ;;(def string-results (query c "select ?s ?p ?o where { ?s ?p ?o }" {:converter str}))
+   #+end_src
+
+   #+name: query-overview
+   #+begin_src clojure :session clj :results table pp
+    (print-table (take 5 results))
+   #+end_src
+
+
+
+
+
+   #+begin_src clojure :session clj :results pp
+     (take 3 (map :p results))
+   #+end_src
+
+   #+begin_src clojure :session clj :results pp
+     (def results (query c "
+     PREFIX : <http://looneytunes-graph.com/>
+     select distinct ?n
+     WHERE { ?s ?p ?o . ?s a :Looney_Tunes_Character ; :name ?n }"))
+   #+end_src
+
+   #+begin_src clojure :session clj :results table pp
+     (print-table results)
+   #+end_src
