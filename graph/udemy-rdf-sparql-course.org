@@ -14,7 +14,8 @@
 #+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
 #+startup: overview
 * Setup for interactive querying and data manipulation
-  Ref: Endpoints for REST API [[https://stardog-union.github.io/http-docs/][API Reference | ReDoc]]
+  + Ref: Endpoints for REST API [[https://stardog-union.github.io/http-docs/][API Reference | ReDoc]]
+  + Ref: [[https://docs.stardog.com/operating-stardog/database-administration/adding-data#add-data-using-the-graph-store-http-protocol][Adding Data Using the Graph Store HTTP Protocol| Stardog Doc]]
 
   The course uses BlazeGraph, which happily accepts combinations of DML and DDL type
   statements.  The =ob-sparql= used in the following code blocks works *only* for queries
@@ -32,7 +33,7 @@
 
   + ref: [[https://stardog-union.github.io/http-docs/#tag/SPARQL][Stardog HTTP SPARQL API Reference | ReDoc]]
   #+begin_src emacs-lisp :var url=svals[2,0] :var db=svals[2,1] :var endpoint=svals[2,2] :var tpath=svals[2,3] :results silent
-    (let ((fullurl (concat  "/" db "/" endpoint "/" )))
+    (let ((fullurl (concat url "/" db "/" endpoint "/" )))
       ;; (message "My lovely url is %s\n" fullurl)
       (setq-local org-babel-default-header-args:sparql
                   (cons `(:url  . ,fullurl)
@@ -1222,6 +1223,8 @@
    #+begin_src clojure :session clj :results table pp
     (print-table (take 5 results))
    #+end_src
+
+
 
 
 
