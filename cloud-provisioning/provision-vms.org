@@ -65,7 +65,7 @@
                 # --cluster-version "1.20.10-gke.301" \
               # --max-pods-per-node "110" \
 
-       KUBECONFIG=~/.kube/config-files/gke-gg-gmk8s.yaml gcloud beta container --project "tigergraph-sales" clusters create "gg-gmk8s" \
+       KUBECONFIG=~/.kube/config-files/gke-gg-gmk8s.yaml gcloud beta container --project "MYPROJECT" clusters create "gg-gmk8s" \
               --zone "us-west3-a" \
               --labels="owner=greg_grubbs" \
               --no-enable-basic-auth \
@@ -94,7 +94,7 @@
      #+end_src
    + basic cluster
      #+begin_src bash
-       KUBECONFIG=~/.kube/config-files/gke-gg-basic.yaml gcloud beta container --project "tigergraph-sales" clusters create "gg-basic" \
+       KUBECONFIG=~/.kube/config-files/gke-gg-basic.yaml gcloud beta container --project "MYPROJECT" clusters create "gg-basic" \
               --zone "us-central1-c" \
               --no-enable-basic-auth \
               --cluster-version "1.20.10-gke.301" \
@@ -173,11 +173,11 @@
 
    + Nuke said cluster
      #+begin_src bash
-       gcloud beta container --project "tigergraph-sales" clusters delete "gg-tester" --zone "us-west3-a"
+       gcloud beta container --project "MYPROJECT" clusters delete "gg-tester" --zone "us-west3-a"
      #+end_src
 *** Add a node pool
     #+begin_src bash
-      gcloud beta container --project "tigergraph-sales" node-pools create "bigpool" \
+      gcloud beta container --project "MYPROJECT" node-pools create "bigpool" \
              --cluster "gg-synthea" \
              --zone "us-west1-b" \
              --node-version "1.21.9-gke.1002" \
@@ -198,7 +198,7 @@
 ** Single-node Rancher
   #+begin_src bash
     IP=nn.nn.nn.nn # reserved IP
-    gcloud beta compute --project=rancher-dev instances create gg-rancher-25-leap \
+    gcloud beta compute --project=MYPROJECT instances create gg-rancher-25-leap \
            --zone=us-west3-a \
            --machine-type=e2-medium \
            --network=default \
@@ -628,7 +628,7 @@
 *** individual instances vs instance groups
     + Create instance templates
       #+begin_src bash  :var IMAGE_FAMILY=cluster-image-family :var IMAGE_PROJECT=cluster-image-project :results output
-        gcloud beta compute --project=rancher-dev \
+        gcloud beta compute --project=MYPROJECT \
                instance-templates create gg-leap-4-k3s \
                --machine-type=e2-standard-4 \
                --network=projects/rancher-dev/global/networks/default \
@@ -651,13 +651,13 @@
     + CLI to create an instance group from the preceding instance template
       #+begin_src bash
         # no auto-scaling
-        gcloud compute --project=rancher-dev \
+        gcloud compute --project=MYPROJECT \
                instance-groups managed create gg-k3s-leap-servers \
                --base-instance-name=gg-k3s-server \
                --template=gg-leap-4-k3s \
                --size=2 \
                --zone=us-central1-b
-        gcloud compute --project=rancher-dev \
+        gcloud compute --project=MYPROJECT \
                instance-groups managed create gg-k3s-leap-agents \
                --base-instance-name=gg-k3s-agent \
                --template=gg-leap-4-k3s \
@@ -666,7 +666,7 @@
 
 
         # auto-scaling
-        # gcloud beta compute --project "rancher-dev" \
+        # gcloud beta compute --project "MYPROJECT" \
         #        instance-groups managed set-autoscaling "gg-k3s-sles-servers" \
         #        --zone "us-central1-b" \
         #        --cool-down-period "60" \
@@ -691,7 +691,7 @@
       + --image-family=opensuse-leap
       + --image-project=opensuse-cloud
     #+begin_src bash
-      gcloud beta compute --project=rancher-dev \
+      gcloud beta compute --project=MYPROJECT \
              instances create opensuse-leap-15-1 \
              --zone=us-central1-b \
              --machine-type=e2-medium \
