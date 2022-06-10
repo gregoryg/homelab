@@ -1237,8 +1237,8 @@
    #+begin_src clojure :session clj :results pp
      (def results (query c "
      PREFIX : <http://looneytunes-graph.com/>
-     select distinct ?n
-     WHERE { ?s ?p ?o . ?s a :Looney_Tunes_Character ; :name ?n }"))
+     select distinct ?name
+     WHERE { ?s ?p ?o . ?s a :Looney_Tunes_Character ; :name ?name }"))
    #+end_src
 
    #+begin_src clojure :session clj :results table pp
