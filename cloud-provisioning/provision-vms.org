@@ -7,7 +7,7 @@
      eksctl create cluster \
             --profile <MYPROFILE> \
             --auto-kubeconfig \
-            --name gg-tiger35 \
+            --name gg-stardog35 \
             --region us-west-2 \
             --with-oidc \
             --ssh-access \
@@ -16,10 +16,10 @@
             --node-volume-size 100 \
             --node-type m5.2xlarge
 
-     aws eks update-kubeconfig --kubeconfig ~/.kube/config-files/eks-gg-test.yaml --name gg-tiger35 --region us-west-2
+     aws eks update-kubeconfig --kubeconfig ~/.kube/config-files/eks-gg-test.yaml --name gg-stardog35 --region us-west-2
    #+end_src
    #+begin_src bash
-     eksctl delete cluster --name gg-tiger --profile <MYPROFILE>
+     eksctl delete cluster --name gg-stardog --profile <MYPROFILE>
    #+end_src
 ** Set up AKS cluster
    + ref: [[https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough][Quickstart: Deploy an AKS cluster by using Azure CLI - Azure Kubernetes Servi...]]
@@ -39,7 +39,7 @@
      #+begin_src bash
        ##   --generate-ssh-keys \
        az aks create \
-          --name gg-tiger35 \
+          --name gg-stardog35 \
           --resource-group gg-aks-rg \
           --node-count 3 \
           --enable-addons monitoring \
@@ -53,7 +53,7 @@
      #+end_src
    + Nab credentials
      #+begin_src bash
-       az aks get-credentials --resource-group gg-aks-rg --name gg-tiger35 --file -
+       az aks get-credentials --resource-group gg-aks-rg --name gg-stardog35 --file -
      #+end_src
    + Nuke the cluster by deleting the resource group (love Azure)
      #+begin_src bash
@@ -80,8 +80,6 @@
               --logging=SYSTEM,WORKLOAD \
               --monitoring=SYSTEM \
               --enable-ip-alias \
-              --network "projects/tigergraph-sales/global/networks/default" \
-              --subnetwork "projects/tigergraph-sales/regions/us-west3/subnetworks/default" \
               --no-enable-intra-node-visibility \
               --default-max-pods-per-node "110" \
               --no-enable-master-authorized-networks \
@@ -110,8 +108,6 @@
               --logging=SYSTEM,WORKLOAD \
               --monitoring=SYSTEM \
               --enable-ip-alias \
-              --network "projects/tigergraph-sales/global/networks/default" \
-              --subnetwork "projects/tigergraph-sales/regions/us-central1/subnetworks/default" \
               --no-enable-intra-node-visibility \
               --default-max-pods-per-node "110" \
               --no-enable-master-authorized-networks \
