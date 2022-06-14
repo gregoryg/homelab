@@ -7,7 +7,7 @@
      eksctl create cluster \
             --profile <MYPROFILE> \
             --auto-kubeconfig \
-            --name gg-stardog35 \
+            --name gg-stardog \
             --region us-west-2 \
             --with-oidc \
             --ssh-access \
@@ -16,7 +16,7 @@
             --node-volume-size 100 \
             --node-type m5.2xlarge
 
-     aws eks update-kubeconfig --kubeconfig ~/.kube/config-files/eks-gg-test.yaml --name gg-stardog35 --region us-west-2
+     aws eks update-kubeconfig --kubeconfig ~/.kube/config-files/eks-gg-test.yaml --name gg-stardog --region us-west-2
    #+end_src
    #+begin_src bash
      eksctl delete cluster --name gg-stardog --profile <MYPROFILE>
@@ -39,7 +39,7 @@
      #+begin_src bash
        ##   --generate-ssh-keys \
        az aks create \
-          --name gg-stardog35 \
+          --name gg-stardog \
           --resource-group gg-aks-rg \
           --node-count 3 \
           --enable-addons monitoring \
@@ -53,7 +53,7 @@
      #+end_src
    + Nab credentials
      #+begin_src bash
-       az aks get-credentials --resource-group gg-aks-rg --name gg-stardog35 --file -
+       az aks get-credentials --resource-group gg-aks-rg --name gg-stardog --file -
      #+end_src
    + Nuke the cluster by deleting the resource group (love Azure)
      #+begin_src bash
