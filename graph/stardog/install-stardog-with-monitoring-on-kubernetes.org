@@ -1,0 +1,126 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:1
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:nil
+#+options: todo:t |:t
+#+title: Install Stardog with monitoring on Kubernetes
+#+date: <2022-06-08 Wed>
+#+author: Gregory Grubbs
+#+email: gregory.grubbs@gmail.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 28.1.50 (Org mode 9.5.3)
+#+cite_export:
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
+* Install Stardog with monitoring on Kubernetes
+
+  Greg Grubbs, Sr. Solutions Consultant
+* Overview
+  We are going to install Stardog Server using Helm on any Kubernetes cluster managed by
+  Rancher.
+
+  We will add a Kubernetes cluster to an existing Rancher instance, then leverage Rancher
+  Catalog to install Prometheus and Grafana into our managed cluster.
+
+  We will then add Stardog Server and enable metrics collection.
+
+  This is one of the quickest ways to set up a properly configured Prometheus server and
+  is easy to put up and tear down for specific demos and Proofs of Concept.
+
+  What this video does *not* cover:
+  + Setting up Rancher
+  + Setting up a Kubernetes cluster
+
+* Provision a cluster - example in EKS
+  #+begin_src bash
+    eksctl create cluster \
+           --auto-kubeconfig \
+           --name gg-stardog \
+           --region us-west-2 \
+           --with-oidc \
+           --ssh-access \
+           --ssh-public-key gg-sd-oregon \
+           --nodes 3 \
+           --node-volume-size 100 \
+           --node-type m5.2xlarge
+
+    aws eks update-kubeconfig --kubeconfig ~/.kube/config-files/eks-gg-test.yaml --name gg-stardog --region us-west-2
+  #+end_src
+* Add a Kubernetes cluster to Rancher
+  This step will allow Rancher to manage our Kubernetes cluster.
+
+  Your cluster must have access to the Rancher instance but the reverse is not true.
+  Rancher will get periodic updates from your cluster even if it is behind a firewall that
+  Rancher is not able to reach over the network.
+
+** Prep the cluster
+  Let's begin by using the command line to look at our cluster
+  #+begin_src bash
+    kubectl get nodes -o wide
+  #+end_src
+
+  Now that we have affirmed our connection to the cluster, we will get a command from
+  Rancher to use in adding that cluster to Rancher management
+
+  You will name your cluster (only used as a label in Rancher) - and then will receive a
+  command that will look something like this:
+  #+begin_src bash
+    curl --insecure -sfL https://my-rancher.org/v3/import/46czgqv8pptmb5mn9hgjt9lzqzspfw6qdl2lqcq852wzvfhsczn6xp_c-m-f92qkxhl.yaml | kubectl apply -f -
+  #+end_src
+
+  The =--insecure= flag is only for clusters that do not have SSL/TLS ingress
+  established.  Choose the correct command for your cluster from the choices that Rancher
+  provides.
+
+  Once this command runs, a number of Custom Resource definitions will be installed on the
+  cluster, and the various deployments and daemonsets that make up Rancher and Fleet will
+  be installed.  It will take several minutes for everything to get running and ready.
+** Access our cluster in Rancher
+   We now have the option to continue manipulating cluster resource from the command line
+   using =kubectl= or doing many of those operations from within Rancher
+
+
+
+* Use Rancher to install monitoring (Prometheus and Grafana)
+
+  Select our newly added cluster, then select "Apps -> Charts" from the menu.
+
+  We are looking for the pre-packaged Monitoring package, which will be installed as a
+  Helm chart.  No specific modifications are necessary for this to work.
+
+  The Rancher Catalog is a collection of Helm charts (or Kustomize templates or just YAML
+  manifests).  Most of our applications will be packages as Helm charts in Git
+  repositories.
+
+  Choose "Monitoring", then "Install"
+
+
+
+
+* Add our Helm chart repository to Rancher Catalog
+
+  Our step here is to add the Helm chart for Stardog that includes metrics collection.
+
+  As of today in June 2022, there is a specific fork of the Stardog Helm chart repo on
+  GitHub that we will be using.
+
+
+* Install Stardog Server
+
+  Click on Stardog, and move through the wizard, being sure to select metrics collection.
+
+
+* Install a Grafana dashboard for Stardog
+
+  Go to the stardog-examples GitHub repository on Stardog-Union account
+
+  Import the dashboards for Stardog under the =grafana= directory
+
+
+* Access Monitoring
+  We will look at Prometheus and Grafana
+
+* Resources
+  + [[https://github.com/gregoryg/homelab/blob/master/cloud-provisioning/provision-vms.org][Provision Kubernetes]] using CLI for AWS, Azure and Google Cloud
+  + [[https://rancher.com/docs/rancher/v2.6/en/][Rancher Docs]] page
+  +

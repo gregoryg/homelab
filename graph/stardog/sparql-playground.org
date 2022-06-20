@@ -1,0 +1,353 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:t stat:t tags:t tasks:t tex:t timestamp:t title:t toc:nil
+#+options: todo:t |:t
+#+title: SPARQL Playground in Emacs OR Worst Notebook Ever
+#+date: <2022-06-10 Fri>
+#+author: Gregory Grubbs
+#+email: gregory.grubbs@gmail.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 28.1.50 (Org mode 9.5.3)
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
+#+startup: overview
+* Setup for interactive querying and data manipulation
+  + Ref: Endpoints for REST API [[https://stardog-union.github.io/http-docs/][API Reference | ReDoc]]
+  + Ref: [[https://docs.stardog.com/operating-stardog/database-administration/adding-data#add-data-using-the-graph-store-http-protocol][Adding Data Using the Graph Store HTTP Protocol| Stardog Doc]]
+
+  The =ob-sparql= used in the following code blocks works *only* for queries using the
+  =/query= endpoint.  Some data manipulation can be done on the =/update= endpoint
+
+
+** Variables for host, database, default endpoint
+   #+name: svals
+   | connection-name | base-url                            | db           | api-endpoint | tramp-path                       | cmd-path         | working-path |
+   |-----------------+-------------------------------------+--------------+--------------+----------------------------------+------------------+--------------|
+   | homelab         | http://172.16.17.17:5820            | looney-tunes | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
+   | localhost       | http://localhost:5820               | looney-tunes | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
+   | doghouse        | https://doghouse.stardog.cloud:5820 | insurance    | query        |                                  |                  |              |
+   #+begin_src emacs-lisp :var url=svals[2,1] :var db=svals[2,2] endpoint=svals[2,3]
+     db
+   #+end_src
+
+  + ref: [[https://stardog-union.github.io/http-docs/#tag/SPARQL][Stardog HTTP SPARQL API Reference | ReDoc]]
+** Use CURL with no Org Mode package dependencies
+   #+begin_src bash :results table replace :var url=svals[3,1] :var db=svals[3,2]
+     #          -H 'Accept: application/sparql-results+json' \
+     #     'http://172.16.17.17:5820/looney-tunes/query?reasoning=false' \
+     curl -s -X POST \
+          -H 'Accept: text/csv' \
+          -u admin:admin \
+          "${url}/${db}/query?reasoning=false" \
+          --data-urlencode 'query=select * WHERE { ?s a :Person ; :name ?n}'
+   #+end_src
+
+
+** Function to call in a new section to change endpoint URL
+   If changing database, API endpoint etc pass new values to the function
+
+  #+begin_src emacs-lisp
+    (defun gjg/set-sparql-header-args (url db endpoint)
+
+      (let ((fullurl (concat url "/" db "/" endpoint "/" )))
+        ;; (message "My lovely url is %s\n" fullurl)
+        (setq-local org-babel-default-header-args:sparql
+                    (cons `(:url  . ,fullurl)
+                          (assq-delete-all :url org-babel-default-header-args:sparql)))))
+    (defun gjg/set-stardog-bash-header-args (tramp-path )
+      (setq-local org-babel-default-header-args:bash
+                  (cons `(:dir . ,tpath)
+                        (assq-delete-all :dir org-babel-default-header-args:bash)))
+      )
+  #+end_src
+
+** Set SPARQL header args and test with a query
+   #+begin_src emacs-lisp :var url=svals[3,1] :var db=svals[3,2] :var endpoint=svals[3,3] :var tpath=svals[3,4] :results silent
+     (gjg/set-sparql-header-args url db endpoint)
+     (gjg/set-stardog-bash-header-args tpath)
+   #+end_src
+  #+begin_src sparql
+    SELECT * WHERE { ?s ?p ?o ; a ?type } LIMIT 5
+  #+end_src
+
+  #+begin_src sparql
+    select * where {?s a :Person ; :name ?n } LIMIT 5
+  #+end_src
+
+* Insurance database with hands-on labs
+** Set up headers for =insurance= database on =doghouse
+   #+begin_src emacs-lisp :var url=svals[4,1] :var db="insurance" :var endpoint=svals[2,3] :var tpath=svals[2,4] :results silent
+     (gjg/set-sparql-header-args url db endpoint)
+;     (gjg/set-stardog-bash-header-args tpath)
+   #+end_src
+
+** Stored queries on the =insurance= database
+*** Sensitive data in simple query =all_hands_sensitive_property=
+   SSN shows unmasked
+   #+begin_src sparql
+     PREFIX sqs: <tag:stardog:api:sqs:>
+     PREFIX : <http://api.stardog.com/>
+
+     select * WHERE{
+         <http://api.stardog.com/Customer#4502> a :Customer;
+                                                :Name ?NAME;
+                                                :SSN ?SSN.
+     }
+   #+end_src
+
+   Add properties to database:
+   | property                      | value                                   |
+   |-------------------------------+-----------------------------------------|
+   | security.masking.function     | replace(str(?object), ".+", "<Hidden>") |
+   | security.properties.sensitive | http://api.stardog.com/SSN              |
+
+   Run the above query again to see masking in effect
+*** =home_info= stored query
+   #+begin_src sparql
+     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+     PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+     PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+     PREFIX : <http://api.stardog.com/>
+     prefix geof: <http://www.opengis.net/def/function/geosparql/>
+     prefix unit: <http://qudt.org/vocab/unit#>
+
+     select * {
+     {
+     ?address a :Address;
+                         :Assessed_For ?assessment.
+     ?assessment a :Assessment;
+                 :Assessment_Value ?value.
+     FILTER(?address=<http://api.stardog.com/Address#99>)
+     BIND("AssessedValue" as ?category)
+     BIND(4 as ?order)
+
+     }
+     UNION
+     {
+     ?address a :Address;
+                         :Assessed_For ?assessment.
+     ?assessment a :Assessment;
+                 :Annual_Tax ?value.
+     FILTER(?address=<http://api.stardog.com/Address#99>)
+     BIND("Annual Tax" as ?category)
+     BIND(5 as ?order)
+
+     }
+     UNION
+     {
+     ?address a :Address;
+                         :Assessed_For ?assessment.
+     ?assessment a :Assessment;
+                 :Land_Area ?value.
+     FILTER(?address=<http://api.stardog.com/Address#99>)
+     BIND("Land Area" as ?category)
+     BIND(3 as ?order)
+
+
+     }
+     UNION
+     {
+     ?address a :Address;
+                         :Assessed_For ?assessment.
+     ?assessment a :Assessment;
+                 :Premise_Address ?value.
+     FILTER(?address=<http://api.stardog.com/Address#99>)
+     BIND("Address" as ?category)
+     BIND(1 as ?order)
+
+
+     }
+     UNION
+     {
+     ?address a :Address;
+                         :Assessed_For ?assessment.
+     ?assessment a :Assessment;
+                 :Property_Type ?value.
+     FILTER(?address=<http://api.stardog.com/Address#99>)
+     BIND("Property Type" as ?category)
+     BIND(2 as ?order)
+
+     }
+
+     }
+     ORDER BY ASC(?order)
+   #+end_src
+
+*** Crime stats
+    #+begin_src sparql
+      PREFIX sqs: <tag:stardog:api:sqs:>
+      PREFIX : <http://api.stardog.com/>
+
+      select * {
+        ?statIRI a :Crime_Stats;
+                 :Crime_Type ?offense;
+                 :Crime_Count ?crimeCount;
+                 :Crime_Zip ?zipCode;
+                 :Occurred_In ?zipCodeIri .
+        ?zipCodeIri a :Zip_Codes .
+      }
+      LIMIT 10
+    #+end_src
+
+    #+begin_src python :session :results file
+      import matplotlib
+      import matplotlib.pyplot as plt
+      fig=plt.figure(figsize=(3,3))
+      plt.plot([1,3,2])
+      fig.tight_layout()
+
+      fname = '/tmp/myfig.png'
+      plt.savefig(fname)
+      fname # return this to org-mode
+    #+end_src
+
+** Hands on exercises
+   Use any combo of SPARQL and Stardog Explorer to answer these
+*** Marvel BONUS Challenge
+    What Superpower does =Mystique= have?
+
+    Use the Movies database
+**** Reset header args to point to =movies= DB
+     #+begin_src emacs-lisp :var url=svals[4,1] :var db="movies" :var endpoint=svals[4,3] :var tpath=svals[4,4] :results silent
+     (gjg/set-sparql-header-args url db endpoint)
+     #+end_src
+**** Use SPARQL
+     #+begin_src sparql
+       select *
+       where { ?s ?p ?o }
+       LIMIT 9
+     #+end_src
+
+     #+begin_src sparql
+       SELECT *
+       where { ?s a :character }
+     #+end_src
+     NOTE: use 'query all graphs'
+     #+begin_src sparql
+       SELECT *
+       WHERE {
+        ?s a ?class ;
+        rdfs:label ?label .
+         ?class rdfs:label ?classType .
+         filter ( contains(lcase(?label), 'character'))
+       }
+     #+end_src
+
+     #+begin_src sparql
+       select *
+       where { ?s a tag:stardog:project:220202010345:modelConceptClass:220202e4TIRVY }
+       limit 10
+     #+end_src
+     #+begin_src sparql
+       SELECT *
+       {
+           ?instance a ?classType;
+                     rdfs:label ?instanceLabel.
+           ?classType a owl:Class;
+                      rdfs:label ?classLabel.
+           }
+       LIMIT 5
+     #+end_src
+
+* playground
+** Use sessions to server
+   I don't know whether I can do this with Stardog Cloud (get a shell) - but it works well
+   for local, Kubernetes, and standard servers
+   + Establish the session
+      #+begin_src bash :session stardog-sesh :dir /kube:stardog@stardog-stardog-0:/var/opt/stardog/
+     export PATH=$PATH:/opt/stardog/bin
+     #+end_src
+   + list databases
+     #+begin_src bash :session stardog-sesh :results replace raw
+       stardog-admin db list
+     #+end_src
+   + Let's load the good stuff
+     #+begin_src bash :session stardog-sesh
+       time stardog-admin db create -n Customer360 /tmp/Customer360_tag_stardog_api_context_local.ttl.gz
+     #+end_src
+   +
+* Clojure!
+#+PROPERTY: header-args:clojure :dir ~/projects/graph/stardog/stardog-clj
+** Define Stardog Server URL and DB name
+  #+name: stardog-server-url
+  |http://localhost:5820|
+  #+name: stardog-db
+  |looney-tunes|
+** Hook up =stardog-clj= and start a Cider session
+   Wait to evaluate Clojure code until REPL comes up!
+   #+begin_src emacs-lisp
+     (cider-jack-in-clj '(:project-dir "~/projects/graph/stardog/stardog-clj"))
+   #+end_src
+
+** Connect to DB
+   #+begin_src clojure :session clj :dir ~/projects/graph/stardog/stardog-clj  :var url=stardog-server-url[,0] :var db=stardog-db[,0]
+     (use 'clojure.pprint)
+     (use 'stardog.core)
+
+     (def c (connect {:db db :server url}))
+   #+end_src
+
+** Query and explore results
+   Note use of =(print-table)= and =:results table pp= to create Org Mode table
+   #+begin_src clojure :session clj
+     (def results (query c "select * where { ?s ?p ?o }" ))
+     ;;(def string-results (query c "select ?s ?p ?o where { ?s ?p ?o }" {:converter str}))
+   #+end_src
+
+   #+name: query-overview
+   #+begin_src clojure :session clj :results table pp
+    (print-table (take 5 results))
+   #+end_src
+
+
+
+   #+begin_src clojure :session clj :results pp
+     (take 3 (map :p results))
+   #+end_src
+
+   #+begin_src clojure :session clj :results pp
+     (def results (query c "
+     PREFIX : <http://looneytunes-graph.com/>
+     select distinct ?name
+     WHERE { ?s ?p ?o . ?s a :Looney_Tunes_Character ; :name ?name }"))
+   #+end_src
+
+   #+begin_src clojure :session clj :results table pp
+     (print-table results)
+   #+end_src
+
+* SQL play for use with virtual graphs
+** MySQL
+  Let's start with some MySQL
+  #+begin_src sql :engine mysql :dbhost 172.16.17.5 :dbpassword <mypassword> :database teslafi :hlines no
+    --          select * FROM teslafi.teslafi  ORDER BY RAND() LIMIT 10
+
+            show tables
+  #+end_src
+
+** sqlite
+    :PROPERTIES:
+    :header-args:sqlite:  :hlines yes :db /data/data-files/teslafi/teslafi.db :header yes :column yes
+    :END:
+    Set header args for sqlite in Org properties above
+   #+begin_src sqlite
+           select distinct(user_charge_enable_request)  from `teslafi-2017-04`
+   #+end_src
+
+   #+begin_src sqlite
+         select * FROM `teslafi` WHERE calendar_enabled='True' ORDER BY RANDOM() LIMIT 10
+   #+end_src
+
+   #+begin_src sqlite
+     --     select distinct(charge_to_max_range) from `teslafi`
+     --            select charge_to_max_range from teslafi WHERE  charge_to_max_range='' LIMIT 4
+     -- select chargeNumber, max(strftime('%Y-%m-%d',`Date`)) AS chargeDate, battery_level, max(battery_range) FROM teslafi
+     select chargeNumber, max(strftime('%Y-%m',`Date`)) AS chargeMonth, battery_level, max(battery_range) FROM teslafi
+     WHERE chargeNumber > 0 AND battery_level > 99 AND battery_level <> ''
+     -- GROUP BY chargeNumber
+     GROUP BY strftime('%Y-%m',`Date`)
+     -- ORDER BY chargeNumber ASC
+     ORDER BY chargeMonth ASC
+     LIMIT 10
+   #+end_src
