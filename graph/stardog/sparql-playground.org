@@ -41,6 +41,7 @@
           -u admin:admin \
           "${url}/${db}/query?reasoning=false" \
           --data-urlencode 'query=select * WHERE { ?s a :Person ; :name ?n}'
+     # echo "url: ${url}, db: ${db}"
    #+end_src
 
 
@@ -223,6 +224,7 @@
        SELECT *
        where { ?s a :character }
      #+end_src
+
      NOTE: use 'query all graphs'
      #+begin_src sparql
        SELECT *
@@ -239,6 +241,7 @@
        where { ?s a tag:stardog:project:220202010345:modelConceptClass:220202e4TIRVY }
        limit 10
      #+end_src
+
      #+begin_src sparql
        SELECT *
        {
@@ -258,14 +261,17 @@
       #+begin_src bash :session stardog-sesh :dir /kube:stardog@stardog-stardog-0:/var/opt/stardog/
      export PATH=$PATH:/opt/stardog/bin
      #+end_src
+
    + list databases
      #+begin_src bash :session stardog-sesh :results replace raw
        stardog-admin db list
      #+end_src
+
    + Let's load the good stuff
      #+begin_src bash :session stardog-sesh
        time stardog-admin db create -n Customer360 /tmp/Customer360_tag_stardog_api_context_local.ttl.gz
      #+end_src
+
    +
 * Clojure!
 #+PROPERTY: header-args:clojure :dir ~/projects/graph/stardog/stardog-clj
@@ -302,6 +308,8 @@
 
 
 
+
+
    #+begin_src clojure :session clj :results pp
      (take 3 (map :p results))
    #+end_src
@@ -317,6 +325,8 @@
      (print-table results)
    #+end_src
 
+
+
 * SQL play for use with virtual graphs
 ** MySQL
   Let's start with some MySQL
@@ -328,7 +338,7 @@
 
 ** sqlite
     :PROPERTIES:
-    :header-args:sqlite:  :hlines yes :db /data/data-files/teslafi/teslafi.db :header yes :column yes
+    :header-args:sqlite:   :db /data/data-files/teslafi/teslafi.db :column yes :header yes
     :END:
     Set header args for sqlite in Org properties above
    #+begin_src sqlite
