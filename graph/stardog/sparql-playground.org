@@ -252,6 +252,333 @@
            }
        LIMIT 5
      #+end_src
+* Northwind Everclear - using pystardog
+  :PROPERTIES:
+  :header-args:python: :session jupyter-venv :results output
+  :END:
+  Refer to poc-northwind-everclear
+  Notebook =Parallel_Data_Load.ipynb= in =Data-Load= directory
+** Set up headers for =paratest= database on =homelab=
+   #+begin_src emacs-lisp :var url=svals[2,1] :var db="paratest" :var endpoint=svals[2,3] :var tpath="~/tmp/" :results silent
+     (gjg/set-sparql-header-args url db endpoint)
+     (gjg/set-stardog-bash-header-args tpath)
+   #+end_src
+** Reproduce the data loading Jupyter notebook without Jupyter
+*** Import statements
+    Establish a Python session and pull in imports
+
+    Set the Python header args according to the =#properties= definition above
+
+    #+begin_src emacs-lisp :session jupyter-venv
+      (use-package pyvenv
+        :straight t)
+      (pyvenv-activate "~/.local/python-venvs/jupyter")
+    #+end_src
+
+    #+RESULTS:
+
+    #+begin_src bash :session jupyter-venv :results output
+      echo "${VIRTUAL_ENV}"
+    #+end_src
+
+    #+RESULTS:
+    : /home/gregj/.local/python-venvs/jupyter
+
+
+    #+begin_src python
+      import sys
+      print('\n'.join(sys.path))
+    #+end_src
+
+    #+RESULTS:
+    :
+    : /usr/lib/python310.zip
+    : /usr/lib/python3.10
+    : /usr/lib/python3.10/lib-dynload
+    : /home/gregj/.local/python-venvs/jupyter/lib/python3.10/site-packages
+
+    #+begin_src python
+      # IMPORT STATEMENTS
+
+      import stardog
+      import asyncio
+      import os
+      import re
+      import urllib.parse
+      from requests.auth import HTTPBasicAuth
+      import time
+      from requests import get, post
+      from requests_toolbelt.multipart.encoder import MultipartEncoder
+    #+end_src
+
+    #+RESULTS:
+
+*** Notebook environment variables
+    #+begin_src python
+      # NOTEBOOK ENVIRONMENT VARIABLES - CHANGE TO YOUR ENVIRONMENT
+
+      # env_endpoint = 'http://stardog1:5820'
+      env_endpoint = 'http://172.16.17.17:5820'
+      env_username = 'admin'
+      env_password = 'admin'
+      env_database = "paratest"
+      env_dir_path = '/home/gregj/projects/graph/stardog/poc-northwind-everclear/Data-Load/domains/people/data'
+      env_mapping_path = "/home/gregj/projects/graph/stardog/poc-northwind-everclear/Data-Load/domains/people/mappings/people.sms2"
+      env_file_type = "JSON"
+
+      env_content_list = [stardog.content.File('/home/gregj/projects/graph/stardog/poc-northwind-everclear/Data-Load/domains/people/sample.ttl')] # Data files to add
+
+      c_config = {
+          "conn_details": {
+              'endpoint': env_endpoint,
+              'username': env_username,
+              'password': env_password
+          },
+          "database": env_database,
+          "dir_path": env_dir_path,
+          "mapping_path": env_mapping_path,
+          "file_type": env_file_type
+      }
+    #+end_src
+
+    #+RESULTS:
+
+*** Function definitions
+    #+begin_src python
+      # FUNCTION DEFINITIONS
+
+      # Returns a PyStardog connection with 'verify' set
+      def get_conn(config):
+          CERT_PATH=os.getenv("CERT_PATH", "") # might be useful for verify=false setting
+          with stardog.Connection(config["database"], **config["conn_details"]) as conn:
+              if len(CERT_PATH) > 0:
+                  conn.client.session.verify = CERT_PATH
+              else:
+                  conn.client.session.verify = False
+          print("  - Certificate Check: verify = " + str(conn.client.session.verify)) # Just for debug and check purposes
+          return conn
+
+      # Returns a PyStardog administration with 'verify' set
+      def get_admin(config):
+          CERT_PATH=os.getenv("CERT_PATH", "") # might be useful for verify=false setting
+          with stardog.Admin(**config["conn_details"]) as admin:
+              if len(CERT_PATH) > 0:
+                  admin.client.session.verify = CERT_PATH
+              else:
+                  conn.client.session.verify = False
+          print("  - Certificate Check: verify = " + str(admin.client.session.verify)) # Just for debug and check purposes
+          return admin
+
+
+      def get_auth(config):
+          return HTTPBasicAuth(config["conn_details"]["username"], config["conn_details"]["password"])
+
+
+      # Returns the healthcheck URL for the given Stardog Endpoint
+      def get_healthcheck_url(config):
+          return config["conn_details"]["endpoint"] + "/admin/healthcheck"
+
+
+      # Returns the Status Code of the healthcheck request. Returns None if the the server is unavailable
+      def get_healthcheck(config):
+          try:
+              # remove cert check - verify = False
+              healthcheck_result = get(get_healthcheck_url(config), verify = False, auth = get_auth(config))
+              return healthcheck_result.status_code
+          except:
+              return None
+
+
+      # Gets triple cound of DB with exact parameter set to true
+      def get_triple_count(config):
+
+          conn = get_conn(config)
+          size = conn.size(exact=True)  # This can take some time to check since we are asking for exact, this does not effect the actual load time
+          return size
+
+
+      # This is just using the HTTP API directly
+      def get_triple_count_api(config):
+
+          ## The Stardog HTTP endpoint for importing data from a file
+          size_url = config["conn_details"]['endpoint'] + '/' + config["database"] + '/size?exact=True'
+
+          stardogResult = get(size_url, auth = get_auth(config), verify = False)
+
+          return int(stardogResult.text)
+
+
+      # Get the row count of results
+      def get_row_count(config, query):
+          conn = get_conn(config)
+          row_count = select_query(config, query)["results"]["bindings"][0]["count"]["value"]
+
+          return int(row_count)
+
+
+      # Send a select query
+      def select_query(config, query):
+          conn = get_conn(config)
+          result = conn.select(query)
+
+          return result
+
+
+      # Get the row count directly from API
+      def get_row_count_api(config, query):
+
+          ## The Stardog HTTP endpoint for importing data from a file
+          sparql_url = config["conn_details"]['endpoint'] + '/' + config["database"] + '/query?query=' + urllib.parse.quote_plus(query) # Need to URL encode the query
+
+          stardogResult = post(sparql_url, auth = get_auth(config), verify = False, headers={'Accept': 'application/sparql-results+json'})
+
+          row_count = stardogResult.json()["results"]["bindings"][0]["count"]["value"]
+
+          return int(row_count)
+
+
+      def load_file(conn_config, action_config):
+
+          multipart_data = MultipartEncoder(
+              fields = {
+                  'database': conn_config["database"],
+                  'mappings': open(action_config["mapping_path"],'br'),
+                  'options' : '',
+                  'input_file_type': action_config["file_type"],
+                  'input_file': open(action_config["file_path"],'br')
+              })
+
+          ## The Stardog HTTP endpoint for importing data from a file
+          import_url = conn_config["conn_details"]['endpoint'] + '/admin/virtual_graphs/import'
+
+          # remove cert check - verify = False
+          stardogResult = post(import_url, auth = get_auth(conn_config), data = multipart_data, verify = False, headers={'Content-Type': multipart_data.content_type})
+
+          return stardogResult.status_code
+
+
+      async def async_load_file(conn_config, action_config):
+          return load_file(conn_config, action_config)
+
+
+      async def load_file_async(conn_config, action_config):
+          # network_latency = 0.25
+          # # print("Network Latency is:" + network_latency)
+          # await asyncio.sleep(network_latency) # Network Latency
+          return await async_load_file(conn_config, action_config)
+
+
+      async def para_load(config):
+          dir_path = config["dir_path"]
+          mapping_path = config["mapping_path"]
+          file_type = config["file_type"]
+          input_files = os.listdir(dir_path)
+
+          a_config_list = []
+          pre_row_count = 0
+
+          ## Get the row counts, need before and after
+          pre_count = get_triple_count(config)
+          #pre_count = get_triple_count_api(config) # API directly
+          with open(mapping_path,'br') as f:
+
+              count_query = ""
+              data = f.read().rstrip()
+              prefix = re.findall(r"(^prefix.*|^PREFIX.*)", data.decode('utf-8')) # Get all the prefix lines
+
+              for p in prefix:
+                  count_query += p + "\n" # Add prefix to query
+
+              count_query += "\nSELECT (COUNT(*) AS ?count) { \n" + re.search(r"\}[\S\s]*TO[\S\s]*\{([\S\s]*(.*))\}[\S\s]*WHERE", data.decode('utf-8')).group(1) + "\n }" # Match 'TO {...}'
+
+              pre_row_count = get_row_count(config, count_query)
+
+          ## Creates all the Action Configurations and appends them to the action Configuration List
+          for f in input_files:
+              a_config = {
+                  "mapping_path": mapping_path,
+                  "file_type": file_type,
+                  "file_path": dir_path + "/" + f
+              }
+
+              a_config_list.append(a_config)
+
+          ## Creates a co-routine list
+          cors = [load_file_async(config, a) for a in a_config_list]
+          results = asyncio.gather(*cors)
+
+          start_time = time.perf_counter() # Start timmer
+
+          ## Await for all tasks to complete
+          results_list = await results
+
+          ## Show HTTP status codes for each file load if they are not successful
+          for c, r in zip(a_config_list, results_list):
+              if r != 200:
+                  print("FAILED LOAD: " + os.path.basename(c["file_path"]) + " - file load HTTP status " + str(r))
+
+          ##  Output load results
+          elapsed_time = time.perf_counter() - start_time # End timmer
+          print(f"Load executed in {elapsed_time:0.2f} seconds.")
+
+          new_count = get_triple_count(config)
+          #new_count = get_triple_count_api(config) # API directly
+          load_count = new_count - pre_count
+          print("Triples Loaded: " + str(load_count))
+
+          new_row_count = get_row_count(config, count_query)
+          #new_row_count = get_row_count_api(config, count_query)
+          load_row_count = new_row_count - pre_row_count
+          print("Rows Loaded: " + str(load_row_count))
+
+      # Load RDF files (ontoloty/data)
+      def load_data(config, content_list):
+          conn = get_conn(config)
+          conn.begin()
+          for content in content_list:
+              conn.add(content)
+              print("Loaded : " + content.fname)
+          result = conn.commit() # PLAT-4257, commit should return added/deleted like HTTP API
+          conn.close()
+
+          return result
+    #+end_src
+
+    #+RESULTS:
+
+*** Run data loading
+    #+begin_src python :results both
+      # RUN LOAD
+
+      healthcheck_url = get_healthcheck_url(c_config)
+
+      if(get_healthcheck(c_config) == 200):
+          load_data(c_config, env_content_list) # This could be the ontology
+          await para_load(c_config)
+      else:
+          print("Error: The Stardog Server at " + healthcheck_url + " is not available")
+          print("Error: A Stardog Server must be running and available, check your connection configuration and try again.")
+          print("Error: To check the the status of the Stardog server you may use the following CLI command")
+          print("Error: stardog-admin --server http://localhost:5820 server status")
+    #+end_src
+
+    #+RESULTS:
+
+*** Test a query
+    #+begin_src python
+      # TEST QUERY
+
+      query = 'SELECT * { ?s ?p ?o } LIMIT 10'
+
+      response = select_query(c_config, query)
+
+      print(response["results"])
+    #+end_src
+
+    #+RESULTS:
+    :   - Certificate Check: verify = False
+    : {'bindings': []}
+
 
 * playground
 ** Use sessions to server
