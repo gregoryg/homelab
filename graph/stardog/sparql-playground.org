@@ -275,27 +275,15 @@
       (pyvenv-activate "~/.local/python-venvs/jupyter")
     #+end_src
 
-    #+RESULTS:
-
     #+begin_src bash :session jupyter-venv :results output
       echo "${VIRTUAL_ENV}"
     #+end_src
-
-    #+RESULTS:
-    : /home/gregj/.local/python-venvs/jupyter
 
 
     #+begin_src python
       import sys
       print('\n'.join(sys.path))
     #+end_src
-
-    #+RESULTS:
-    :
-    : /usr/lib/python310.zip
-    : /usr/lib/python3.10
-    : /usr/lib/python3.10/lib-dynload
-    : /home/gregj/.local/python-venvs/jupyter/lib/python3.10/site-packages
 
     #+begin_src python
       # IMPORT STATEMENTS
@@ -310,8 +298,6 @@
       from requests import get, post
       from requests_toolbelt.multipart.encoder import MultipartEncoder
     #+end_src
-
-    #+RESULTS:
 
 *** Notebook environment variables
     #+begin_src python
@@ -340,8 +326,6 @@
           "file_type": env_file_type
       }
     #+end_src
-
-    #+RESULTS:
 
 *** Function definitions
     #+begin_src python
@@ -544,10 +528,8 @@
           return result
     #+end_src
 
-    #+RESULTS:
-
 *** Run data loading
-    #+begin_src python :results both
+    #+begin_src python
       # RUN LOAD
 
       healthcheck_url = get_healthcheck_url(c_config)
@@ -562,12 +544,9 @@
           print("Error: stardog-admin --server http://localhost:5820 server status")
     #+end_src
 
-    #+RESULTS:
-
 *** Test a query
     #+begin_src python
       # TEST QUERY
-
       query = 'SELECT * { ?s ?p ?o } LIMIT 10'
 
       response = select_query(c_config, query)
@@ -575,11 +554,10 @@
       print(response["results"])
     #+end_src
 
-    #+RESULTS:
-    :   - Certificate Check: verify = False
-    : {'bindings': []}
-
-
+*** Test the query the Org mode way
+    #+begin_src sparql
+      select * {?s ?p ?o} LIMIT 10
+    #+end_src
 * playground
 ** Use sessions to server
    I don't know whether I can do this with Stardog Cloud (get a shell) - but it works well
