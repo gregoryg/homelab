@@ -682,7 +682,7 @@
      WCOLL=~/projects/homelab/pdsh/all-nodes.txt pdsh -R ssh 'sudo systemctl restart docker'
 
    #+end_src
-* k3s
+* k3s/k3sup
   As of OpenSSH server 9.x, there is a change needed to make SSH work with k3s
   in =/etc/ssh/sshd_config= make sure you have the following settings
   #+begin_src conf
@@ -2204,7 +2204,96 @@
 **** Knowledge test
      + 95%
 
+* Data generation
+  When you just can't pry data from a client.
 
+
+** Faker library
+
+*** Python
+
+*** Ruby
+
+**** A small fake aerospace project data set
+     #+begin_src ruby
+       require 'csv'
+       require 'faker'
+
+       AEROSPACE_TERMS = [
+         "aeroacoustics", "aerobraking", "aeroelsticity", "aerospace architecture", "aerospace bearing",
+         "aerospace materials", "flight control systems", "signal acquisition", "antimatter rocket",
+         "arcject rocket", "astrodynamics", "beam powered propulsion", "bi-elliptic transfer",
+         "booster", "cabin pressurization", "centrifugal compressor", "collimated beam",
+         "compressor map", "constant speed drive", "cylinder stress", "digital datcom",
+         "dual mode propulsion rocket", "electrostatic ion thruster", "expander cycle",
+         "field emission electric propulsion", "helicopter flight control systems",
+         "aircraft flight control systems", "gas generator cycle", "gps", "gravitational slingshot",
+         "hall effect thruster", "instrument landing system", "interplanetary transport network",
+         "jet engine", "lander", "legrangian mechanics", "lithobraking", "magsail", "membrane mirror",
+         "monopropellant rocket", "multistage rocket", "orbit phasing", "orbital station keeping",
+         "pogo oscillation", "radar", "railgun", "remote manipulator system", "reaction control system",
+         "resistojet rocket", "reusable launch system", "satellite", "scramjet", "skyhook", "solar panel",
+         "solar thermal rocket", "space activity suit", "space elevator", "space fountain", "space plane",
+         "tripropellant rocket", "two stage to orbit", "v2 rocket", "vasimr", "vortex generator",
+         "wind tunnels"
+       ]
+
+
+       AEROSPACE_TERM_COUNT = AEROSPACE_TERMS.size
+       CSV.open("/tmp/projects.csv", "w") do |csv|
+         csv << ['projectID', 'name', 'concept']
+         1000.times do |n|
+           default_tag = AEROSPACE_TERMS[rand(AEROSPACE_TERM_COUNT)]
+           project_name = default_tag.upcase + "(#{n})"
+           csv << [n, project_name, default_tag]
+           tag_count = 1 + rand(10)
+           tag_count.times do
+             index = (rand < 0.85 ? 5*rand((AEROSPACE_TERM_COUNT/5).floor) : rand(AEROSPACE_TERM_COUNT))
+             tag = AEROSPACE_TERMS[index]
+             csv << [n+1, project_name, tag]
+           end
+         end
+         puts "Projects done"
+       end
+
+       # ganerate employees and map them to locations and projects
+       employees = 141_000.times.map { Faker::Name.name }
+       CSV.open("/tmp/employees.csv", "w") do |csv|
+         csv << ['employeeID','name']
+         employees.each_with_index do |e, i|
+           csv << [i+1, e]
+         end
+         puts "Employees done"
+       end
+
+       city_faker = Faker::Address.unique
+       locations = 58.times.map { "#{city_faker.city}\, #{Faker::Address.state}" }
+       CSV.open("/tmp/locations.csv", "w") do |csv|
+         csv << ['locationID', 'location']
+         locations.each_with_index do |l, i|
+           csv << [i+1, l]
+         end
+         puts "Locations done"
+       end
+
+       CSV.open("/tmp/employee_locations.csv", "w") do |csv|
+         csv << ['employeeID', 'locationID']
+         employees.each_with_index do |e, i|
+           csv << [i+1, (rand < 0.5 ? rand(3) : rand(locations.size)) + 1]
+         end
+         puts "Employee locations done"
+       end
+
+       CSV.open("/tmp/employee_projects.csv", "w") do |csv|
+         csv << ['employeeID', 'projectID']
+         employees.each_with_index do |e, i|
+           (1 + rand(3)).times do
+             csv << [i+1, (rand < 0.333 ? rand(10) : rand(1000))+1]
+           end
+         end
+         puts "Employee projects done"
+       end
+     #+end_src
 * Home automation
 ** Home Assistant
    + Ref: [[https://www.home-assistant.io/installation/linux][Linux - Home Assistant]]
