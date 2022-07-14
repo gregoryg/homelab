@@ -50,20 +50,7 @@
 ** Function to call in a new section to change endpoint URL
    If changing database, API endpoint etc pass new values to the function
 
-  #+begin_src emacs-lisp
-    (defun gjg/set-sparql-header-args (url db endpoint)
-
-      (let ((fullurl (concat url "/" db "/" endpoint "/" )))
-        ;; (message "My lovely url is %s\n" fullurl)
-        (setq-local org-babel-default-header-args:sparql
-                    (cons `(:url  . ,fullurl)
-                          (assq-delete-all :url org-babel-default-header-args:sparql)))))
-    (defun gjg/set-stardog-bash-header-args (tramp-path )
-      (setq-local org-babel-default-header-args:bash
-                  (cons `(:dir . ,tpath)
-                        (assq-delete-all :dir org-babel-default-header-args:bash)))
-      )
-  #+end_src
+   Cf. =gjg/set-sparql-header-args= and =gjg/set-stardog-bash-header-args= in [[file:~/emacs-gregoryg/emacs/gjg-functions.el][gjg-functions.el]]
 
 ** Set SPARQL header args and test with a query
    #+begin_src emacs-lisp :var url=svals[3,1] :var db=svals[3,2] :var endpoint=svals[3,3] :var tpath=svals[3,4] :results silent
