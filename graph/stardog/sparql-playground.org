@@ -547,6 +547,59 @@
     #+begin_src sparql
       select * {?s ?p ?o} LIMIT 10
     #+end_src
+
+* Phat insurance
+**
+* Healthcare
+  :PROPERTIES:
+  :header-args:python: :session jupyter-venv :results output
+  :END:
+
+** Set up headers for =healthcare= database on =homelab-secure=
+  #+begin_src emacs-lisp :var url=svals[5,1] :var db="healthcare" :var endpoint=svals[5,3] :var tpath="~/tmp/" :results silent
+    (gjg/set-sparql-header-args url db endpoint)
+    (gjg/set-stardog-bash-header-args tpath)
+  #+end_src
+
+** Count of all triples
+   Test time against doghouse
+   #+begin_src sparql
+     select (count(*) AS ?triples)
+     WHERE { ?s ?p ?o}
+     LIMIT 10
+   #+end_src
+
+* Emacs interface experiments using =homelab-secure=
+** Set up headers for =looney-tunes= database on =homelab-secure=
+ #+begin_src emacs-lisp :var url=svals[2,1] :var db="looney-tunes" :var endpoint=svals[2,3] :var tpath="~/tmp/" :results silent
+   (gjg/set-sparql-header-args url db endpoint)
+   (gjg/set-stardog-bash-header-args tpath)
+ #+end_src
+** Get all predicates
+   #+begin_src sparql
+     select distinct ?p where {?s ?p ?o}
+   #+end_src
+** Emacs table lookup stuff
+
+    #+TBLNAME: rates
+   | currency        | abbreviation | euros |
+   |-----------------+--------------+-------|
+   | euro            | eur          |     1 |
+   | Norwegian krone | nok          |  0.15 |
+   | Swedish krona   | sek          |  0.12 |
+   | US dollar       | usd          |  0.77 |
+
+   |  date | expense          |  sum | currency | rate |   euros |
+   |-------+------------------+------+----------+------+---------|
+   |  1.3. | flights          |  324 | eur      |    1 |     324 |
+   |  4.6. | books and maps   |  243 | usd      | 0.77 |  187.11 |
+   | 30.7. | rental car       | 8300 | sek      | 0.12 |    996. |
+   |  2.7. | hotel            | 1150 | sek      | 0.12 |    138. |
+   |  2.7. | lunch            |  190 | sek      | 0.12 |    22.8 |
+   |  3.7. | fishing licenses | 1400 | nok      | 0.15 |    210. |
+   |  3.7. | gasoline         |  340 |          |  nil | 340 nil |
+   #+TBLFM: $5='(org-lookup-first $4 '(remote(rates,@2$2..@>$2)) '(remote(rates,@2$3..@>$3)))::$6=$5*$3
+
 * playground
 ** Use sessions to server
    I don't know whether I can do this with Stardog Cloud (get a shell) - but it works well
