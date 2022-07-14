@@ -22,11 +22,13 @@
 
 ** Variables for host, database, default endpoint
    #+name: svals
-   | connection-name | base-url                            | db           | api-endpoint | tramp-path                       | cmd-path         | working-path |
-   |-----------------+-------------------------------------+--------------+--------------+----------------------------------+------------------+--------------|
-   | homelab         | http://172.16.17.17:5820            | looney-tunes | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
-   | localhost       | http://localhost:5820               | looney-tunes | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
-   | doghouse        | https://doghouse.stardog.cloud:5820 | insurance    | query        |                                  |                  |              |
+   | connection-name | base-url                                             | db           | api-endpoint | tramp-path                       | cmd-path         | working-path |
+   |-----------------+------------------------------------------------------+--------------+--------------+----------------------------------+------------------+--------------|
+   | homelab         | http://172.16.17.17:5820                             | looney-tunes | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
+   | localhost       | http://localhost:5820                                | looney-tunes | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
+   | doghouse        | https://doghouse.stardog.cloud:5820                  | insurance    | query        |                                  |                  |              |
+   | homelab-secure  | https://preferred-goat-q7vpfs.g57fzg0l.traefikhub.io | looney-tunes | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
+   | presles         | https://presales.stardog.cloud:5820                  | insurance    | query        |                                  |                  |              |
    #+begin_src emacs-lisp :var url=svals[2,1] :var db=svals[2,2] endpoint=svals[2,3]
      db
    #+end_src
