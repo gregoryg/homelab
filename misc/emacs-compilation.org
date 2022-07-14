@@ -69,10 +69,11 @@
    #+end_src
 
 * Configure and compile
+  NOTE: Emacs must be compiled with modules support in order to use Jupyter
 #+begin_src bash
   cd emacs-source
   ./autogen.sh
-  ./configure --with-imagemagick --with-mailutils --with-xwidgets --with-native-compilation --with-json
+  ./configure --with-imagemagick --with-mailutils --with-xwidgets --with-native-compilation --with-json --with-modules
   time make -j
   sudo make install
 #+end_src
