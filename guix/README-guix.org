@@ -172,6 +172,11 @@
    #+end_src
 ** Visual Studio Code - OSS - com.visualstudio.code-oss
 ** Zoom - us.zoom.Zoom
+ + Give access to virtual backgrounds
+   #+begin_src bash
+     flatpak --user override --filesystem=~/backgrounds us.zoom.Zoom
+     flatpak --user override --filesystem=~/.zoom us.zoom.Zoom
+   #+end_src
  + Run Zoom once, exit, then edit ~/.var/app/us.zoom.Zoom/config/zoomus.conf
    Set =enableMiniWindow=false=
  + Add MIME handler =x-scheme-handler/zoommtg=us.zoom.Zoom.desktop= to
