@@ -556,15 +556,25 @@
   :END:
 
 ** Set up headers for =healthcare= database on =homelab-secure=
-  #+begin_src emacs-lisp :var url=svals[5,1] :var db="healthcare" :var endpoint=svals[5,3] :var tpath="~/tmp/" :results silent
+  #+begin_src emacs-lisp :var url=svals[5,1] :var db="musicbrainz" :var endpoint=svals[5,3] :var tpath="~/tmp/" :results silent
     (gjg/set-sparql-header-args url db endpoint)
     (gjg/set-stardog-bash-header-args tpath)
+  #+end_src
+  #+begin_src sparql
+    SELECT ?year (count(?album) AS ?count)
+    FROM <virtual://all> {
+          ?album a :Album ;
+                 :date ?date ;
+          BIND (year(?date) AS ?year)
+    }
+    GROUP By ?year
   #+end_src
 
 ** Count of all triples
    Test time against doghouse
    #+begin_src sparql
      select (count(*) AS ?triples)
+     FROM <:context:virtual>
      WHERE { ?s ?p ?o}
      LIMIT 10
    #+end_src
@@ -599,8 +609,18 @@
    |  3.7. | fishing licenses | 1400 | nok      | 0.15 |    210. |
    |  3.7. | gasoline         |  340 |          |  nil | 340 nil |
    #+TBLFM: $5='(org-lookup-first $4 '(remote(rates,@2$2..@>$2)) '(remote(rates,@2$3..@>$3)))::$6=$5*$3
+* PyStardog using Databrics from local notebook
+  This makes use of =databricks-connect=
+
+  Let's activate our Python virtual environment
+  #+begin_src emacs-lisp :session jupyter-venv
+    (pyvenv-activate "~/.local/python-venvs/jupyter")
+  #+end_src
+
+
 
 * playground
+
 ** Use sessions to server
    I don't know whether I can do this with Stardog Cloud (get a shell) - but it works well
    for local, Kubernetes, and standard servers
@@ -624,7 +644,7 @@
 #+PROPERTY: header-args:clojure :dir ~/projects/graph/stardog/stardog-clj
 ** Define Stardog Server URL and DB name
   #+name: stardog-server-url
-  |http://localhost:5820|
+  |http://172.16.17.18:5820|
   #+name: stardog-db
   |looney-tunes|
 ** Hook up =stardog-clj= and start a Cider session
