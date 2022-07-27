@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+## THIS relies on a Google OAuth 2.0 DESKTOP APP credential ref https://developers.google.com/gmail/api/quickstart/python
 
 from __future__ import print_function
 
