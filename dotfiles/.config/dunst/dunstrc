@@ -74,6 +74,7 @@
 
 [wallpaper]
     appname = Spotify
-    script = rotate-wallpapers.sh
+    script = update-spotify-exwm.sh
+    # script = rotate-wallpapers.sh
     font = Noto Serif 18
     # new_icon = spotify
