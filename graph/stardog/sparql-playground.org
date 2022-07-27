@@ -22,13 +22,14 @@
 
 ** Variables for host, database, default endpoint
    #+name: svals
-   | connection-name | base-url                                             | db           | api-endpoint | tramp-path                       | cmd-path         | working-path |
-   |-----------------+------------------------------------------------------+--------------+--------------+----------------------------------+------------------+--------------|
-   | homelab         | http://172.16.17.17:5820                             | looney-tunes | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
-   | localhost       | http://localhost:5820                                | looney-tunes | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
-   | doghouse        | https://doghouse.stardog.cloud:5820                  | insurance    | query        |                                  |                  |              |
-   | homelab-secure  | https://preferred-goat-q7vpfs.g57fzg0l.traefikhub.io | looney-tunes | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
-   | presles         | https://presales.stardog.cloud:5820                  | insurance    | query        |                                  |                  |              |
+   | connection-name | base-url                                             | db                | api-endpoint | tramp-path                       | cmd-path         | working-path |
+   |-----------------+------------------------------------------------------+-------------------+--------------+----------------------------------+------------------+--------------|
+   | homelab         | http://172.16.17.17:5820                             | looney-tunes      | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
+   | localhost       | http://localhost:5820                                | looney-tunes      | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
+   | doghouse        | https://doghouse.stardog.cloud:5820                  | insurance         | query        |                                  |                  |              |
+   | homelab-secure  | https://preferred-goat-q7vpfs.g57fzg0l.traefikhub.io | looney-tunes      | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
+   | presles         | https://presales.stardog.cloud:5820                  | insurance         | query        |                                  |                  |              |
+   | dogpack (rafa)  | http://testlabcluster.eastus.cloudapp.azure.com:5820 | discover-pagerank | query        |                                  |                  |              |
    #+begin_src emacs-lisp :var url=svals[2,1] :var db=svals[2,2] endpoint=svals[2,3]
      db
    #+end_src
@@ -578,6 +579,122 @@
      WHERE { ?s ?p ?o}
      LIMIT 10
    #+end_src
+* Dogpack - and Discover Pagerank queries
+** Set up headers for =healthcare= database on =homelab-secure=
+  #+begin_src emacs-lisp :var url=svals[7,1] :var db=svals[7,2] :var endpoint=svals[7,3] :var tpath="~/tmp/" :results silent
+    (gjg/set-sparql-header-args url db endpoint)
+    (gjg/set-stardog-bash-header-args tpath)
+  #+end_src
+  #+begin_src sparql
+  #+end_src
+** 2.1 - How much data do we have?
+   #+begin_src sparql
+     SELECT (count(?subject_node) AS ?number_of_nodes) {
+       { SELECT DISTINCT ?subject_node {
+         ?subject_node ?relationship ?object_node . }
+       }
+     }
+   #+end_src
+** 2.2 - What are all the known types?
+   #+begin_src sparql
+     SELECT DISTINCT ?Type {
+       ?subject_node rdf:type ?Type . }
+   #+end_src
+** 2.3 - What are all the known relationships?
+   #+begin_src sparql
+     SELECT DISTINCT ?relationship {
+       ?subject_node ?relationship ?object_node . }
+   #+end_src
+** Step 3 - run the =discover-pagerank= job
+** 4.1 - What are the top 100 most connected nodes?
+   #+begin_src sparql
+     SELECT ?subject_node ?rank {
+       graph <example:analytics:graph> {
+         ?subject_node ?p ?rank .
+       }
+     } ORDER BY desc(?rank) LIMIT 100
+   #+end_src
+** Step 5 - filter out =stardog:router=
+   #+begin_src sparql
+     SELECT ?node_name ?rank {
+       graph <example:analytics:graph> {
+         ?node ?p ?rank .
+
+         filter(?node != <http://api.stardog.com/router>)
+
+         BIND(STRAFTER(str(?node), "tag:stardog:api:") as ?node_name)
+       }
+     } ORDER BY desc(?rank) LIMIT 10
+   #+end_src
+**
+* Learning SPARQL internal course
+  + course creator: Rafael Campo
+** Set up headers for =healthcare= database on =homelab-secure=
+  #+begin_src emacs-lisp :var url=svals[7,1] :var db="gg-training" :var endpoint=svals[7,3] :var tpath="~/tmp/" :results silent
+    (gjg/set-sparql-header-args url db endpoint)
+    (gjg/set-stardog-bash-header-args tpath)
+  #+end_src
+** CRUD
+   Create - Read - Update - Delete
+   Use database =gg-training=
+*** Define namespaces on the database
+    #+begin_src sparql
+      PREFIX t: <http://training.stardog.com/instructor/rafaelcampo/training/>
+      PREFIX tm: <http://training.stardog.com/instructor/rafaelcampo/trainingModule/>
+      select * { ?s ?p ?o }
+    #+end_src
+*** Read
+**** Select all triples
+    #+begin_src sparql
+      SELECT ?subject ?predicate ?object WHERE {
+        ?subject ?predicate ?object
+      }
+    #+end_src
+**** Use '*' to display all variables
+     #+begin_src sparql
+       SELECT * {
+         ?subject ?predicate ?object .
+       }
+     #+end_src
+**** Select distinct types
+     #+begin_src sparql
+       SELECT DISTINCT ?type WHERE {
+         ?subject a ?type .
+       }
+     #+end_src
+**** Select the number of triples
+     This query uses the =COUNT()= function
+
+     Note the mandataor AS phrase to specify a variable name for the result of the COUNT
+     function.
+     #+begin_src sparql
+       SELECT (COUNT(*) AS ?number_of_triples) WHERE {
+         ?subject ?predicate ?object .
+       }
+     #+end_src
+**** Select all distinct predicates
+     Note the =WHERE= clause is optional in a =SELECT= query
+
+     #+begin_src sparql
+       SELECT DISTINCT ?predicate {
+         ?subject ?predicate ?object
+       }
+     #+end_src
+**** Are and Producers also known Bands
+     #+begin_src sparql
+       PREFIX : <http://stardog.com/tutorial/>
+       ASK WHERE {
+           ?producer a :Producer ;
+                     a :Band .
+       }
+     #+end_src
+     #+begin_src sparql
+       PREFIX : <http://stardog.com/tutorial/>
+       SELECT * {
+           ?producer rdf:type :Producer ;
+                     a :Band .
+       }
+     #+end_src
 
 * Emacs interface experiments using =homelab-secure=
 ** Set up headers for =looney-tunes= database on =homelab-secure=
