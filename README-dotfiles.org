@@ -99,6 +99,10 @@
      if [ -a /usr/local/conda/etc/profile.d/conda.sh ]; then
          . /usr/local/conda/etc/profile.d/conda.sh
      fi
+
+     # Set the location of Python virtual environments
+     # Used by =pyvenv=, default is ~/.virtualenvs/
+     export WORKON_HOME=$HOME/.local/python-venvs
    #+end_src
 
    #+name: original-bashrc
