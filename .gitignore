@@ -8,6 +8,10 @@ src
 notebooks/credentials.json
 notebooks/token.json
 notebooks/CREDENTIALS.config
+notebooks/orders.db
 dotfiles/.config/obs-studio/logs/
 dotfiles/.config/obs-studio/profiler_data/
 **/*.bak
+**/.RData
+**/.Rhistory
+**/.ob-jupyter/
