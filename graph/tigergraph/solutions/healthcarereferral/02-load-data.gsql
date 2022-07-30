@@ -1,0 +1,23 @@
+USE GRAPH HealthCareReferral
+DROP JOB load_healthcarereferral
+CREATE LOADING JOB load_healthcarereferral FOR GRAPH HealthCareReferral {
+  DEFINE FILENAME claim = "m1:/home/tigergraph/mydata/healthcarereferral/data/claim.csv";
+  DEFINE FILENAME claim_associated_with_patient = "m1:/home/tigergraph/mydata/healthcarereferral/data/claim associated with patient.csv";
+  DEFINE FILENAME claim_submitted_by_prescriber = "m1:/home/tigergraph/mydata/healthcarereferral/data/claim submitted_by prescriber.csv";
+  DEFINE FILENAME specialties_subspecialties = "m1:/home/tigergraph/mydata/healthcarereferral/data/specialties-subspecialties.csv";
+  DEFINE FILENAME subspecialties_prescriber = "m1:/home/tigergraph/mydata/healthcarereferral/data/subspecialties-prescriber.csv";
+
+
+  LOAD claim to vertex Claim values($0, $1, $4, $6, $2) USING SEPARATOR=",", HEADER="true", EOL="\n";
+  LOAD claim_associated_with_patient TO EDGE associated VALUES($0, $1) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+
+  LOAD claim_submitted_by_prescriber TO EDGE submitted_by VALUES($0, $1) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+
+  LOAD subspecialties_prescriber TO EDGE subspecialty_prescriber VALUES($1, $0) USING SEPARATOR=",", HEADER="true", EOL="\n";
+  LOAD subspecialties_prescriber TO EDGE associated VALUES($0, $1) USING SEPARATOR=",", HEADER="true", EOL="\n";
+
+  LOAD specialties_subspecialties TO EDGE specialty_subspecialty VALUES($0, $1) USING SEPARATOR=",", HEADER="true", EOL="\n";
+}
+RUN LOADING JOB load_healthcarereferral

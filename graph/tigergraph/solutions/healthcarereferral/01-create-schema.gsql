@@ -1,0 +1,18 @@
+USE GLOBAL
+DROP GRAPH HealthCareReferral
+CREATE GRAPH HealthCareReferral()
+USE GRAPH HealthCareReferral
+DROP JOB healthcarereferral_schema
+CREATE SCHEMA_CHANGE JOB healthcarereferral_schema FOR GRAPH HealthCareReferral {
+  ADD VERTEX Specialty(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX SubSpecialty(PRIMARY_ID id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX Prescriber(PRIMARY_ID Prescriber_id STRING, pageRank FLOAT, communityId INT) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX Claim(PRIMARY_ID Claim_id STRING, rx_fill_date DATETIME, ICD10Code STRING, ICD10CodeDescription STRING, CodeGroupTitle STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD VERTEX Patient(PRIMARY_ID Patient_id STRING) WITH STATS="OUTDEGREE_BY_EDGETYPE", PRIMARY_ID_AS_ATTRIBUTE="false";
+  ADD DIRECTED EDGE submitted_by(FROM Claim, TO Prescriber) WITH REVERSE_EDGE="reverse_submitted_by";
+  ADD DIRECTED EDGE associated(FROM Claim, TO Patient) WITH REVERSE_EDGE="reverse_associated";
+  ADD DIRECTED EDGE specialty_subspecialty(FROM Specialty, TO SubSpecialty) WITH REVERSE_EDGE="reverse_specialty_subspecialty";
+  ADD DIRECTED EDGE subspecialty_prescriber(FROM SubSpecialty, TO Prescriber) WITH REVERSE_EDGE="reverse_subspecialty_prescriber";
+  ADD DIRECTED EDGE referral(FROM Prescriber, TO Prescriber, num_patient INT DEFAULT "0") WITH REVERSE_EDGE="reverse_referral";
+}
+RUN SCHEMA_CHANGE JOB healthcarereferral_schema
