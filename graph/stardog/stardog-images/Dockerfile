@@ -1,5 +1,5 @@
 # Install typical drivers
-ARG STARDOG_IMAGE=stardog/stardog:8.0.0-java11-preview
+ARG STARDOG_IMAGE=stardog/stardog:8.0.1-java11-preview
 FROM $STARDOG_IMAGE
 
 USER root
