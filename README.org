@@ -1244,6 +1244,12 @@
     # Set pages on printer to print in reverse order
     sudo lpadmin -p HP-Officejet-Pro-8030 -o outputorder-default=reverse
   #+end_src
+** If driver can't be found or can't set printer as default
+   #+begin_src bash
+     sudo apt install --reinstall cups cups-filters-core-drivers cups-filters
+   #+end_src
+
+   And then REBOOT - not kidding
 
 * Firefox touchscreen scrolling
   + Ref: [[https://askubuntu.com/a/994483/104280][Ubuntu 16 and touchscreen scrolling in FireFox - Ask Ubuntu]]
