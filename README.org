@@ -1233,8 +1233,9 @@
   Oh it can be quite the trick finding a working URL
 
   #+begin_src bash
+    sudo apt -y install cups cups-bsd cups-filters
     sudo lpinfo -v -l
-    sudo system-config-printer
+    system-config-printer
   #+end_src
 ** Set printer to print pages in reverse order
   #+begin_src bash
