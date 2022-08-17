@@ -15,7 +15,7 @@
     shrink = no
 
     # The transparency of the window.  Range: [0; 100].
-    transparency = 10
+    transparency = 4
 
     # The height of the entire notification.  If the height is smaller
     # than the font height and padding combined, it will be raised
@@ -73,7 +73,7 @@
     # Markup is allowed
     # format = "<b>%s</b>\n%b"
     # format = "<b>%s %p</b>\n%b\nFrom app %a"
-    format = "<b>%s %p</b>\n%b"
+    format = "<b>%s %p</b>\n\n%b"
 
     # Alignment of message text.
     # Possible values are "left", "center" and "right".
@@ -150,7 +150,8 @@
 
     mouse_left_click = close_current
     mouse_middle_click = do_action
-    mouse_right_click = close_all
+    # mouse_right_click = close_all
+    mouse_right_click = do_action
 
     # Shortcuts are specified as [modifier+][modifier+]...key
     # Available modifiers are "ctrl", "mod1" (the alt-key), "mod2",
@@ -188,7 +189,7 @@
     # IMPORTANT: colors have to be defined in quotation marks.
     # Otherwise the "#" and following would be interpreted as a comment.
     background = "#222222"
-    foreground = "#888888"
+    foreground = "#f5f5f5"
     timeout = 10
     # Icon for notifications with low urgency, uncomment to enable
     #icon = /path/to/icon
