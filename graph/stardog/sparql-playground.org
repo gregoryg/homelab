@@ -744,7 +744,105 @@
   #+end_src
 
 
+* =mbarbieri='s Northwind SQL/SPARQL Adventure
+  + [[https://medium.com/agnos-ai/northwind-sql-vs-sparql-de662f2e0e7b][Northwind SQL vs SPARQL hands-on experience on Knowledge Graph database. | ag...]]
 
+** Basic select with specified columns (not sorted)
+  #+begin_src sparql :results table
+    SELECT ?label ?lastName ?firstName ?title
+    WHERE {
+      ?emp a :Employee ;
+      rdfs:label ?label ;
+      foaf:title ?title ;
+      foaf:lastName ?lastName ;
+      foaf:firstName ?firstName .
+    }
+
+  #+end_src
+
+
+** Filtering data
+   #+begin_src sparql
+     PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+     SELECT ?label ?lastName ?firstName ?title
+     WHERE {
+       ?emp a :Employee ;
+       rdfs:label ?label ;
+       foaf:lastName ?lastName ;
+       foaf:firstName ?firstName ;
+       foaf:title ?title ;
+       :country ?country .
+       FILTER (?country = "USA")
+       }
+   #+end_src
+
+
+** Testing for existence of rows/graphs/patterns
+   :PROPERTIES:
+   :header-args:sparql: :format text/boolean
+   :END:
+   format must be =text/boolean=
+   #+begin_src sparql
+     ASK {
+       ?emp a :Employee ;
+       :country "UK" .
+     }
+   #+end_src
+
+* Rafa's All Paws not magic
+** Start with an outline
+   #+begin_src org
+     All Pack Demo Requirements
+     ,* Interactive Requirement
+     ,** Poll Question
+     ,** Live Exercise
+     ,* Magic Requirement
+     ,** p_t_p (Pledge - Turn - Prestige)
+   #+end_src
+** Turtle
+   #+begin_src ttl
+     :AllPackDemoRequirements	a	owl:Class
+     :MagicRequirement	a	owl:Class
+     :InteractiveRequirement	rdfs:subClassOf	:AllPackDemoRequirements
+     :MagicRequirement	rdfs:subClassOf	:AllPackDemoRequirements
+     :LiveExercise	a	:InteractiveRequirement
+     :PollQuestion	a	:InteractiveRequirement
+     :pledge_Turn_Prestige	a	:MagicRequirement
+     :LiveExercise	rdfs:label	"Live Exercise"
+     :PollQuestion	rdfs:label	"Poll Question"
+     :AllPackDemoRequirements	rdfs:label	"All Pack Demo Requirements"
+     :MagicRequirement	rdfs:label	"Magic Requirement"
+     :pledge_Turn_Prestige	rdfs:label	"Pledge Turn Prestige"
+
+   #+end_src
+** Queries and data insertion
+   #+begin_src sparql
+     INSERT DATA {
+       :LiveExercise a :InteractiveRequirement ;
+       rdfs:label "Live Exercise" .
+
+       :PollQuestion a :InteractiveRequirement ;
+       rdfs:label "Poll Question" .
+
+       :AllPackDemoRequirements a owl:class ;
+       rdfs:label "All Pack Demo Requirements" .
+
+       :InteractiveRequirement a :AllPackDemoRequirements .
+     }
+
+     SELECT * {
+       ?req a :AllPackDemoRequirements .
+     }
+
+     SELECT * {
+       ?req a :InteractiveRequirement .
+     }
+
+     ASK {
+       ?s ?p ?o .
+     }
+
+   #+end_src
 * playground
 
 ** Use sessions to server
