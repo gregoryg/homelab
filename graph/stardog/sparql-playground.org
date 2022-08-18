@@ -800,6 +800,7 @@
      ,** p_t_p (Pledge - Turn - Prestige)
    #+end_src
 ** Turtle
+   Here's where we capture the essence of the outline
    #+begin_src ttl
      :AllPackDemoRequirements	a	owl:Class
      :MagicRequirement	a	owl:Class
@@ -815,8 +816,10 @@
      :pledge_Turn_Prestige	rdfs:label	"Pledge Turn Prestige"
 
    #+end_src
-** Queries and data insertion
-   #+begin_src sparql
+** Insert data using the /update API endpoint
+   TODO: improve ob-sparql with :endpoint and :db or somesuch
+
+   #+begin_src sparql :url http://localhost:5820/northwind/update :results output
      INSERT DATA {
        :LiveExercise a :InteractiveRequirement ;
        rdfs:label "Live Exercise" .
@@ -829,20 +832,33 @@
 
        :InteractiveRequirement a :AllPackDemoRequirements .
      }
+   #+end_src
 
+
+
+** Did any data get into our database?  Any at all?
+   #+begin_src sparql :format text/boolean
+     ASK {
+       ?s ?p ?o . }
+   #+end_src
+
+** Can we see some of that data maybe?
+   #+begin_src sparql
      SELECT * {
        ?req a :AllPackDemoRequirements .
      }
+   #+end_src
 
+   #+begin_src sparql
      SELECT * {
        ?req a :InteractiveRequirement .
      }
 
-     ASK {
-       ?s ?p ?o .
-     }
+     #+end_src
 
-   #+end_src
+**
+
+
 * playground
 
 ** Use sessions to server
