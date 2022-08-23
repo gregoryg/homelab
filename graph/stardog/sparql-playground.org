@@ -800,8 +800,10 @@
      ,** p_t_p (Pledge - Turn - Prestige)
    #+end_src
 ** Turtle
+
    Here's where we capture the essence of the outline
-   #+begin_src ttl
+   #+name: not-magic-ttl
+   #+begin_src ttl :tangle /tmp/not-magic.ttl
      :AllPackDemoRequirements	a	owl:Class
      :MagicRequirement	a	owl:Class
      :InteractiveRequirement	rdfs:subClassOf	:AllPackDemoRequirements
@@ -814,12 +816,23 @@
      :AllPackDemoRequirements	rdfs:label	"All Pack Demo Requirements"
      :MagicRequirement	rdfs:label	"Magic Requirement"
      :pledge_Turn_Prestige	rdfs:label	"Pledge Turn Prestige"
-
    #+end_src
+
+   Insert that data into our empty database
+
+   #+HEADER: :url http://172.16.17.230:5820/not-magic/update
+   #+begin_src sparql :noweb yes
+     INSERT DATA {
+       <<not-magic-ttl>>
+     }
+   #+end_src
+
+
 ** Insert data using the /update API endpoint
    TODO: improve ob-sparql with :endpoint and :db or somesuch
 
-   #+begin_src sparql :url http://localhost:5820/northwind/update :results output
+   #+HEADER: :url http://172.16.17.230:5820/not-magic/update
+   #+begin_src sparql :url http://172.16.17.230:5820/not-magic/update
      INSERT DATA {
        :LiveExercise a :InteractiveRequirement ;
        rdfs:label "Live Exercise" .
@@ -836,11 +849,15 @@
 
 
 
+
 ** Did any data get into our database?  Any at all?
+   #+HEADER: :url http://172.16.17.230:5820/not-magic/query
    #+begin_src sparql :format text/boolean
      ASK {
        ?s ?p ?o . }
    #+end_src
+
+
 
 ** Can we see some of that data maybe?
    #+begin_src sparql
@@ -849,15 +866,13 @@
      }
    #+end_src
 
+
    #+begin_src sparql
      SELECT * {
        ?req a :InteractiveRequirement .
      }
 
      #+end_src
-
-**
-
 
 * playground
 
