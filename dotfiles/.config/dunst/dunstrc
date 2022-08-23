@@ -217,7 +217,7 @@
     # script = switch-to-slack.sh
     script = rotate-wallpapers.sh
 
-[wallpaper]
+[spotify]
     appname = Spotify
     script = update-spotify-exwm.sh
     # script = rotate-wallpapers.sh
