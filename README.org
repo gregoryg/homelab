@@ -1250,6 +1250,23 @@
    #+end_src
 
    And then REBOOT - not kidding
+* Low level theme setting
+  Still searching for what various apps are looking at when doing 'follow system theme'
+
+  The =gsettings= command affects Open File dialog and ... was noch?
+  Also look at =gtk-theme=
+
+  #+begin_src bash
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+    gsettings get org.gnome.desktop.interface gtk-theme
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'
+  #+end_src
+
+  #+begin_src bash
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-light'
+    gsettings get org.gnome.desktop.interface gtk-theme
+    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita'
+  #+end_src
 
 * Firefox touchscreen scrolling
   + Ref: [[https://askubuntu.com/a/994483/104280][Ubuntu 16 and touchscreen scrolling in FireFox - Ask Ubuntu]]
