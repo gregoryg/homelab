@@ -2332,3 +2332,56 @@
 
        # --device=/dev/ttyACM0 \
      #+end_src
+
+* Blasts.  From pasts.
+
+** swat! - the amazing tty fly swatting game
+   #+begin_src c :tangle swat2.cc
+     #include <stdio.h>
+     #include <math.h>
+     #define RND(x) rand() % (x) + 1
+     #define CS 12
+     int xmax = 79;
+     int ymax = 21;
+     int slow = 0;
+
+     void cheat(int xnew, int ynew, int digits) {
+
+     }
+
+     int main(int argc, char *argv[])
+     {
+
+       int digits, xvel, yvel, xnew, ynew, visible, dummy;
+       int xfly, yfly, xuser, yuser;
+       int direction;
+
+       if (argc > 1) {
+         slow = 1;
+         printf("slow is %d: ", slow);
+         dummy = getc(stdin);
+       }
+
+       /* set terminal to half duplex, no line feeds, single character reads */
+       // gterm(&terminal);
+       // terminal.tt_flags = 89;
+       do
+         {
+           int cheating = 0;
+           int tracing = 0;
+           xuser = xmax/5;
+           yfly = yuser = ymax/2;
+           xfly = xmax/2;
+           xvel = yvel = 0;
+           printf("%c", CS);
+           do { /* loop each move */
+             xnew = xuser + xvel;
+             ynew = yuser + yvel;
+             if (cheating) {
+               digits = 1;
+               cheat(xnew,ynew,digits); /* show where choices lead */
+             }
+           } while (direction != 'r' && direction != 'R');
+         } while (direction);
+     }
+   #+end_src
