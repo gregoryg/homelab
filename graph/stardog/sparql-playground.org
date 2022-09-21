@@ -135,6 +135,85 @@
    + ref: Stardog tutorial [[https://docs.stardog.com/tutorials/getting-started-series/getting-started-2][Getting Started Part 2: Six Degrees of Kevin Bacon | Stardog Documentation La...]]
    +
 ** FoaF - n hops away
+** Use COALESCE to use unbound variables (not linked)
+   + ref: [[https://stackoverflow.com/a/66304670/457574][SPARQL Unbound variables || Query to bind a variable if it's unbound - Stack ...]]
+   +
+** Brendan Newlon's Designer simplification query
+   #+begin_src sparql
+     ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     ## Use this query to simplify the output of Stardog Designer after publishing to Stardog
+     ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     ##  Warning: This query requires that IRIs created in Designer were unique.
+     ##  Eg. no class was created that shared the same name/label with a property.
+     ##  Designer uses separate IRI structures for classes, relationships, and attributes to keep them distinct.
+     ##  This query applies the same IRI structure to everything, so make sure you adhere to a naming convention that already distinguishes these in your model.
+     ## ~~~~~~~~ INSTRUCTIONS ~~~~~~~~~
+     ## Find/replace-all to update the urn definition for the 'simpler:' prefix (but you can leave the prefix as 'simpler:')
+     ## Run the query. The result will be one graph for your simpler:data and one for your simpler:model
+     prefix simpler: <urn:demo:healthcare:> # find/replace-all what's between <>
+     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     insert data { graph simpler:data {
+       rdfs:label rdf:type owl:DatatypeProperty .
+       rdf:type rdf:type owl:ObjectProperty .
+       rdfs:subClassOf rdf:type owl:ObjectProperty .
+       rdfs:domain rdf:type owl:ObjectProperty .
+       rdfs:range rdf:type owl:ObjectProperty .
+     } }
+     ; # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     ## Move all datatype triples to a single graph and simplify the IRIs
+     delete { graph ?g { ?s ?p ?o . } }
+     insert { graph simpler:data { ?new_s ?new_p ?o. } }
+     where { graph ?g { ?s ?p ?o .
+       FILTER not EXISTS { graph ?any { ?p a owl:ObjectProperty }}
+       filter (?g != simpler:data )
+       bind(IRI(replace(str(?s), "tag:stardog:project:.*:([-_a-zA-Z0-9]+)",
+                        "urn:demo:healthcare:$1"))
+            as ?new_s)
+       bind(IRI(replace(str(?p), "tag:stardog:project:.*:([-_a-zA-Z0-9]+)",
+                        "urn:demo:healthcare:$1"))
+            as ?new_p)
+     }}
+     ; # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     ## Move all other triples to a single graph and simplify the IRIs
+     delete { graph ?g { ?s ?p ?o } }
+     insert { graph simpler:data { ?new_s ?new_p ?new_o. } }
+     where { graph ?g { ?s ?p ?o .
+       filter (?g != simpler:data )
+       bind(IRI(replace(str(?s), "tag:stardog:project:.*:([-_a-zA-Z0-9]+)",
+                        "urn:demo:healthcare:$1"))
+            as ?new_s)
+       bind(IRI(replace(str(?p), "tag:stardog:project:.*:([-_a-zA-Z0-9]+)",
+                        "urn:demo:healthcare:$1"))
+            as ?new_p)
+
+       bind(IRI(replace(str(?o), "tag:stardog:project:.*:([-_a-zA-Z0-9]+)",
+                        "urn:demo:healthcare:$1"))
+            as ?new_o)
+     }}
+     ; # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     ## Move model data into its own graph
+     # ##~~~~~~~~~ classes
+     delete { graph simpler:data {?s ?p ?o . } }
+     insert { graph simpler:model { ?s rdf:type owl:Class ; ?p ?o . } }
+     where { graph simpler:data { ?s ?p ?o . filter exists {?s rdf:type owl:Class } }}
+     ; ##~~~~~~~~~ datatype properties
+     delete { graph simpler:data { ?s ?p ?o .} }
+     insert { graph simpler:model { ?s rdf:type owl:DatatypeProperty ; ?p ?o } }
+     where { graph simpler:data { ?s ?p ?o . filter exists {?s rdf:type owl:DatatypeProperty } }}
+     ; ##~~~~~~~~~ object properties
+     delete { graph simpler:data { ?s ?p ?o .} }
+     insert { graph simpler:model { ?s rdf:type owl:ObjectProperty ; ?p ?o } }
+     where { graph simpler:data { ?s ?p ?o . filter exists {?s rdf:type owl:ObjectProperty } }}
+     ; # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     ## Clean up temporary data
+     delete data { graph simpler:model {
+       rdfs:label rdf:type owl:DatatypeProperty .
+       rdf:type rdf:type owl:ObjectProperty .
+       rdfs:subClassOf rdf:type owl:ObjectProperty .
+       rdfs:domain rdf:type owl:ObjectProperty .
+       rdfs:range rdf:type owl:ObjectProperty .
+     } }
+   #+end_src
 * Insurance database with hands-on labs
 ** Set up headers for =insurance= database on =doghouse
    #+begin_src emacs-lisp :var url=svals[4,1] :var db="insurance" :var endpoint=svals[2,3] :var tpath=svals[2,4] :results silent
@@ -795,7 +874,7 @@
    |  3.7. | fishing licenses | 1400 | nok      | 0.15 |    210. |
    |  3.7. | gasoline         |  340 |          |  nil | 340 nil |
    #+TBLFM: $5='(org-lookup-first $4 '(remote(rates,@2$2..@>$2)) '(remote(rates,@2$3..@>$3)))::$6=$5*$3
-* PyStardog using Databrics from local notebook
+* PyStardog using Databricks from local notebook
   This makes use of =databricks-connect=
 
   Let's activate our Python virtual environment
