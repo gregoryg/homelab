@@ -2349,12 +2349,93 @@
 
      }
 
+     int ppos(xuser, yuser, xfly, yfly)
+          int *xuser, *yuser, *xfly, *yfly;
+     {
+       int visible;
+       at(*yfly, *xfly);
+       printf("%%");
+       visible = (0 <= *xuser) && (*xuser <= xmax) && (0 <= *yuser) && (*yuser <= ymax);
+       if (visible) {
+         at(yuser, xuser);
+         printf("*");
+       }
+       return visible;
+     } // ppos
+
+     void hop()
+       int *xfly, *yfly, *xuser, *yuser;
+     {
+       int i, hops;
+       ftime(&time_detail);
+       srand(time_detail, millitm);
+       hops = RND(19);
+       for (i = 1; i <= hops; i++) {
+         at(*yfly, *xfly);
+         printf("%c", (*xfly == *xuser) && (*yfly == *yuser) ? '*' : ' ');
+         ,*xfly += RND(3) - 2;
+         ,*yfly += RND(3) - 2;
+         if (*xfly < 0) *xfly = 0;
+         if (*yfly < 0) *yfly = 0;
+         if (*xfly > xmax) *xfly = xmax;
+         if (*yfly > ymax) *yfly = ymax;
+         if (!slow || i == hops) {
+           at(*yfly, *xfly);
+           printf("%c", (*xfly == *xuser) && (*yfly == *yuser) ? '*' : ' ');
+         }
+       }
+     } // hop
+
+     void cheat(xnew, ynew, digits)
+          int xnew, ynew, digits;
+     {
+       int j, i, xcrt, ycrt;
+       for (j = -1; j <= 1; j++) {
+         for (i = -1; i <= 1; i++) {
+           xcrt = xnew + i;
+           ycrt = ynew + j;
+           if ((0 <= xcrt) && (xcrt <= xmax) && (0 <= ycrt) && (ycrt <= ymax)) {
+             at(ycrt, xcrt);
+             if (digits)
+               printf("%d", 1 + 5 - (3 * j));
+             else
+               printf(" ");
+           }
+         }
+       }
+     } // cheat
+
+     void at(row, col)
+          int row, col;
+     {
+       static char arr[] = {11, 0, 16, 0, 0};
+       arr[1] = 64 + (row % 24);
+       arr[3] = ((col % 80) / 10) * 16 + col % 10;
+       printf("%s", arr);
+     } // at
+
+     void phelp() {
+       int dummy;
+       printf("%c\n\n\nThe basic point of the game is to swat that damn fly", CS);
+       printf("\n(i.e., the percent sign).  You control your direction by inputting");
+       printf("\nnumbers in the standard number pad configuration.");
+       printf("\n\nOn each turn you may also choose one of several options:");
+       printf("\n\n'T' will tell the program to trace your moves on the screen.");
+       printf("\n'C' will allow you to \"cheat\", i.e. show the number pad");
+       printf("\n    configuration on the screen;");
+       printf("\n'R' will restart the game from the beginning;");
+       printf("\n'Q' will allow you to give up and go home");
+       printf("\n\n\npress <cr> to continue ");
+       dummy = getc(stdin);
+       printf("%c", CS);
+     } // phelp
+
      int main(int argc, char *argv[])
      {
 
        int digits, xvel, yvel, xnew, ynew, visible, dummy;
        int xfly, yfly, xuser, yuser;
-       int direction;
+       int dir;
 
        if (argc > 1) {
          slow = 1;
@@ -2381,7 +2462,86 @@
                digits = 1;
                cheat(xnew,ynew,digits); /* show where choices lead */
              }
-           } while (direction != 'r' && direction != 'R');
-         } while (direction);
-     }
+             // print the positions of the fly and the intrepid swatter
+             xuser += xvel;
+             yuser += yvel;
+             visible = ppos(&xuser, &yuser, &xfly, &yfly);
+             if ((xuser == xfly) && (yuser == yfly) ) {
+               /* terminal.tt_flags = 23; */
+               /* sterm(&terminal); */
+               printf("%cS W A T  ! ! `%d steps.`\n", CS, steps);
+               exit(0);
+             }
+             // fly hops
+             hop(&xfly, &yfly, &xuser, &yuser);
+             at(ymax,1);
+             printf("%sYou're at [%d,%d], ", eos, xuser, yuser);
+             if (cheating) printf("cheating, ");
+             if (tracing) printf("tracing, ");
+             printf("fly's at [%d,%d]\n", xfly, yfly);
+             printf("Your move? (Dir 1-9, h, c, q, r, t)");
+             dir = getc(stdin);
+             steps++;
+             if (cheating) {
+               digits = 0;
+               cheat(xnew, ynew, digits);  /* erase hints */
+             }
+             switch(dir) {
+             case '1':
+               xvel--;
+               yvel++;
+               break;
+             case '2':
+               yvel++;
+               break;
+             case '3':
+               xvel++;
+               yvel++;
+               break;
+             case '4':
+               xvel--;
+               break;
+             case '6':  /* case 5 is like, a no-op */
+               xvel++;
+               break;
+             case '7':
+               xvel--;
+               yvel--;
+               break;
+             case '8':
+               yvel--;
+               break;
+             case '9':
+               xvel++;
+               yvel--;
+               break;
+             case 'c':
+             case 'C':
+               cheating = !cheating;
+               break;
+             case 't':
+             case 'T':
+               tracing = !tracing;
+               break;
+             case 'q':
+             case 'Q':
+               terminal.tt_flags = 23;
+               sterm(&terminal);
+               printf("%c %d steps fer nuttin'!\n\n", CS, steps);
+               break;
+             case 'h':
+             case 'H':
+               steps -= 1;
+               phelp();
+               visible = ppos(&xuser, &yuser, &xfly, &yfly);
+               break;
+             }
+             if (visible) {
+               at(yuser, xuser);
+               putchar((tracing) ? '.' : ' ');
+             }
+           } while (dir != 'r' && dir != 'R');
+         } while (dir);
+     } // main()
+
    #+end_src
