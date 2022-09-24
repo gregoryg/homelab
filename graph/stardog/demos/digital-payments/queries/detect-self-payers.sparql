@@ -1,0 +1,7 @@
+# Are there any me2me payments?
+
+select (COUNT(*) AS ?cnt)
+FROM <tag:stardog:api:context:local>
+WHERE {
+  ?s :pays_any_p2p ?o . FILTER (?s = ?o )
+}

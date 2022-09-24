@@ -1,0 +1,8 @@
+# Indegree
+
+SELECT ?o (COUNT(*) AS ?indegree)
+FROM <tag:stardog:api:context:local>
+ { ?s ?p ?o }
+ GROUP BY ?o
+ ORDER BY DESC(?indegree)
+ LIMIT 40

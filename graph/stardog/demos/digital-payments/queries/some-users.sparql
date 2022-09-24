@@ -1,0 +1,12 @@
+# Let's see some Users
+
+select *
+FROM <http://picpay.com/activeusers>
+where {
+    ?s a :User ;
+       :full_name ?name ;
+       :lives_at ?location .
+    ?location :street_address ?address ;
+              :city ?city ;
+              :state ?state .
+} limit 10

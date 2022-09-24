@@ -1,0 +1,10 @@
+# Who are they?
+
+select ?user ?name
+FROM <tag:stardog:api:context:local>
+WHERE {
+    ?user :pays_any_p2p ?o ;
+       :full_name ?name .
+    FILTER (?user = ?o)
+}
+LIMIT 100

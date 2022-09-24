@@ -1,0 +1,11 @@
+# outdegree from Transaction
+
+SELECT ?tx (COUNT(*) AS ?outdegree)
+FROM <tag:stardog:api:context:local>
+WHERE  {
+  ?tx a :Transaction .
+  ?tx ?p ?o
+}
+GROUP BY ?tx
+ORDER BY DESC(?outdegree)
+LIMIT 100

@@ -1,0 +1,12 @@
+# Who has received the most payments?
+
+select   ?name (COUNT(*) AS ?beneficiary )
+FROM <tag:stardog:api:context:local>
+WHERE {
+    ?s a :Transaction .
+    ?s :pays_out ?o .
+    ?o :full_name ?name
+}
+GROUP BY ?o ?name
+ORDER BY DESC(?beneficiary)
+limit 20

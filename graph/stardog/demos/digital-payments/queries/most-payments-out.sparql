@@ -1,0 +1,12 @@
+# Who has made the most payments?
+
+select ?name (COUNT(*) AS ?daddy_warbucks)
+FROM <tag:stardog:api:context:local>
+WHERE {
+    ?o a :Transaction .
+    ?s :makes_payment ?o ;
+       :full_name ?name
+}
+GROUP BY ?s ?name
+ORDER BY DESC(?daddy_warbucks)
+LIMIT 10

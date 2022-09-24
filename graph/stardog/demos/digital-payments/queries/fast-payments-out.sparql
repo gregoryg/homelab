@@ -1,0 +1,10 @@
+# Fastest possible p2p payment count - bypass Transaction
+
+SELECT ?spendy (COUNT(*) AS ?payment)
+FROM <tag:stardog:api:context:local>
+WHERE {
+     ?spendy :pays_any_p2p ?lucky
+ }
+ GROUP BY ?spendy
+ ORDER BY DESC(?payment)
+ LIMIT 10

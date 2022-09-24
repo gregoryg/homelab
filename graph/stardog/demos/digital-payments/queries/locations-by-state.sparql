@@ -1,0 +1,10 @@
+# Show number of addresses (locations by state)
+
+select ?state (COUNT(*) AS ?num)
+WHERE {
+    ?location a :Location ;
+              :state ?state
+}
+GROUP BY ?state
+ORDER BY DESC(?num)
+LIMIT 40

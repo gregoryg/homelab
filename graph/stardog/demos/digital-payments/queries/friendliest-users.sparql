@@ -1,0 +1,11 @@
+# Who is very friendly?
+
+SELECT ?friend ?name (COUNT(*) AS ?friendliness)
+FROM <tag:stardog:api:context:local>
+WHERE {
+     ?friend :friend_of ?o ;
+             :full_name ?name
+ }
+GROUP BY ?friend ?name
+ORDER BY DESC(?friendliness)
+LIMIT 100

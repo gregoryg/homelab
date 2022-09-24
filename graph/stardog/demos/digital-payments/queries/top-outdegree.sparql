@@ -1,0 +1,10 @@
+# Outdegree
+
+SELECT ?s (COUNT(*) AS ?outdegree)
+FROM <tag:stardog:api:context:local>
+ {
+     ?s ?p ?o .
+ }
+ GROUP BY ?s
+ ORDER BY ?outdegree
+ LIMIT 40

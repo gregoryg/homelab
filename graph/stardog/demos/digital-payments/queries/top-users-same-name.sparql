@@ -1,0 +1,8 @@
+# Find top # of users with the same full name
+
+select ?o (count(*) AS ?sameName)
+FROM <tag:stardog:api:context:local>
+where { ?s :full_name ?o}
+GROUP BY ?o
+ORDER BY DESC ( ?sameName)
+limit 10
