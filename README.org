@@ -2236,6 +2236,14 @@
 
 *** Python
 
+**** Try some of the 3rd-party modules
+     #+begin_src python
+       from faker_music import MusicProvider
+       # fake = Faker()
+       fake.add_provider(MusicProvider)
+       fake.music_genre()
+     #+end_src
+
 *** Ruby
 
 **** A small fake aerospace project data set
