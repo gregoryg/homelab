@@ -1,5 +1,0 @@
-# Show distinct links
-
-select DISTINCT ?link
-FROM <tag:stardog:api:context:local>
-WHERE { ?s ?link ?p}

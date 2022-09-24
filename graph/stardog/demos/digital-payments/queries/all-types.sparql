@@ -1,5 +1,0 @@
-# Show all types
-
-select distinct ?type
-FROM <tag:stardog:api:context:local>
-where {?s a ?type }
