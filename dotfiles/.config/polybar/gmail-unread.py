@@ -16,8 +16,8 @@ from googleapiclient.errors import HttpError
 if os.path.exists('/tmp/pause-gmail-unread'):
     print('')
     exit(0)
-# Return zippo if today is a weekend
-if datetime.today().weekday() > 4:
+# Return zippo if today is a weekend OR it's evening
+if datetime.today().weekday() > 4 or datetime.today().hour >17:
     print('')
     exit(0)
 
@@ -44,7 +44,7 @@ if not creds or not creds.valid:
 
 try:
     service = build('gmail', 'v1', credentials=creds)
-    # results = service.users().messages().list(userId='me', q="in:inbox is:unread").execute()
+    # service.users().threads().get(userId='me', id='18346315133d3f93').execute()
     results = service.users().threads().list(userId='me', q="in:inbox is:unread").execute()
     if results['resultSizeEstimate'] > 0:
         print (results['resultSizeEstimate'])
