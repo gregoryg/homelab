@@ -1043,6 +1043,25 @@
 
 * playground
 
+** playing
+   #+begin_src sparql
+     select ?tx (xsd:integer(replace(str(?tx), "http://ontology.stardog.com/picpay_simple/Transaction-", "")) AS ?txid) { ?tx a :Transaction } limit 5
+   #+end_src
+
+   #+begin_src sparql
+     select * { ?tx a :Transaction .
+       OPTIONAL {?tx rdfs:label ?label}
+       }
+       LIMIT 10
+   #+end_src
+
+   #+begin_src sparql
+     select * { ?tx a :Transaction
+       FILTER NOT EXISTS { ?tx rdfs:label ?label }
+       }
+     limit 10
+   #+end_src
+
 ** Use sessions to server
    I don't know whether I can do this with Stardog Cloud (get a shell) - but it works well
    for local, Kubernetes, and standard servers
