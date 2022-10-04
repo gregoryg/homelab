@@ -43,24 +43,24 @@
    + Some additional cows
      + [[https://github.com/piuccio/cowsay/tree/master/cows][cowsay/cows at master · piuccio/cowsay · GitHub]]
 
-   The cownonical Cow Me! script
+***    The cownonical Cow Me! script
    #+begin_src bash :tangle ~/bin/cowme :results replace output
      # Optionally specify a cow - whether or not in the safe list
      mycow=$1
-     # cowfiles are in diff paths on openSUSE and Ubuntu, so include them both
-     export COWPATH=/usr/share/cows:/usr/share/cowsay/cows:~/projects/homelab/cows
+     # cowfiles are in diff paths on openSUSE, Debian and Ubuntu, so include them all
+     export COWPATH=/usr/share/cows:/usr/share/cowsay/cows:~/projects/homelab/cows:/usr/share/games/fortunes:/usr/share/games/fortunes-de
      if [ -z ${mycow} ] ; then
-         IFS=',' read -r -a safe_cows <<< 'default,default,default,default,bud-frogs,elephant,small,three-eyes,tux,rancher,rancher-trademarked,rancher-k3os,rancher-k3os-trademarked,kitten,robotfindskitten,owl,hellokitty'
+         IFS=',' read -r -a safe_cows <<< 'default,default,default,default,bud-frogs,duck,elephant,elephant-in-snake,three-eyes,tux,rancher,rancher-trademarked,rancher-k3os,rancher-k3os-trademarked,kitten,robotfindskitten,owl,hellokitty,pony-smaller,unipony-smaller,moofasa,skeleton,www'
          mycow=${safe_cows[$((RANDOM % ${#safe_cows[@]}))]}
      fi
      case ${mycow} in
          rancher*|tux|chameleon)
              db='linux computers debian science startrek steven-wright'
              ;;
-         owl|satanic)
+         owl|satanic|eyes)
              db='cookie definitions steven-wright deep-thoughts off/zippy'
              ;;
-         *)
+         ,*)
              db=
      esac
      cowcmd='cowsay'
