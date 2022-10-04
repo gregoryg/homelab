@@ -137,7 +137,35 @@
 ** FoaF - n hops away
 ** Use COALESCE to use unbound variables (not linked)
    + ref: [[https://stackoverflow.com/a/66304670/457574][SPARQL Unbound variables || Query to bind a variable if it's unbound - Stack ...]]
-   +
+
+     Note that COALESCE can take more than 2 arguments, e.g. if we slightly alter our data to:
+
+     #+begin_src ttl
+       @prefix : <http://example.com/> .
+
+       :john a :Person ;
+             :hasDaughter :anna ;
+             :hasSon :will .
+       :anna a :Person ;
+             :hasSon :charlie .
+       :will a :Person .
+       :charlie a :Person .
+     #+end_src
+     i.e. we say if the child is a son or a daughter, then we can issue a query like:
+     #+begin_src sparql
+       SELECT ?person ?child
+       WHERE {
+       ?person a :Person .
+       OPTIONAL { ?person :hasDaughter ?daughter }
+       OPTIONAL { ?person :hasSon ?son }
+       BIND(COALESCE(?daughter, ?son, "Has no children.") AS ?child)
+       }
+     #+end_src
+
+     This returns a daughter if there is one. Failing that, it will return a son, and
+     failing that too, it will return the "Has no children."
+
+
 ** Brendan Newlon's Designer simplification query
    #+begin_src sparql
      ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
