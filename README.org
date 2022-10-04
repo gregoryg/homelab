@@ -74,6 +74,16 @@
          echo
      fi
    #+end_src
+
+*** Links may be needed to get all fortunes
+    It's harder to pass multiple paths to =fortune= (at least on Debian), so links to
+    additional fortune files may be advised.
+
+    #+begin_src bash :results none
+      sudo ln -s ~/projects/homelab/fortunes/* /usr/share/games/fortunes/
+    #+end_src
+
+
 * For every Chroot there is a season
   #+begin_src bash
     cd /mnt/arch # or where you are preparing the chroot dir
