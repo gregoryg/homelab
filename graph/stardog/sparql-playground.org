@@ -12,6 +12,9 @@
 #+creator: Emacs 28.1.50 (Org mode 9.5.3)
 #+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
 #+startup: overview
+
+#+property: header-args:sparql :comments org :eval never-export :post remove_prefix[:colnames yes](*this*)
+
 * Setup for interactive querying and data manipulation
   + Ref: Endpoints for REST API [[https://stardog-union.github.io/http-docs/][API Reference | ReDoc]]
   + Ref: [[https://docs.stardog.com/operating-stardog/database-administration/adding-data#add-data-using-the-graph-store-http-protocol][Adding Data Using the Graph Store HTTP Protocol| Stardog Doc]]
@@ -19,7 +22,12 @@
   The =ob-sparql= used in the following code blocks works *only* for queries using the
   =/query= endpoint.  Some data manipulation can be done on the =/update= endpoint
 
-
+** Post query processing
+   #+name: remove_prefix
+   #+begin_src emacs-lisp :var data=""
+     ;; (string-replace "http://ontology.stardog.com/picpay_simple/" ":" data)
+     (-tree-map (lambda (s) (string-replace "http://ontology.stardog.com/picpay_simple/" ":" s)) data)
+   #+end_src
 ** Variables for host, database, default endpoint
    #+name: svals
    | connection-name | base-url                                             | db                | api-endpoint | tramp-path                       | cmd-path         | working-path |
