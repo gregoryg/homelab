@@ -242,6 +242,28 @@
        rdfs:range rdf:type owl:ObjectProperty .
      } }
    #+end_src
+
+** Return data from subclasses also
+   #+begin_src sparql
+     select * { ?artist rdf:type/rdfs:subClassOf* :Artist }
+   #+end_src
+
+** Very basic RDFS Inference
+   + From Jaro's [[https://youtu.be/_IJ-jUr34m8?t=393][Stardog Academy: Reasoning - YouTube]]
+   #+begin_src ttl
+     # Schema
+     :track a rdf:Property ;
+       rdfs:label "track" ;
+       rdfs:domain :Album ;
+       rdfs:rance :Song .
+
+     # Asserted (explicitly defined) triple
+     :Let_It_Be :track :Across_the_Universe .
+
+     # Inferred triples
+     :Let_It_Be rdf:type :Album .
+     :Across_the_Universe rdf:type :Song .
+   #+end_src
 * Insurance database with hands-on labs
 ** Set up headers for =insurance= database on =doghouse
    #+begin_src emacs-lisp :var url=svals[4,1] :var db="insurance" :var endpoint=svals[2,3] :var tpath=svals[2,4] :results silent
