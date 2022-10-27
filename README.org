@@ -2241,7 +2241,8 @@
 *** Logseq
 **** Working together with Org Mode
      + Best global defaults
-     #+begin_src clojure :tangle ~/.logseq/config/config.edn
+       Tangle to ~/.logseq/config/config.edn
+     #+begin_src clojure
        ;; This global config file is used by all graphs.
        ;; Your graph's logseq/config.edn overrides config keys in this file
        ;; except for maps which are merged.
