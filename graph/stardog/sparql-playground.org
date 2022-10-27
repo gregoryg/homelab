@@ -754,7 +754,6 @@
     #+begin_src sparql
       select * {?s ?p ?o} LIMIT 10
     #+end_src
-
 * Phat insurance
 **
 * Healthcare
@@ -1113,11 +1112,13 @@
    +
 * Clojure!
 #+PROPERTY: header-args:clojure :dir ~/projects/graph/stardog/stardog-clj
+ Docs: [[https://docs.stardog.com/developing/programming-with-stardog/clojure][Clojure | Stardog Documentation Latest]]
+
 ** Define Stardog Server URL and DB name
   #+name: stardog-server-url
-  |http://172.16.17.18:5820|
+  |http://172.16.17.230:5820 |
   #+name: stardog-db
-  |looney-tunes|
+  |stardog-tutorial-music|
 ** Hook up =stardog-clj= and start a Cider session
    Wait to evaluate Clojure code until REPL comes up!
    #+begin_src emacs-lisp
@@ -1125,11 +1126,18 @@
    #+end_src
 
 ** Connect to DB
+   Pass the =connect= function a map with all non-default connection parameters.  The
+   structure can be discovered or created with the =create-db-spec= method, for example
+   #+begin_src clojure
+     (create-db-spec "testdb" "http://localhost:5820/" "admin" "admin" "none")
+   #+end_src
+
    #+begin_src clojure :session clj :dir ~/projects/graph/stardog/stardog-clj  :var url=stardog-server-url[,0] :var db=stardog-db[,0]
      (use 'clojure.pprint)
      (use 'stardog.core)
 
-     (def c (connect {:db db :server url}))
+     (def c (connect {:db db :server url :user "admin" :pass "admin"}))
+
    #+end_src
 
 ** Query and explore results
