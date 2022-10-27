@@ -50,7 +50,7 @@
      # cowfiles are in diff paths on openSUSE, Debian and Ubuntu, so include them all
      export COWPATH=/usr/share/cows:/usr/share/cowsay/cows:~/projects/homelab/cows:/usr/share/games/fortunes:/usr/share/games/fortunes-de
      if [ -z ${mycow} ] ; then
-         IFS=',' read -r -a safe_cows <<< 'default,default,default,default,bud-frogs,duck,elephant,elephant-in-snake,three-eyes,tux,rancher,rancher-trademarked,rancher-k3os,rancher-k3os-trademarked,kitten,robotfindskitten,owl,hellokitty,pony-smaller,unipony-smaller,moofasa,skeleton,www'
+         IFS=',' read -r -a safe_cows <<< 'default,default,default,default,bud-frogs,duck,elephant,three-eyes,tux,rancher,rancher-trademarked,rancher-k3os,rancher-k3os-trademarked,kitten,robotfindskitten,owl,hellokitty,pony-smaller,unipony-smaller,moofasa,skeleton,www'
          mycow=${safe_cows[$((RANDOM % ${#safe_cows[@]}))]}
      fi
      case ${mycow} in
