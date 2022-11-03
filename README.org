@@ -2271,6 +2271,7 @@
         ;; `[[Grant Ideas]]` to `[[file:./grant_ideas.org][Grant Ideas]]` for org-mode
         ;; For more, see https://github.com/logseq/logseq/issues/672
         :org-mode/insert-file-link? true
+        :shortcuts {:editor/open-file-in-default-app "ctrl+o"}
         }
      #+end_src
 
