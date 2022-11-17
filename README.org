@@ -1353,7 +1353,48 @@
 
      Now apt will accept that key's signature for all packages in that repo and only that
      repo.
+** Keep Ibus off my damn systems
+   :PROPERTIES:
+   :ID:       a6737084-b8d4-4050-86bc-10a394cfb81d
+   :END:
+   Ibus is the horrible thing that makes the letter =e= appear in dired when I type
+   =C-;= - its stunning usefulness is allowing you a shortcut to enter any of several
+   thousand emojis.
 
+*** Remove dependency in Debian package
+   Zoom packages this as a dependency - which is quite idiotic.
+
+   If there is no software you care about that depends on ibus, you can simply do
+   =sudo apt purge ibus=
+
+   Otherwise, plead with package maintainers to remove the dependency.
+
+   In the case of Zoom that has so far proven fruitless, so remove the dependency in the
+   =.deb= package as explained here:
+   [[https://hashman.ca/zoom/][hashman.ca :: Repack Zoom .debs to remove the `ibus` dependency]]
+
+   #+begin_src bash
+     scratch=$(mktemp -d)
+
+     # Extract package contents
+     dpkg -x ~/Downloads/zoom_amd64.deb $scratch
+
+     # Extract package control information
+     dpkg -e ~/Downloads/zoom_amd64.deb $scratch/DEBIAN
+
+     # Remove the ibus dependency
+     sed -i -E 's/(ibus, |, ibus)//' $scratch/DEBIAN/control
+
+     # Rebuild the .deb
+     dpkg -b $scratch patched_zoom_amd64.deb
+   #+end_src
+*** OR keep Ibus but change settings to rid yourself of the emoji key
+    Do it via gui: =ibus-settings=, =emoji= tab
+
+    Do it via command line (untested):
+    #+begin_src bash
+      gsettings set org.freedesktop.ibus.panel.emoji hotkey "@as []"
+    #+end_src
 * Spark on Kubernetes
   #+begin_src bash
     helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator
