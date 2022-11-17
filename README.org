@@ -220,13 +220,13 @@
 * Setting up Kubernetes distributions
 ** Set up initial barebones cluster
 *** Apache Kubernetes using Kubeadm
-    + [[file+emacs:01-k8s-distribution/apache-kubeadm/]]
+    + [[file:kubernetes/01-k8s-distribution/apache-kubeadm/]]
 *** Rancher Labs' RKE
-    + [[file+emacs:01-k8s-distribution/rancher-rke/]]
+    + [[file:kubernetes/01-k8s-distribution/rancher-rke/]]
     + Have a look at the two canonical starter configs from Rancher:
-      + [[file+emacs:01-k8s-distribution/rancher-rke/templates/cluster-full-example.yaml-TEMPLATE][Cluster full example config]]
-      + [[file+emacs:01-k8s-distribution/rancher-rke/templates/cluster-minimal-example.yaml-TEMPLATE][Cluster minimal example config]]
-    + [[file+emacs:01-k8s-distribution/rancher-rke/cluster.yaml][My specific homelab config]]
+      + [[file:kubernetes/01-k8s-distribution/rancher-rke/templates/cluster-full-example.yaml-TEMPLATE][Cluster full example config]]
+      + [[file:kubernetes/01-k8s-distribution/rancher-rke/templates/cluster-minimal-example.yaml-TEMPLATE][Cluster minimal example config]]
+    + [[file:kubernetes/01-k8s-distribution/rancher-rke/cluster.yaml][My specific homelab config]]
     + Once you have the config to your liking, run
       #+begin_src bash
         # rke up
@@ -1297,7 +1297,7 @@
 #+end_src
 
 * Linux setup odds and ends
-** Debian and Ubuntu deprecated =apt-key= follow these miserable steps instead
+** Debian and Ubuntu deprecated =apt-key= --  follow these miserable steps instead
    Painful, but necessary for now
    ref: [[https://askubuntu.com/questions/1286545/what-commands-exactly-should-replace-the-deprecated-apt-key][What commands (exactly) should replace the deprecated apt-key? - Ask Ubuntu]]
    ref: [[https://www.linuxuprising.com/2021/01/apt-key-is-deprecated-how-to-add.html][apt-key Is Deprecated. How To Add OpenPGP Repository Signing Keys Without It ...]]
@@ -1986,7 +1986,7 @@
 ******* Try a bunch of queries
         + Sample queries for this module
 
-          file:databases/tigergraph/udemy/documents/InstaFollow+Sample+Queries.sql
+          [[file:graph/tigergraph/udemy/documents/InstaFollow+Sample+Queries.sql]]
 
 ***** Use case: pattern matching
       + Search a graph for all occurences of a

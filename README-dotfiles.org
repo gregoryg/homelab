@@ -1,3 +1,5 @@
+#+property: header-args:bash :comments both :shebang #!/usr/bin/env bash :results none
+
 * Literate programming for dotfiles
   For the most part, I'm happy to keep static dotfiles periodically check in to a Git
   repository.
