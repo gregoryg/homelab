@@ -1,11 +1,14 @@
 # Install typical drivers
-ARG STARDOG_IMAGE=stardog/stardog:8.0.1-java11-preview
+ARG STARDOG_IMAGE=stardog/stardog:8.1.0-java11-preview
+# ARG STARDOG_IMAGE=stardog/stardog:8.0.0-java11-preview
 FROM $STARDOG_IMAGE
 
 USER root
 RUN yum updateinfo && yum install -y iproute lsof sudo postgresql-jdbc mysql-connector-java epel-release net-tools
 RUN yum install -y htop jq rsync openssh
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN groupadd sudo
+RUN usermod -G sudo -a stardog
 RUN mkdir -p /var/opt/drivers/
 RUN chown root:stardog /var/opt/drivers
 RUN cp -v /usr/share/java/mysql-connector-java.jar /usr/share/java/postgresql-jdbc.jar /var/opt/drivers/
