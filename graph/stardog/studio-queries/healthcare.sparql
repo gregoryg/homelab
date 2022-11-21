@@ -1,0 +1,35 @@
+# prefix : <tag:stardog:project:220429021120:modelConceptClass:>
+select DISTINCT ?type {
+    ?s a ?type
+} ORDER BY ?type
+
+select DISTINCT ?link {
+    ?s ?link ?o
+} ORDER BY ?link
+
+# proposal database
+# select * WHERE {
+#     ?q a :Question ;
+#        rel:response ?resp ;
+#     attr:question ?idk .
+# }
+# limit 10
+
+# select (count(*) as ?cnt ) { ?q a :Question}
+
+select * { ?med hc:prescribed_to_treat ?condition}
+
+select ?medDesc ?normcode (?condDesc AS ?Condition) WHERE {
+    ?med hc:prescribed_to_treat ?c  ;  # This is the inferred link
+         hc:RxNorm_code ?normcode ;
+         rdfs:label ?medDesc .
+    ?c rdfs:label ?condDesc ;
+}
+
+select DISTINCT ?o { ?s a ?o }
+
+select * { hc:Condition-38341003 ?link ?o}
+
+select (count(*) AS ?numberOfTriples) {?s ?p ?o}
+
+select * { ?person a hc:Patient}

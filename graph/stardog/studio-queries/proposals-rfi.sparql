@@ -1,0 +1,36 @@
+# prefix : <tag:stardog:project:220429021120:modelConceptClass:>
+select DISTINCT ?type {
+    ?s a ?type
+}
+
+select DISTINCT ?link {
+    ?s ?link ?o
+}
+
+select * WHERE {
+    ?q a :Question ;
+       rel:response ?resp ;
+    attr:question ?idk .
+    filter (CONTAINS (lcase(?idk), "rpo" ))
+
+}
+limit 10
+
+select (count(*) as ?cnt ) { ?q a :Question}
+
+select DISTINCT ?s ?score
+where {
+    ?s ?p ?l .
+    (?l ?score) <tag:stardog:api:property:textMatch> 'the' .
+}
+
+
+select *
+where {
+    ?doc a :Document ;
+         ?p ?o
+}
+
+
+select ?p ?o where { ?s a :Answer ;
+                    ?p ?o }

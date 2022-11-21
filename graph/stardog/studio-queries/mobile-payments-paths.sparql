@@ -1,0 +1,27 @@
+
+PATH ?p FROM (:User-508054 AS ?x) TO ?y {
+    ?x ^:friend_of ?y
+}
+
+
+SELECT * {
+    :User-508054 :friend_of ?p ;
+                 :full_name ?name .
+    ?p :full_name ?friend
+}
+
+
+SELECT ?cycle {
+PATH ?cycle FROM ?start TO ?end {
+    ?start :pays_any_p2p ?end
+}
+FILTER (?start = ?end)
+}
+
+PATHS CYCLIC START ?start END ?end VIA :pays_any_p2p
+
+PATHS START ?start = :User-508054 END ?end VIA :pays_any_p2p
+
+PATHS CYCLIC START ?start = :User-508054 END ?end VIA :pays_any_p2p
+
+PATHS ALL START ?x = ?start END ?y VIA :pays_any_p2p 

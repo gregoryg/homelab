@@ -1,0 +1,44 @@
+select ?name (SAMPLE(?a) AS ?artist) (SAMPLE(?released) AS ?date) (count(*) AS ?numTracks)
+WHERE {
+    ?album a :Album ;
+           :artist ?a ;
+           :name ?name ;
+           :date ?released ;
+           :track ?track ;
+           :description ?description ;
+           :producer ?producer .
+}
+GROUP BY ?name ?numTracks
+ORDER BY ?date
+LIMIT 10
+
+select ?artist (GROUP_CONCAT(?type) AS ?thang)
+FROM <stardog:context:all>
+WHERE {
+    ?artist rdf:type/rdfs:subClassOf* :Artist ;
+            rdf:type ?type .
+}
+GROUP BY ?artist
+
+select * { :A_Quick_One ?p ?o }
+
+select distinct ?type { ?s a ?type}
+
+select ?s (COUNT(*) AS ?outdegree)
+WHERE {
+    ?s a/rdfs:subClassOf*  :Person .
+    ?s ?p ?o
+}
+GROUP BY ?s
+ORDER BY DESC(?outdegree)
+LIMIT 10
+
+SELECT * { ?s a :Songwriter}
+
+CONSTRUCT {?s rdf:type :singerSongwriter }
+WHERE
+{
+    ?s a :Songwriter ;
+       a :SoloArtist
+}
+limit 100

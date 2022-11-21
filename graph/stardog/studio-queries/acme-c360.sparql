@@ -1,0 +1,85 @@
+# Using the Acme database for Customer360
+
+select * {
+    acme:profile_id_1 a acme:ProfileId ;
+            ?link ?o ;
+
+}
+
+
+select * {
+    ?s acme:hasFriend ?friend ;
+       rdfs:label ?myname .
+    ?friend rdfs:label ?friendname .
+}
+limit 20
+
+select ?me ?myname ?friendname WHERE {
+    ?me rdfs:label ?myname .
+    ?friend rdfs:label ?friendname .
+    { select ?me ?friend where {?me acme:hasFriend ?friend . }
+    limit 20
+} }
+
+
+select distinct ?link
+# FROM acme:churn
+WHERE {?s ?link ?type}
+
+select ?s ?type {?s rdfs:subClassOf ?type} ORDER BY ?type
+
+select (count(*) AS ?cnt) {?s ?p ?o}
+
+# The Customer Journey
+# Earliest date associated with the customer profile, and the type of encounter.
+select ?profile ?event ?eventClass ?firstContact  {
+
+    ?profile acme:hasEncounter ?event .
+    ?event
+        a ?eventClass ;
+        acme:encounterDate ?firstContact .
+    FILTER ((?eventClass != owl:Thing) && (?eventClass != acme:Encounter))
+    {
+        SELECT ?profile (min(?ts) as ?firstContact)  {
+            ?profile a awcme:ProfileId ;
+                acme:hasEncounter ?e .
+            ?e  acme:encounterDate ?ts .
+        }
+        group by ?profile
+    }
+}
+
+select * where {
+    ?profile a acme:ProfileId ;
+             acme:hasEncounter ?e .
+    # ?e acme:encounterDate ?ts .
+    }
+
+select distinct ?link {?profile a acme:ProfileId ;
+                                ?link ?o}
+order by ?link
+
+# stored query for selecting the first five purchases a client makes
+# This query will only be used where we know there are 5 purchases.
+
+select ?profile ?purchaseDate
+    {
+        graph acme:purchases {
+        ?profile acme:hasPurchase/acme:purchaseDate ?purchaseDate .
+        }
+    }
+
+    order by ?purchaseDate
+    limit 5
+
+
+select * where {
+    ?topic a :Topic ;
+           :topic_level ?level ;
+           :topic_headline ?headline ;
+        OPTIONAL {?topic :child_of ?parent } .
+        OPTIONAL {?topic :topic_category ?cagtegoy } .
+}
+
+
+select * {?s ?p ?o} limit 10000

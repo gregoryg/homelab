@@ -1,0 +1,33 @@
+select DISTINCT ?type { ?s a ?type}
+
+select * {?s a :File ;
+             ?p ?o}
+
+
+select * {?s ?p ?o} ORDER BY ?p ?o
+
+select (count(*) as ?cnt) {?s ?p ?o}
+
+select * { ?topic a :Topic ; ?p ?o} ORDER BY ?p ?o
+
+select * {:6a76fbd7-4f5a-48a6-8b27-ca158946a7ca a :Topic}
+
+select * WHERE {
+    ?tag a :Tag ;
+         rdfs:label ?label ;
+         ^:file_tag ?file .
+    ?file ^:from_file ?topic .
+    ?topic rdfs:label ?topic_label ;
+           :topic_category ?cat ;
+           :topic_level ?level .
+    # ?topic rdfs:label ?topic_label
+}
+
+
+select distinct ?tag { ?tag a :Tag}
+
+select * { :6a76fbd7-4f5a-48a6-8b27-ca158946a7ca ?p ?o}
+
+select * {?topic a :Topic  ; rdfs:label ?label . FILTER(contains(?label, "parse"))} ORDER BY  ?topic
+
+select * {?file a :File}

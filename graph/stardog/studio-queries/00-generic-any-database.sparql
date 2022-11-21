@@ -1,0 +1,5 @@
+# Find all distinct "types"/classes
+select DISTINCT ?type {?s a ?type}
+
+# Find all distinct edge types
+select DISTINCT ?link {?s ?link ?o}
