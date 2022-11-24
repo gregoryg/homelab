@@ -11,6 +11,7 @@
 #+exclude_tags: noexport
 #+creator: Emacs 28.0.50 (Org mode 9.4.4)
 #+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
+#+property: header-args:bash :comments both :shebang #!/usr/bin/env bash
 
    Official site: [[https://harvesterhci.io/][Harvester - Open-source hyperconverged infrastructure]]
 
@@ -272,6 +273,25 @@
             --server-ip ${SERVER1_HOST} \
             --print-command
     #+end_src
+
+* Useful shell scripts
+** scripts
+   #+begin_src bash :tangle ~/bin/accept-vminstances.sh
+     # Accept IPs and hostnames for all Harverster VM instances in default namespace
+     IFS='
+     '
+     for line in `kubectl get vmi -o custom-columns=NAME:metadata.name,IP:status.interfaces[0].ipAddress |tr -s ' '|tail -n +2`
+     do
+         h=$(echo $line | cut -d' ' -f1)
+         ip=$(echo $line | cut -d' ' -f2)
+         echo "Host is ${h}, IP is ${ip}"
+         ssh-keygen -R $h
+         ssh-keygen -R ${h}.magichome
+         ssh-keygen -R $ip
+         ssh -o StrictHostKeyChecking=no $h hostname
+         ssh -o StrictHostKeyChecking=no ${h}.magichome hostname
+     done
+   #+end_src
 * Mohammed's Harvester Node driver
    AKA node-driver NodeDriver
 
