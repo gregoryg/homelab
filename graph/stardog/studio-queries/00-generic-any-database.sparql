@@ -3,3 +3,6 @@ select DISTINCT ?type {?s a ?type}
 
 # Find all distinct edge types
 select DISTINCT ?link {?s ?link ?o}
+
+# Count all triples
+select (count(*) AS ?cnt) {?s ?p ?o}
