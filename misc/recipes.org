@@ -66,7 +66,7 @@
 ** The Perfect Cynar Boulevardier
    I made the perfect Negroni-adjacent drink
    + 2 oz Bourbon (Elijah Craig small batch)
-   + < 2 oz Dolin white sweet vermouth
+   + < 2 oz Dolin blanc sweet vermouth
    + 1.5 oz Cynar
    + .5 oz Suze
    + Grapefruit bitters (Fee Bros)
@@ -80,3 +80,8 @@
      Shake with ice for 1 minute+
 
      Strain into a second shaker without ice, shake for 30 seconds+
+** Campari Americano
+   + 1/2 ounces Campari
+   + 1 1/2 ounces sweet vermouth (Dolin Rouge!)
+   + Soda water, chilled, to top
+   + Garnish: orange twist
