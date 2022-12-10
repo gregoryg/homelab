@@ -337,7 +337,25 @@
 
    + Give MetalLB a pool of IPs
      + Here I'm using a pool from the primary home network
-       #+begin_src yaml :tangle manifests/metallb-pool-cm.yaml :mkdirp yes
+       #+begin_src yaml :tangle manifests/metallb-pool.yaml :mkdirp yes
+         apiVersion: metallb.io/v1beta1
+         kind: IPAddressPool
+         metadata:
+           name: homelab-pool
+           namespace: metallb-system
+         spec:
+           addresses:
+           - 172.16.17.230-172.16.17.250
+       #+end_src
+       #+begin_src emacs-lisp :tangle manifests/metallb-l2advert.yaml :mkdirp yes
+         apiVersion: metallb.io/v1beta1
+         kind: L2Advertisement
+         metadata:
+           name: example
+           namespace: metallb-system
+       #+end_src
+     + The older way to do it via a ConfigMap
+       #+begin_src yaml
          apiVersion: v1
          kind: ConfigMap
          metadata:
