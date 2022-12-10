@@ -2466,7 +2466,22 @@
 
        # --device=/dev/ttyACM0 \
      #+end_src
-
+* Lispssss
+** Guile
+*** Setup on Debian
+    On Emacs, use the =geiser-guile= package
+    #+begin_src bash
+      sudo apt install guile-3.0-dev guile-3.0-doc
+    #+end_src
+*** Try out [[https://www.gnu.org/software/g-golf/index.html][G-Golf]] for GUI development
+    #+begin_src bash
+      sudo apt install libgirepository-1.0-dev guile-library
+      cd ~/projects/coding/lisp/guile/g-golf
+      ./autogen.sh
+      ./configure --with-guile-site=yes
+      make
+      sudo make install
+    #+end_src
 * Blasts.  From pasts.
 
 ** swat! - the amazing tty fly swatting game
