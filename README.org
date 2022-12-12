@@ -2482,6 +2482,14 @@
       make
       sudo make install
     #+end_src
+** Racket
+   :PROPERTIES:
+   :ID:       e69b8b8e-0ac3-4ac2-a687-307bb8931d0b
+   :END:
+   #+begin_src bash
+     sudo apt -y install racket
+     raco pkg install racket-langserver
+   #+end_src
 * Blasts.  From pasts.
 
 ** swat! - the amazing tty fly swatting game
