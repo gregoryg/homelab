@@ -17,6 +17,8 @@ select DISTINCT ?link {
 
 # select (count(*) as ?cnt ) { ?q a :Question}
 
+
+# Turn on reasoning to follow prescribed_to_treat link
 select * { ?med hc:prescribed_to_treat ?condition}
 
 select ?medDesc ?normcode (?condDesc AS ?Condition) WHERE {
@@ -33,3 +35,47 @@ select * { hc:Condition-38341003 ?link ?o}
 select (count(*) AS ?numberOfTriples) {?s ?p ?o}
 
 select * { ?person a hc:Patient}
+
+# show all links/attributes from Provider
+# is this sometimes an individual physician?
+select DISTINCT ?link {
+    ?provider a hc:Provider ;
+              ?link ?target
+}
+ORDER BY ?link
+
+# Show providers with org and specialty
+select * WHERE
+{
+    ?provider a hc:Provider ;
+              hc:name ?name ;
+              hc:has_organization ?org .
+    ?org ?link ?orgstuff
+    OPTIONAL {?provider hc:has_specialty ?specialty }
+}
+
+
+# What specialities are correlated to what organizations?
+##
+# find clusters of specialists at hospitals
+select ?orglabel (count(?specialitylabel) as ?numSpecialities) ?specialitylabel WHERE
+{
+  ?speciality a hc:Speciality ;
+               rdfs:label ?specialitylabel ;
+              ^hc:has_speciality ?provider .
+   ?provider hc:has_organization ?org ;
+             hc:name ?name ;
+             hc:city ?address .
+   ?org      rdfs:label ?orglabel .
+}
+GROUP BY ?orglabel ?specialitylabel
+ORDER BY DESC(?numSpecialities) ?orglabel
+# medicaid/medicare
+
+select ?org ?label  WHERE {?org a hc:Organization; rdfs:label ?label }
+
+select * WHERE {?org a hc:Organization ; ?p ?o } order by ?org ?p limit 200000
+
+## delete all Specialities
+# delete { ?speciality a hc:Speciality . }
+# where { ?speciality a hc:Speciality}
