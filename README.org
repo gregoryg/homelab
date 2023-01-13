@@ -1432,7 +1432,20 @@
      # Rebuild the .deb
      dpkg -b $scratch patched_zoom_amd64.deb
    #+end_src
+* MySQL / MariaDB on Kubernetes
+  + ref: [[https://artifacthub.io/packages/helm/bitnami/mariadb][mariadb 11.4.2 · bitnami/bitnami]]
+  #+begin_src bash
+    helm repo add bitnami https://charts.bitnami.com/bitnami
+    helm repo update
 
+    helm -n mariadb install mariadb bitnami/mariadb \
+         --set auth.rootPassword=${mariadbRootPass} \
+         --set auth.username=${mariadbUser},auth.password=${mariadbUserPass} \
+         --set primary.persistence.storageClass=longhorn,primary.persistence.size=82Gi \
+         --set primary.service.type=NodePort,primary.service.nodePorts.mysql=30306 \
+         --set metrics.enabled=false,metrics.serviceMonitor.enabled=false \
+         --create-namespace
+  #+end_src
 * Spark on Kubernetes
   #+begin_src bash
     helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator
