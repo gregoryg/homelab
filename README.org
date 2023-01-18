@@ -2480,6 +2480,13 @@
        # --device=/dev/ttyACM0 \
      #+end_src
 * Lispssss
+** Common Lisp
+*** The amazing Kandria
+   [[https://reader.tymoon.eu/article/413][An Overview of Kandria's Development with Lisp - 妖怪世捨て人 ≫ reader.tymoon.eu]]
+*** Radiance - A web application framework in Common Lisp
+    [[https://shirakumo.github.io/radiance/][Radiance ≫ shirakumo.github.io]]
+    [[https://github.com/Shirakumo/radiance][Shirakumo/radiance: A Common Lisp web application environment ≫ github.com]]
+
 ** Guile
 *** Setup on Debian
     On Emacs, use the =geiser-guile= package
