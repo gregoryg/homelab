@@ -6,3 +6,18 @@ select DISTINCT ?link {?s ?link ?o}
 
 # Count all triples
 select (count(*) AS ?cnt) {?s ?p ?o}
+
+# Selecting all properties of a class, e.g. Order
+SELECT DISTINCT
+  ?domain ?prop ?range
+WHERE {
+    ?subject ?prop ?object .
+    ?subject a ?domain .
+    OPTIONAL {
+        ?object a ?oClass .
+    }
+    BIND(IF(BOUND(?oClass), ?oClass, DATATYPE(?object)) AS ?range)
+    FILTER (?prop != rdf:type && ?prop != rdfs:domain && ?prop != rdfs:range
+    && ?domain = :Order
+    )
+}
