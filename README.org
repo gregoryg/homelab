@@ -1267,6 +1267,14 @@
      #+begin_src conf
        options snd_hda_intel power_save=0 power_save_controller=0
      #+end_src
+** Prevent USB microphones from suspending
+   + ref: [[https://askubuntu.com/a/1311891/104280][20.04 - USB webcam microphone not working - Ask Ubuntu]]
+   The problem: USB devices may be set to suspend after being idle
+
+   The fix: in =/etc/pulse/default.pa= comment out the line reading =load-module
+   module-suspend-on-idle=
+
+   Test using =pacmd list-sources=
 * Printer shenaniganas
 ** Find the dang printer
   Oh it can be quite the trick finding a working URL
