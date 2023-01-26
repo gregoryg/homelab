@@ -1,0 +1,115 @@
+# Flood_Zone
+prefix kg: <tag:stardog:api:context:>
+
+select * FROM kg:local {
+?address  a :Address;
+        :Built_In ?flood.
+?flood a :Floodplain;
+          :Zone_Subtype ?zone.
+FILTER(?address=<http://api.stardog.com/Address#99>)
+}
+
+# Home address
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+PREFIX : <http://api.stardog.com/>
+prefix geof: <http://www.opengis.net/def/function/geosparql/>
+prefix unit: <http://qudt.org/vocab/unit#>
+prefix kg: <tag:stardog:api:context:>
+
+
+select * FROM kg:local {
+?address  a :Address;
+        :Full_Address ?fullAddress;
+        :Zip ?zip;
+        :Latitude ?latitude;
+        :Longitude ?longitude;
+        geo:hasGeometry ?addressCoordinates.
+FILTER(?address=<http://api.stardog.com/Address#99>)
+}
+
+# Home info
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+PREFIX : <http://api.stardog.com/>
+prefix geof: <http://www.opengis.net/def/function/geosparql/>
+prefix unit: <http://qudt.org/vocab/unit#>
+prefix kg: <tag:stardog:api:context:>
+
+
+select ?address ?crime FROM kg:local {{
+select ?address ?crime ?addressCoordinates ?crimeCoordinates ?distance
+{{
+#####
+select ?address  ?addressCoordinates {
+?address  a :Address;
+        geo:hasGeometry ?addressCoordinates.
+?addressCoordinates a geo:Geometry;
+                    geo:asWKT ?addressCoords.
+FILTER(?address=<http://api.stardog.com/Address#99>)
+}}
+#####
+
+#####
+{
+select ?crime ?crimeCoordinates {
+     ?crime a :Crime_Incident;
+       :Offense ?offense;
+       geo:hasGeometry ?crimeCoordinates.
+ ?crimeCoordinates a geo:Geometry;
+        geo:asWKT ?crimeCoords.
+ FILTER(?offense IN("BURGLARY","THEFT/OTHER"))
+}}
+
+#####
+BIND(geof:distance(?addressCoordinates, ?crimeCoordinates, unit:MileUSStatute) as ?distance)
+}
+
+ }
+ FILTER(?distance <= .25)
+
+}
+
+# Insurance address dist to crime
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX wgs: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+PREFIX : <http://api.stardog.com/>
+prefix geof: <http://www.opengis.net/def/function/geosparql/>
+prefix unit: <http://qudt.org/vocab/unit#>
+prefix kg: <tag:stardog:api:context:>
+
+
+select ?address ?crime FROM kg:local {{
+select ?address ?crime ?addressCoordinates ?crimeCoordinates ?distance
+{{
+#####
+select ?address  ?addressCoordinates {
+?address  a :Address;
+        geo:hasGeometry ?addressCoordinates.
+?addressCoordinates a geo:Geometry;
+                    geo:asWKT ?addressCoords.
+}}
+#####
+
+#####
+{
+select ?crime ?crimeCoordinates {
+     ?crime a :Crime_Incident;
+       :Offense ?offense;
+       geo:hasGeometry ?crimeCoordinates.
+ ?crimeCoordinates a geo:Geometry;
+        geo:asWKT ?crimeCoords.
+ FILTER(?offense IN("BURGLARY","THEFT/OTHER"))
+}}
+
+#####
+BIND(geof:distance(?addressCoordinates, ?crimeCoordinates, unit:MileUSStatute) as ?distance)
+}
+
+ }
+ FILTER(?distance <= .25)
+
+}
