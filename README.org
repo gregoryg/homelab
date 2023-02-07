@@ -94,7 +94,39 @@
     #+begin_src bash
       strfile -c % mitch-hedberg mitch-hedberg.dat
     #+end_src
+** List all docker tags for a repo
+   #+begin_src bash :tangle ~/bin/docker-tags.sh :comments both
+     if [ $# -lt 1 ]
+     then
+         cat << HELP
 
+     $0  --  list all tags for a Docker image on a remote registry.
+
+     EXAMPLE:
+         - list all tags for ubuntu:
+            $0 ubuntu
+
+         - list all php tags containing apache:
+            $0 php apache
+
+     HELP
+         exit 0
+     fi
+     namespace=$(echo "${1}" | cut -s -d'/' -f1)
+     image=$(echo "${1}" | cut -s -d'/' -f2)
+     if [ -z "${namespace}" ]; then
+         namespace="library"
+         image="${1}"
+     fi
+
+     tags=$(curl --silent "https://registry.hub.docker.com/v2/repositories/${namespace}/${image}/tags?page_size=1000" | jq -r '.results[].name' | sort --version-sort)
+
+     if [ -n "$2" ] ; then
+         tags=$(echo ${tags} | grep "$2")
+     fi
+
+     echo "${tags}"
+   #+end_src
 * For every Chroot there is a season
   #+begin_src bash
     cd /mnt/arch # or where you are preparing the chroot dir
