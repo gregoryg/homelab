@@ -44,7 +44,7 @@
      + [[https://github.com/piuccio/cowsay/tree/master/cows][cowsay/cows at master · piuccio/cowsay · GitHub]]
 
 *** The cownonical Cow Me! script
-   #+begin_src bash :tangle ~/bin/cowme :results replace output
+   #+begin_src bash :tangle ~/bin/cowme :comments both :results replace output
      # Optionally specify a cow - whether or not in the safe list
      mycow=$1
      # cowfiles are in different paths on openSUSE, Debian and Ubuntu, so include them all
