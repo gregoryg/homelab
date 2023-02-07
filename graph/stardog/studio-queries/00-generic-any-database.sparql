@@ -7,6 +7,12 @@ select DISTINCT ?link {?s ?link ?o}
 # Count all triples
 select (count(*) AS ?cnt) {?s ?p ?o}
 
+# Select all named graphs
+select DISTINCT ?g
+WHERE {
+    GRAPH ?g {?s ?p ?o}
+}
+
 # Selecting all properties of a class, e.g. Order
 SELECT DISTINCT
   ?domain ?prop ?range

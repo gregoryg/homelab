@@ -1,0 +1,136 @@
+select distinct ?type
+FROM <http://mobilepayments.com/activeusers/>
+where {?s a ?type }
+
+select DISTINCT ?link
+FROM <http://mobilepayments.com/activeusers/>
+WHERE { ?s ?link ?p}
+
+select *
+FROM <http://mobilepayments.com/activeusers/>
+where {
+    ?s a :User ;
+       :full_name ?name ;
+       :ssn ?ssn ;
+       :lives_at ?location .
+    ?location :street_address ?address ;
+              :city ?city ;
+              :state ?state .
+} limit 10
+
+select ?state (COUNT(*) AS ?num)
+FROM <http://mobilepayments.com/activeusers/>
+WHERE {
+    ?location a :Location ;
+              :state ?state
+}
+GROUP BY ?state
+ORDER BY DESC(?num)
+LIMIT 40
+
+select ?o (count(*) AS ?sameName)
+FROM <tag:stardog:api:context:local>
+where { ?s :full_name ?o}
+GROUP BY ?o
+ORDER BY DESC ( ?sameName)
+limit 10
+
+select   ?name (COUNT(*) AS ?beneficiary )
+FROM <tag:stardog:api:context:local>
+WHERE {
+    ?s a :Transaction .
+    ?s :pays_out ?o .
+    ?o :full_name ?name
+}
+GROUP BY ?o ?name
+ORDER BY DESC(?beneficiary)
+limit 10
+
+select ?user ?name (COUNT(*) AS ?daddy_warbucks)
+FROM <tag:stardog:api:context:local>
+WHERE {
+    ?tx a :Transaction .
+    ?user :makes_payment ?tx ;
+       :full_name ?name
+}
+GROUP BY ?user ?name
+ORDER BY DESC(?daddy_warbucks)
+LIMIT 10
+
+
+# Implement a subquery with fast inner select of most payments received
+
+# The subquery uses the reverse link =^:pays_any_p2p=
+
+# Add transaction details in the outer select
+
+
+SELECT ?user ?name (COUNT(*) AS ?numTransactions) (ROUND(SUM(?amt / 100)) AS ?total) (MIN(?timestamp) AS ?earliest) (MAX(?timestamp) AS ?latest) WHERE {
+  ?user :makes_payment ?transaction ;
+        :full_name ?name .
+  ?transaction :amount_wallet ?amt ;
+  :transaction_timestamp ?timestamp .
+  {
+    SELECT ?user (COUNT(*) AS ?payment)
+    #   FROM <tag:stardog:api:context:local>
+    WHERE {
+      ?user ^:pays_any_p2p ?payer .
+    }
+    GROUP BY ?user
+    ORDER BY DESC(?payment)
+    LIMIT 10
+  }
+}
+GROUP BY ?user ?name
+ORDER BY DESC(?total)
+
+select (COUNT(*) AS ?cnt)
+FROM <tag:stardog:api:context:local>
+WHERE {
+  ?s :pays_any_p2p ?o . FILTER (?s = ?o )
+}
+
+select ?user ?name
+FROM <tag:stardog:api:context:local>
+WHERE {
+    ?user :pays_any_p2p ?o ;
+       :full_name ?name .
+    FILTER (?user = ?o)
+}
+LIMIT 100
+
+SELECT ?tx (COUNT(*) AS ?outdegree)
+FROM <tag:stardog:api:context:local>
+WHERE  {
+  ?tx a :Transaction .
+  ?tx ?p ?o
+}
+GROUP BY ?tx
+ORDER BY DESC(?outdegree)
+LIMIT 100
+
+SELECT ?friend ?name (COUNT(*) AS ?friendliness)
+FROM <tag:stardog:api:context:local>
+WHERE {
+     ?friend (:friend_of|^:friend_of) ?o ;
+             :full_name ?name
+ }
+GROUP BY ?friend ?name
+ORDER BY DESC(?friendliness)
+LIMIT 100
+
+SELECT ?o (COUNT(*) AS ?indegree)
+FROM <tag:stardog:api:context:local>
+ { ?s ?p ?o }
+ GROUP BY ?o
+ ORDER BY DESC(?indegree)
+ LIMIT 10
+
+SELECT ?s (COUNT(*) AS ?outdegree)
+FROM <tag:stardog:api:context:local>
+ {
+     ?s ?p ?o .
+ }
+ GROUP BY ?s
+ ORDER BY DESC (?outdegree)
+ LIMIT 10
