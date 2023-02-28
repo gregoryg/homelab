@@ -68,7 +68,7 @@
    | dogpack (rafa)  | http://testlabcluster.eastus.cloudapp.azure.com:5820 | discover-pagerank | query        |                                  |                  |              |
    | homelab         | http://172.16.17.17:5820                             | looney-tunes      | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
    | homelab-secure  | https://preferred-goat-q7vpfs.g57fzg0l.traefikhub.io | looney-tunes      | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
-   | localhost       | http://localhost:5820                                | looney-tunes      | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
+   | localhost       | http://localhost:5820                                | acme              | query        | /kube:stardog@stardog-stardog-0: | /opt/stardog/bin | mydata       |
    | presles         | https://presales.stardog.cloud:5820                  | insurance         | query        |                                  |                  |              |
 
    #+begin_src emacs-lisp
@@ -118,7 +118,14 @@
    #+end_src
 
    #+begin_src sparql
-     select ?user { ?user a :User } limit 10
+     select ?profile { ?profile a acme:ProfileId } order by rand() limit 10
+   #+end_src
+
+   #+begin_src sparql
+     select *
+     # from <http://amce.com/churn/>
+     where
+     { ?s ?p ?o } order by rand() limit 20
    #+end_src
 
 ** Count of all triples
@@ -126,8 +133,8 @@
         select (count(*) AS ?triples)
         # FROM <:context:virtual>
         WHERE { ?s ?p ?o}
-        LIMIT 10
    #+end_src
+
 ** Count indegree and outdegree
    + ref: [[https://stackoverflow.com/questions/24270532/how-to-calculate-maximum-degree-of-a-directed-graph-using-sparql][jena - How to calculate maximum degree of a directed graph using SPARQL? - St...]]
 *** Simple counts - degree of each node in the graph
@@ -151,7 +158,8 @@
      #+end_src
 
 **** Query to get total degree of each vertex =?x=
-     #+begin_src sparql :url http://172.16.17.230:5820/AntiFraud/query?reasoning=false
+##     #+begin_src sparql :url http://172.16.17.230:5820/AntiFraud/query?reasoning=false
+     #+begin_src sparql
        select ?x (count(*) as ?degree) {
          { ?x ?p ?o } union
          { ?s ?p ?x }
