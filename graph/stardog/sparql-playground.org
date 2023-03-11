@@ -22,44 +22,51 @@
   The =ob-sparql= used in the following code blocks works *only* for queries using the
   =/query= endpoint.  Some data manipulation can be done on the =/update= endpoint
 
-** Post query processing
-   #+name: dblist
-   #+begin_src emacs-lisp :dir /kube:stardog-stardog-0:/var/opt/stardog
-     (shell-command-to-string "/opt/stardog/bin/stardog-admin db list")
-   #+end_src
+* Post query processing
+  #+name: dblist
+  #+begin_src emacs-lisp :dir /kube:stardog-stardog-0:/var/opt/stardog
+    (shell-command-to-string "/opt/stardog/bin/stardog-admin db list")
+  #+end_src
 
-   #+name: dbnamespace
-   #+begin_src emacs-lisp   :dir /kube:stardog-stardog-0:/var/opt/stardog :var db="starwars"
-     ;; (if (and (boundp 'dbnamespace) dbnamespace)
-     ;;     dbnamespace
-     (setq dbnamespace
+  #+name: dbnamespace
+  #+begin_src emacs-lisp   :dir /kube:stardog-stardog-0:/var/opt/stardog :var db="allpaws_c360"
+    ;; (if (and (boundp 'dbnamespace) dbnamespace)
+    ;;     dbnamespace
+
+    (setq dbnamespace
+          (mapcar
+           (lambda (l)
+             (cons (cl-third l) (cl-second l)))
            (mapcar
-            (lambda (l)
-              (cons (cl-second l) (concat (cl-first l) ":")))
-            (mapcar
-             (lambda (s) (s-split "," s))
-             (s-split "\n"
+            (lambda (s)
+              (s-split " " s))
+            (s-split "\n"
+                     (s-replace-all
+                      '(("<" . "") (">" . ""))
                       (s-trim
-                       (shell-command-to-string (concat "/opt/stardog/bin/stardog namespace list " db " | tail -n +4 |head -n -1|tr -d ' '|cut -d'|' -f2,3 --output-delimiter=,")))))))
-     ;; )
-   #+end_src
+                       (shell-command-to-string (concat "/opt/stardog/bin/stardog namespace export --sparql " db ))))))))
+
+    (add-to-list 'dbnamespace '("http://www.w3.org/1999/02/22-rdf-syntax-ns#type" . "a"))
+    ;; )
+  #+end_src
 
 
-   #+name: remove_prefix
-   #+begin_src emacs-lisp :var data="" :results none
-     (unless (and (boundp 'dbnamespace) dbnamespace)
-       (setq dbnamespace
-             (mapcar
-              (lambda (l)
-                (cons (cl-second l) (concat (cl-first l) ":")))
-              (mapcar
-               (lambda (s) (s-split "," s))
-               (s-split "\n"
-                        (s-trim
-                         (shell-command-to-string "/opt/stardog/bin/stardog namespace list acme | tail -n +4 |head -n -1|tr -d ' '|cut -d'|' -f2,3 --output-delimiter=,")))))))
+  #+name: remove_prefix
+  #+begin_src emacs-lisp :var data="" :results none
+    ;; (unless (and (boundp 'dbnamespace) dbnamespace)
+    ;;   (setq dbnamespace
+    ;;         (mapcar
+    ;;          (lambda (l)
+    ;;            (cons (cl-second l) (concat (cl-first l) ":")))
+    ;;          (mapcar
+    ;;           (lambda (s) (s-split "," s))
+    ;;           (s-split "\n"
+    ;;                    (s-trim
+    ;;                     (shell-command-to-string "/opt/stardog/bin/stardog namespace list acme | tail -n +4 |head -n -1|tr -d ' '|cut -d'|' -f2,3 --output-delimiter=,")))))))
 
-     (-tree-map (lambda (s) (s-replace-all dbnamespace s)) data)
-   #+end_src
+    (message "SPARQL post-processing called")
+    (-tree-map (lambda (s) (s-replace-all dbnamespace s)) data)
+  #+end_src
 ** Variables for host, database, default endpoint
    #+name: svals
    | connection-name | base-url                                             | db                | api-endpoint | tramp-path                       | cmd-path         | working-path |
