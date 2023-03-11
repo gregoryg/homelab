@@ -327,6 +327,49 @@
      :Let_It_Be rdf:type :Album .
      :Across_the_Universe rdf:type :Song .
    #+end_src
+* All Paws Time Series and Employment Contracts for [2023-03-10 vie]
+** Questions that require SPARQL
+*** Random triples
+    #+begin_src sparql
+      select * { ?s   ?p ?o } ORDER BY rand() limit 10
+    #+end_src
+
+*** Top Employers in year 2020
+    Top employers in 2020 ; top employers today
+    + Explorer can show top employer by size of circles
+    #+begin_src sparql
+      # active employment in a year
+      # select (count(?employment) as ?num)
+      select ?company ?companyName (count(?employment) as ?numJobs)
+      {
+          ?person a acme:ProfileId ;
+                  acme:employed_as ?employment .
+          # ?employment ?p ?o
+          ?employment acme:starDate ?starter ;
+                  acme:endDate ?ender ;
+                      acme:employer ?company .
+          ?company acme:companyName ?companyName .
+
+          filter (?starter >= "2010-01-01"^^xsd:date && ?starter <= "2010-12-31"^^xsd:date)
+      }
+      group by ?company ?companyName
+      order by desc(?numJobs)
+      limit 5
+    #+end_src
+
+*** Deadbeat Gregs
+    #+begin_src sparql
+      select ?fullname where
+      {
+        ?person a acme:ProfileId ;
+               acme:firstName ?firstname ;
+               acme:fullName ?fullname .
+       filter regex (?firstname, "Greg.*") .
+       filter NOT EXISTS {?person acme:employed_as ?_x}
+      }
+    #+end_src
+
+
 * Insurance database with hands-on labs
 ** Set up headers for =insurance= database on =doghouse
    #+begin_src emacs-lisp :var url=svals[4,1] :var db="insurance" :var endpoint=svals[2,3] :var tpath=svals[2,4] :results silent
