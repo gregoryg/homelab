@@ -131,6 +131,9 @@
    #+begin_src sparql
      select *
      # from <http://amce.com/churn/>
+     # from <tag:stardog:context:local>
+     from <http://acme.com/employment>
+
      where
      { ?s ?p ?o } order by rand() limit 20
    #+end_src
@@ -138,7 +141,7 @@
 ** Count of all triples
       #+begin_src sparql
         select (count(*) AS ?triples)
-        # FROM <:context:virtual>
+        # FROM <http://acme.com/employment>
         WHERE { ?s ?p ?o}
    #+end_src
 
@@ -164,6 +167,10 @@
        LIMIT 10
      #+end_src
 
+     #+begin_src sparql
+       select * { ?s ?p ?o } order by rand() limit 20
+     #+end_src
+
 **** Query to get total degree of each vertex =?x=
 ##     #+begin_src sparql :url http://172.16.17.230:5820/AntiFraud/query?reasoning=false
      #+begin_src sparql
@@ -186,6 +193,7 @@
        order by desc(?degree)
        limit 1
      #+end_src
+
 ** Six degrees
    + ref: Stardog tutorial [[https://docs.stardog.com/tutorials/getting-started-series/getting-started-2][Getting Started Part 2: Six Degrees of Kevin Bacon | Stardog Documentation La...]]
    +
