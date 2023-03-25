@@ -43,7 +43,7 @@
           --resource-group gg-aks-rg \
           --node-count 3 \
           --enable-addons monitoring \
-          --ssh-key-value ~/.ssh/azure_gg-tg_key.pub \
+          --ssh-key-value ~/.ssh/gg-azure-stardog.pub \
           --admin-username gregj \
           --node-vm-size Standard_DS4_v2
      #+end_src
