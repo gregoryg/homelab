@@ -113,3 +113,40 @@ BIND(geof:distance(?addressCoordinates, ?crimeCoordinates, unit:MileUSStatute) a
  FILTER(?distance <= .25)
 
 }
+
+## stored query: insurance_insert_quote
+prefix spa: <tag:stardog:api:analytics:>
+PREFIX : <http://api.stardog.com/>
+
+# INSERT {?quote a :Quote;
+#                rdfs:label ?premiumLabel;
+#                :Premium_Estimate ?predictedPremium.
+#         <http://api.stardog.com/Address#99> :estimate ?quote} WHERE {
+SELECT distinct ?quote ?predictedPremium ?premiumLabel  WHERE {
+  graph spa:model {
+      :premiumModel  spa:arguments (?fireDistance ?policeDistance ?assessedValue ?crimeCount) ;
+                spa:predict ?predictedPremium .
+  }
+
+    <http://api.stardog.com/Address#99> a :Address;
+           #  :Insured_By ?insurance;
+             :Assessed_For ?assessment;
+             :Minimum_Fire_Station_Distance ?fireDistance;
+             :Minimum_Police_Station_Distance ?policeDistance;
+             :Resides_In ?zipCode.
+     #   ?insurance a :Insurance_Policy;
+      #         :Premium ?premium.
+        ?assessment a :Assessment;
+                    :Assessment_Value ?assessedValue.
+        ?zipCode a :Zip_Codes.
+{select ?zipCode (SUM(?crimeCount) as ?totalCnt) {
+    ?statIRI a :Crime_Stats;
+                   :Crime_Count ?crimeCount;
+                   :Occurred_In ?zipCode.
+}
+GROUP BY ?zipCode}
+BIND(IRI("http://api.stardog.com/Quote#1234") as ?quote)
+BIND(CONCAT("$",?predictedPremium) as ?premiumLabel)
+
+}
+# }
