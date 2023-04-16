@@ -11,6 +11,8 @@ notebooks/CREDENTIALS.config
 notebooks/orders.db
 dotfiles/.config/obs-studio/logs/
 dotfiles/.config/obs-studio/profiler_data/
+graph/stardog/orgmode-rdf/parse-org.el
+graph/stardog/orgmode-rdf/orgmode-ontology.ttl
 **/*.bak
 **/.RData
 **/.Rhistory
