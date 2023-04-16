@@ -1,0 +1,248 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+options: p:nil pri:nil prop:t stat:t tags:t tasks:t tex:t timestamp:t title:t toc:nil
+#+options: todo:t |:t
+#+title: Parse Org Mode and save as RDF
+#+date: <2023-04-16 dom>
+#+author: Gregory Grubbs
+#+email: gregory.grubbs@gmail.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 28.1.50 (Org mode 9.5.3)
+#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
+#+startup: overview
+
+#+property: header-args:sparql :comments org :eval never-export :post remove_prefix[:colnames yes](*this*)
+* OHAI
+* Org Mode parsing code
+  #+begin_src emacs-lisp :tangle ./parse-org.el
+    (defun abc/parse-org-directory (dir-path)
+      "Parse a directory of Org files and output the results to two TSV files."
+      (let ((org-files (directory-files-recursively dir-path "\\`[^.].*\\.org\\(\\.gpg\\)?\\'"))
+            (file-columns '(file-id path category))
+            (data-columns '(file-id heading-id heading level parent ord-id todo category tags links)))
+        (unless (seq-empty-p org-files)
+          ;; start our delimited output files with column headings
+          (with-temp-file "org-file.tsv"
+            (insert (concat (mapconcat 'symbol-name file-columns "\t")) "\n"))
+          (with-temp-file "org-data.tsv"
+            (insert (concat (mapconcat 'symbol-name data-columns "\t")) "\n"))
+          (with-temp-file "org-data.ttl"
+            (insert (abc/standard-prefixes)))
+          (dolist (file-path org-files)
+            (abc/output-parsed-org-data file-path)
+            (abc/output-rdf file-path)))))
+
+    (defun abc/parse-org-file (file-path)
+      "Parse an Org file and return its headings and file-level CATEGORY property."
+      (let (headings (prev-uuid nil) (category nil))
+        (with-temp-buffer
+          (insert-file-contents file-path)
+          (org-mode)
+          ;; Find the file-level CATEGORY property if it exists
+          (setq file-category (org-entry-get nil "CATEGORY"))
+          (org-element-map (org-element-parse-buffer) 'headline
+            (lambda (hl)
+              (let* ((level (org-element-property :level hl))
+                     (text (org-element-property :raw-value hl))
+                     (todo-state (org-element-property :todo-keyword hl))
+                     (id (org-element-property :ID hl))
+                     (raw-tags (org-element-property :tags hl))
+                     (tags (when raw-tags (mapconcat 'identity raw-tags "|")))
+                     (category (org-element-property :CATEGORY hl))
+                     (hyperlinks '())
+                     ;; Prefer using the Org ID if it exists, otherwise generate a new UUID
+                     (uuid (or id (org-id-uuid)))
+                     (parent-uuid (if (> level 1) prev-uuid nil)))
+                (setq prev-uuid uuid)
+                ;; nab all hyperlinks
+                (org-element-map hl 'link
+                  (lambda (link)
+                    (push (concat (org-element-property :type link) ":" (org-element-property :path link)) hyperlinks)))
+                (push (list
+                       uuid
+                       text
+                       (number-to-string level)
+                       parent-uuid
+                       id
+                       todo-state
+                       category
+                       tags
+                       (when hyperlinks (mapconcat 'identity hyperlinks "|")))
+                      headings)))))
+        (list headings file-category)))
+
+    (defun abc/output-parsed-org-data (file-path)
+      "Output parsed Org file data to two TSV files."
+      (let* ((parsed (abc/parse-org-file file-path))
+             (headings (nth 0 parsed))
+             (file-id (secure-hash 'sha1 (expand-file-name file-path)))
+             (file-category (nth 1 parsed)))
+        (with-temp-buffer
+          (insert (concat file-id "\t" file-path "\t" file-category "\n"))
+          (append-to-file  (point-min) (point-max) "org-file.tsv"))
+        (dolist (heading headings)
+          (with-temp-buffer
+            (insert file-id "\t" (mapconcat 'identity heading "\t") "\n")
+            (append-to-file  (point-min) (point-max) "org-data.tsv")))))
+
+    ;;;; RDF SECTION
+
+    (defun abc/standard-prefixes ()
+      "Return multi-line string of RDF prefixes used in our standard ontologies."
+      "PREFIX : <http://hypecyclist.org/orgmode#>
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    ")
+
+    (defun abc/output-rdf (file-path)
+      "Output parsed Org file data to RDF following the Simple Org Mode ontology."
+      (let* ((parsed (abc/parse-org-file file-path))
+             (headings (nth 0 parsed))
+             (file-id (secure-hash 'sha1 (expand-file-name file-path)))
+             (file-category (nth 1 parsed)))
+        (with-temp-buffer
+          ;; File-level data
+          ;; (insert (concat file-id "\t" file-path "\t" file-category "\n"))
+          (insert ":File-" file-id " a :File ;\n")
+          (insert "  rdfs:label \"" (file-name-sans-extension (file-name-nondirectory file-path)) "\" ;\n")
+          (insert "  :file-path \"" file-path "\" ;\n")
+          (insert "  :category \"" file-category "\" .\n")
+          (dolist (heading headings)
+            (let ((topic-id (nth 0 heading))
+                  (topic (nth 1 heading))
+                  (topic-level (nth 2 heading))
+                  (topic-parent (nth 3 heading))
+                  (org-id (nth 4 heading))
+                  (todo-state (nth 5 heading))
+                  (topic-category (nth 6 heading))
+                  (tags (nth 7 heading))
+                  (links (nth 8 heading)))
+
+              ;; Category
+              (when topic-category
+                (insert ":Category-" topic-category " a :Category ;\n")
+                (insert "  rdfs:label \"" topic-category "\" ;\n")
+                (insert "  :category_name \"" topic-category "\" .\n\n"))
+              ;; TODO
+              (when todo-state
+                (insert ":TodoState-" todo-state " a :TodoState ;\n" )
+                (insert "  rdfs:label \"" todo-state "\" ;\n" )
+                (insert "  :todo_state \"" todo-state "\" .\n\n" ))
+              ;; Tags
+              (when tags
+                (dolist (tag (s-split "|" tags))
+                  (insert ":Tag-" tag " a :Tag ;\n")
+                  (insert "  rdfs:label \"" tag "\" ;\n")
+                  (insert "  :tag_name \"" tag "\" .\n\n")))
+
+              ;; Topic
+              (insert ":Topic-" topic-id " a :Topic ;\n")
+              (insert "  rdfs:label \"" (s-replace "\"" "\\\"" topic) "\" ;\n")
+              (insert "  :topic_headline \"" (s-replace "\"" "\\\"" topic) "\" ;\n")
+              (insert "  :from_file :File-" file-id " ;\n")
+              (when topic-category
+                (insert "  :has_category :Category-" topic-category " ;\n"))
+              (when todo-state
+                (insert "  :todo_state :TodoState-" todo-state " ;\n"))
+              (when tags
+                (insert "  :topic_tag "
+                        (mapconcat 'identity (mapcar (lambda (s) (concat ":Tag-" s)) (split-string tags "|")) ", ")
+                        " ;\n"))
+              (when topic-parent
+                (insert "  :child_of :Topic-" topic-parent " ;\n"))
+              ;; (when (and links (not (string-empty-p links)))
+              ;; TODO file: and id: links point to files and topics
+              (when links
+                ;; deal with only two types of links: file and id - for now throw the others aside
+                (dolist (link (s-split "|" links))
+                  (let* ((link-parts (s-split ":" link))
+                         (link-type (nth 0 link-parts))
+                         (link-val  (nth 1 link-parts)))
+                    (cond ((string= "file" link-type)
+                           (insert "  :links_to :File-" (secure-hash 'sha1 (expand-file-name link-val)) " ;\n"))
+                          ((string= "id" link-type)
+                           (insert "  :links_to :Topic-" link-val " ;\n"))))))
+              (insert "  :topic_level " topic-level " .\n\n" )
+              ))
+          (append-to-file  (point-min) (point-max) "org-data.ttl"))))
+  #+end_src
+* Ontology
+  #+begin_src ttl :tangle ./orgmode-ontology.ttl
+    PREFIX : <http://hypecyclist.org/orgmode#>
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    :Category a owl:Class ;
+      rdfs:label "Category" .
+    :File a owl:Class ;
+      rdfs:label "File" .
+    :Tag a owl:Class ;
+      rdfs:label "Tag" .
+    :TodoState a owl:Class ;
+      rdfs:label "TodoState" .
+    :Topic a owl:Class ;
+      rdfs:label "Topic" .
+
+    :child_of a owl:ObjectProperty ;
+      rdfs:label "child_of" ;
+      rdfs:domain :Topic ;
+      rdfs:range :Topic .
+    :links_to a owl:ObjectProperty ;
+      rdfs:label "links_to" ;
+      rdfs:domain :Topic ;
+      rdfs:range :Topic, :File .
+    :file_tag a owl:ObjectProperty ;
+      rdfs:label "file_tag" ;
+      rdfs:domain :File ;
+      rdfs:range :Tag .
+    :from_file a owl:ObjectProperty ;
+      rdfs:label "from_file" ;
+      rdfs:domain :Topic ;
+      rdfs:range :File .
+    :todo_state a owl:ObjectProperty ;
+      rdfs:label "todo_state" ;
+      rdfs:domain :Topic ;
+      rdfs:range :TodoState .
+    :topic_category a owl:ObjectProperty ;
+      rdfs:label "has_category" ;
+      rdfs:domain :File, :Topic ;
+      rdfs:range :Category .
+    :topic_tag a owl:ObjectProperty ;
+      rdfs:label "topic_tag" ;
+      rdfs:domain :Topic ;
+      rdfs:range :Tag .
+
+    :category_name a owl:DatatypeProperty ;
+      rdfs:label "category_name" ;
+      rdfs:domain :Category ;
+      rdfs:range xsd:string .
+    :file_path a owl:DatatypeProperty ;
+      rdfs:label "file_path" ;
+      rdfs:domain :File ;
+      rdfs:range xsd:string .
+    :file_type a owl:DatatypeProperty ;
+      rdfs:label "file_type" ;
+      rdfs:domain :File ;
+      rdfs:range xsd:string .
+    :tag_name a owl:DatatypeProperty ;
+      rdfs:label "tag_name" ;
+      rdfs:domain :Tag ;
+      rdfs:range xsd:string .
+    :topic_headline a owl:DatatypeProperty ;
+      rdfs:label "topic_headline" ;
+      rdfs:domain :Topic ;
+      rdfs:range xsd:string .
+    :topic_level a owl:DatatypeProperty ;
+      rdfs:label "topic_level" ;
+      rdfs:domain :Topic ;
+      rdfs:range xsd:integer .
+  #+end_src
