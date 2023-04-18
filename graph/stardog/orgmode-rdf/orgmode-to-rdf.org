@@ -111,7 +111,7 @@
           ;; (insert (concat file-id "\t" file-path "\t" file-category "\n"))
           (insert ":File-" file-id " a :File ;\n")
           (insert "  rdfs:label \"" (file-name-sans-extension (file-name-nondirectory file-path)) "\" ;\n")
-          (insert "  :file-path \"" file-path "\" ;\n")
+          (insert "  :file_path \"" file-path "\" ;\n")
           (insert "  :category \"" file-category "\" .\n")
           (dolist (heading headings)
             (let ((topic-id (nth 0 heading))
