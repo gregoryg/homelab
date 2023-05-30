@@ -930,6 +930,57 @@
      } ORDER BY desc(?rank) LIMIT 10
    #+end_src
 **
+* Org Mode Parsed
+  #+name: dblist
+  #+begin_src emacs-lisp :dir /docker:stardog@stardog:
+    (shell-command-to-string "/opt/stardog/bin/stardog-admin db list")
+  #+end_src
+
+  #+name: dbnamespace
+  #+begin_src emacs-lisp   :dir /docker:stardog@stardog: :var db="orgmode"
+    ;; (if (and (boundp 'dbnamespace) dbnamespace)
+    ;;     dbnamespace
+
+    (setq dbnamespace
+          (mapcar
+           (lambda (l)
+             (cons (cl-third l) (cl-second l)))
+           (mapcar
+            (lambda (s)
+              (s-split " " s))
+            (s-split "\n"
+                     (s-replace-all
+                      '(("<" . "") (">" . ""))
+                      (s-trim
+                       (shell-command-to-string (concat "/opt/stardog/bin/stardog namespace export --sparql " db ))))))))
+
+    (add-to-list 'dbnamespace '("http://www.w3.org/1999/02/22-rdf-syntax-ns#type" . "a"))
+    ;; )
+  #+end_src
+** Let's play
+   #+begin_src sparql
+     select * where {graph ?g  {?s ?p ?o}} order by rand() limit 10
+   #+end_src
+
+   #+begin_src sparql
+     select *
+     from <urn:orgmode:homelab2>
+     where {
+       ?topic a :Topic ;
+              :topic_headline "Drink" ;
+              :from_file ?file ;
+              :topic_level ?start_level ;
+             ^:child_of ?child .
+       ?child ?p ?o .
+     }
+     order by rand()
+     limit 10
+   #+end_src
+
+   #+begin_src sparql
+     select distinct ?label from <urn:orgmode:homelab2> {?topic a :Topic ; ?topic_level 1 ; rdfs:label ?label} limit 10000
+   #+end_src
+
 * Learning SPARQL internal course
   + course creator: Rafael Campo
 ** Set up headers for =healthcare= database on =homelab-secure=
@@ -1268,8 +1319,30 @@
    #+begin_src clojure :session clj :results table pp
      (print-table results)
    #+end_src
+* Python!
+  ref [[https://sparqlwrapper.readthedocs.io/en/latest/main.html][SPARQL Endpoint interface to Python — SPARQLWrapper documentation ≫ sparqlwrapper.readthedocs.io]]
+  #+begin_src python
+    # SPARQLWrapper2 is only for JSON results
+    from SPARQLWrapper import SPARQLWrapper, JSON, SPARQLWrapper2
 
+    # sparql = SPARQLWrapper( "http://localhost:5820/northwind/query")
+    sparql = SPARQLWrapper2( "http://localhost:5820/northwind/query")
+    sparql.setReturnFormat("json") # csv, tsv, json
+    sparql.setCredentials("admin", "admin")
+    sparql.setQuery("select * {?s ?p ?o} limit 10")
 
+    try:
+      # ret = sparql.queryAndConvert()
+      # print(ret) # for csv and tsv
+      ret = sparql.query()
+      # for r in ret["results"]["bindings"]:  # for JSON results
+      #   print(r)
+      d = ret.convert()
+    except Exception as e:
+      print("Ooops: ")
+      print(e)
+
+  #+end_src
 
 * SQL play for use with virtual graphs
 ** MySQL
