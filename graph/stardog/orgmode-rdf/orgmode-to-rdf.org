@@ -42,6 +42,7 @@
           (org-mode)
           ;; Find the file-level CATEGORY property if it exists
           (setq file-category (org-entry-get nil "CATEGORY"))
+          (setq level-uuids (make-vector 42 nil))
           (org-element-map (org-element-parse-buffer) 'headline
             (lambda (hl)
               (let* ((level (org-element-property :level hl))
@@ -54,8 +55,10 @@
                      (hyperlinks '())
                      ;; Prefer using the Org ID if it exists, otherwise generate a new UUID
                      (uuid (or id (org-id-uuid)))
-                     (parent-uuid (if (> level 1) prev-uuid nil)))
+                     (parent-uuid (if (> level 1) (aref level-uuids (- level 2)) nil)))
+                (aset level-uuids (- level 1) uuid)
                 (setq prev-uuid uuid)
+                (setq prev-level level)
                 ;; nab all hyperlinks
                 (org-element-map hl 'link
                   (lambda (link)
@@ -111,7 +114,7 @@
           ;; (insert (concat file-id "\t" file-path "\t" file-category "\n"))
           (insert ":File-" file-id " a :File ;\n")
           (insert "  rdfs:label \"" (file-name-sans-extension (file-name-nondirectory file-path)) "\" ;\n")
-          (insert "  :file_path \"" file-path "\" ;\n")
+          (insert "  :file-path \"" file-path "\" ;\n")
           (insert "  :category \"" file-category "\" .\n")
           (dolist (heading headings)
             (let ((topic-id (nth 0 heading))
