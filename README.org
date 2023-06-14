@@ -1496,17 +1496,96 @@
          --create-namespace
   #+end_src
 * Python Virtual Environments
-  Virtual environments are required because Python is such a damned mess.
-
- + Ref: [[https://docs.python.org/3/tutorial/venv.html][12. Virtual Environments and Packages — Python 3.10.2 documentation]]
-** Create a set of directories for venvs under =.local=
+  Manage my virtual environments
+  + Ref: [[https://docs.python.org/3/tutorial/venv.html][12. Virtual Environments and Packages — Python 3.10.2 documentation]]
+** Create directory for venvs under =.local=
+   #+begin_src bash
+     mkdir -p ~/.local/python-venvs/
+   #+end_src
+** Create and activate venv from CLI
    #+begin_src bash
      sudo apt -y install python3-venv
-     mkdir -p ~/.local/python-venvs/
      cd ~/.local/python-venvs/
      python3 -m venv jupyter
      source ~/.local/python-venvs/jupyter/bin/activate
    #+end_src
+** Emacs
+   Use the Emacs =python-venv= package (ref my Emacs setup in [[https://github.com/gregoryg/emacs-gregoryg/blob/master/README.org#python-mode-setup][Python Mode Setup ≫ github.com]]
+*** Use Emacs package to create and activate venvs
+   M-x pyvenv-create
+   M-x pyvenv-workon
+** Setup basic virtual environments for specific uses
+   =pip-search= is a given for all environments
+*** myspark for running Jupyter and local Spark
+    #+begin_src conf :tangle ~/.local/python-venvs/myspark-requirements.txt
+      configparser
+      findspark
+      google-auth
+      google-auth-httplib2
+      google-search-results
+      jupyter
+      jupyterlab
+      pandas
+      pip-search
+      pyspark
+      pystardog
+    #+end_src
+*** gmail for use of the Google Gmail API
+    #+begin_src bash :tangle ~/.local/python-venvs/gmail-requirements.txt
+      beautifulsoup4
+      bs4
+      cachetools
+      certifi
+      charset-normalizer
+      google
+      google-api-core
+      google-api-python-client
+      google-auth
+      google-auth-httplib2
+      google-auth-oauthlib
+      google-pasta
+      googleAPI
+      googleapis-common-protos
+      httplib2
+      idna
+      markdown-it-py
+      mdurl
+      oauth2client
+      oauthlib
+      pip
+      pip-search
+      protobuf
+      pyasn1
+      pyasn1-modules
+      Pygments
+      pyparsing
+      requests
+      requests-oauthlib
+      rich
+      rsa
+      setuptools
+      six
+      soupsieve
+      uritemplate
+      urllib3
+    #+end_src
+*** databricks
+    As opposed to =myspark=
+    #+begin_src conf :tangle ~/.local/python-venvs/databricks-requirements.txt
+      databricks-cli
+      databricks-connect
+      pip-search
+    #+end_src
+*** langchain-llm
+    This environment can grow huge quickly and will merit careful management: uninstall
+    outdated methods & APIs for example
+    #+begin_src conf :tangle ~/.local/python-venvs/langchain-llm-requirements.txt
+      python-dotenv
+      faiss-cpu
+      langchain
+      openai
+      pip-search
+    #+end_src
 
 * R kernel in Jupyter
   + [[https://richpauloo.github.io/2018-05-16-Installing-the-R-kernel-in-Jupyter-Lab/][Installing the R kernel in Jupyter Lab]]
