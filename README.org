@@ -1580,6 +1580,7 @@
     This environment can grow huge quickly and will merit careful management: uninstall
     outdated methods & APIs for example
     #+begin_src conf :tangle ~/.local/python-venvs/langchain-llm-requirements.txt
+      streamlit
       python-dotenv
       faiss-cpu
       langchain
