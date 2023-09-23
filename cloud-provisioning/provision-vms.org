@@ -42,8 +42,8 @@
 ** Set up AKS cluster
    + ref: [[https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough][Quickstart: Deploy an AKS cluster by using Azure CLI - Azure Kubernetes Servi...]]
      #+begin_src bash
-     # create resource group
-     az group create --name gg-aks-rg --location eastus
+       # create resource group
+       az group create --name gg-aks-rg --location eastus
      #+end_src
    + Assure cluster monitoring is ready to go
      #+begin_src bash
@@ -59,7 +59,7 @@
        az aks create \
           --name gg-stardog \
           --resource-group gg-aks-rg \
-          --node-count 3 \
+          --node-count 1 \
           --enable-addons monitoring \
           --ssh-key-value ~/.ssh/gg-azure-stardog.pub \
           --admin-username gregj \
