@@ -60,7 +60,7 @@
              ;;
 
          owl|satanic|eyes)
-             db='cookie definitions steven-wright deep-thoughts off/zippy mitch-hedberg'
+             db='cookie definitions steven-wright deep-thoughts zippy mitch-hedberg'
              ;;
          ,*)
              db=
