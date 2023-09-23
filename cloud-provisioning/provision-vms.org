@@ -3,21 +3,39 @@
 #+startup: content
 * Provision managed Kubernetes in cloud platforms
 ** Set up EKS Cluster
+   + Start with a single-node system-only cluster
    #+begin_src bash
      eksctl create cluster \
-            --profile <MYPROFILE> \
             --auto-kubeconfig \
             --name gg-stardog \
             --region us-west-2 \
             --with-oidc \
             --ssh-access \
             --ssh-public-key <MYSSHKEYNAME> \
-            --nodes 4 \
+            --nodes 1 \
             --node-volume-size 100 \
             --node-type m5.2xlarge
 
      aws eks update-kubeconfig --kubeconfig ~/.kube/config-files/eks-gg-test.yaml --name gg-stardog --region us-west-2
    #+end_src
+   + Add in one or more nodegroups
+   #+begin_src bash
+     eksctl create nodegroup \
+       --cluster gg-stardog \
+       --name gg-starpool \
+       --region us-west-2 \
+       --node-volume-size 100 \
+       --node-type m5.2xlarge \
+       --ssh-access \
+       --ssh-public-key <MYSSHKEYNAME> \
+       --nodes 3
+   #+end_src
+   + To target the nodepool in Kubernetes manifests, use
+     #+begin_src yaml
+       nodeSelector:
+         eks.amazonaws.com/nodegroup: gg-starpool
+     #+end_src
+   + To every season turn, turn turn
    #+begin_src bash
      eksctl delete cluster --name gg-stardog --profile <MYPROFILE>
    #+end_src
