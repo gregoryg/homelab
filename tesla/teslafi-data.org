@@ -10,7 +10,7 @@
 #+language: en
 #+select_tags: export
 #+exclude_tags: noexport
-#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
+#+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme
 
 * Data files
   Download data files

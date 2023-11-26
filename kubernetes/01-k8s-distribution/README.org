@@ -1,2 +1,2 @@
 #+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :tangle no :eval never-export
-#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
+#+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme

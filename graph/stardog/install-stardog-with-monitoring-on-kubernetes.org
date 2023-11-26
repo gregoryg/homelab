@@ -11,7 +11,7 @@
 #+exclude_tags: noexport
 #+creator: Emacs 28.1.50 (Org mode 9.5.3)
 #+cite_export:
-#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
+#+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme
 * Install Stardog with monitoring on Kubernetes
 
   Greg Grubbs, Sr. Solutions Consultant

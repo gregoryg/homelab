@@ -10,8 +10,8 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 27.0.91 (Org mode 9.3.6)
-#+setupfile: ~/projects/emacs/org-html-themes/org/./theme-readtheorg-local.setup
-# #+setupfile: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
+#+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme
+# #+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme
 #+PROPERTY: header-args:bash :comments org :shebang #!/usr/bin/env bash :eval never-export
 
 * Literate document setup

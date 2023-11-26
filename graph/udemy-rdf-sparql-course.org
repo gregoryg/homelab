@@ -11,7 +11,7 @@
 #+exclude_tags: noexport
 #+creator: Emacs 28.1.50 (Org mode 9.5.3)
 #+cite_export:
-#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
+#+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme
 #+startup: overview
 * Setup for interactive querying and data manipulation
   + Ref: Endpoints for REST API [[https://stardog-union.github.io/http-docs/][API Reference | ReDoc]]

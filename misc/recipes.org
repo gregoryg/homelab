@@ -10,7 +10,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 27.0.60 (Org mode 9.3.6)
-#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg.setup
+#+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme
 * Food
 ** Mountainous Noodles - Peanutty Noodles
    + 1 lb. thin fresh noodles

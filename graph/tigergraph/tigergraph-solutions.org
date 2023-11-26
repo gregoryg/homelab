@@ -11,7 +11,7 @@
 #+exclude_tags: noexport
 #+creator: Emacs 28.0.60 (Org mode 9.5)
 #+cite_export:
-#+setupfile: ~/projects/emacs/org-html-themes/org/theme-bigblow-local.setup
+#+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme
 * Overview
   This file generates all the scripts and GSQL code in the =solutions= directory.  Edits
   to those generated files will be lost whenever this Org Mode file is used for tangling

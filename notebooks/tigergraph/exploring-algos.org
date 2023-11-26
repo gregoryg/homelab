@@ -11,7 +11,7 @@
 #+exclude_tags: noexport
 #+creator: Emacs 28.0.60 (Org mode 9.5.1)
 #+cite_export:
-#+setupfile: ~/projects/emacs/org-html-themes/org/theme-bigblow-local.setup
+#+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme
 #+PROPERTY: header-args:jupyter-python :pandoc t :async yes
 * Jupyter in Org mode
   ref: [[https://sqrtminusone.xyz/posts/2021-05-01-org-python/][Replacing Jupyter Notebook with Org Mode]]

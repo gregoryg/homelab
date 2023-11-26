@@ -11,7 +11,7 @@
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
 #+CREATOR: Emacs 26.1 (Org mode 9.2)
-#+setupfile: ~/projects/emacs/org-html-themes/setup/theme-readtheorg.setup
+#+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme
 
 * The Ways of the Pixelbook
 * Pros and cons of the notebook itself

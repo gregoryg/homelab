@@ -11,7 +11,7 @@
 #+exclude_tags: noexport
 #+creator: Emacs 27.2 (Org mode 9.5.2)
 #+cite_export:
-#+setupfile: ~/projects/emacs/org-html-themes/org/theme-readtheorg-local.setup
+#+setupfile: ~/projects/emacs/org-themes/src/readtheorg_inline/readtheorg_inline.theme
 #+property: header-args:bash :comments org :shebang #!/usr/bin/env bash :eval never-export
 * refs
   + [[https://willschenk.com/articles/2019/installing_guix_on_nuc/][Installing guix on IntelNUC]]
