@@ -87,6 +87,16 @@
 
   + ref: [[https://stardog-union.github.io/http-docs/#tag/SPARQL][Stardog HTTP SPARQL API Reference | ReDoc]]
 ** Use CURL with no Org Mode package dependencies
+*** Healthcheck
+    no auth required
+
+    Tell CURL to print HTTP status code
+    #+begin_src bash :var url="http://localhost:5820"
+      curl -w "%{http_code}" -X GET \
+           "${url}/admin/healthcheck"
+    #+end_src
+
+*** Query db
    #+begin_src bash :results table replace :var url=svals[3,1] :var db=svals[3,2]
      #          -H 'Accept: application/sparql-results+json' \
      #     'http://172.16.17.17:5820/looney-tunes/query?reasoning=false' \
