@@ -17,3 +17,4 @@ graph/stardog/orgmode-rdf/orgmode-ontology.ttl
 **/.RData
 **/.Rhistory
 **/.ob-jupyter/
+kobo/**/*.key
