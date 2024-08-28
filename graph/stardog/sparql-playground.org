@@ -337,7 +337,7 @@
      :Let_It_Be rdf:type :Album .
      :Across_the_Universe rdf:type :Song .
    #+end_src
-* All Paws Time Series and Employment Contracts for [2023-03-10 vie]
+* All Paws Time Series and Employment Contracts for [2023-03-10 Fri]
 ** Questions that require SPARQL
 *** Random triples
     #+begin_src sparql
