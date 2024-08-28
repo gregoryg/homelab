@@ -18,7 +18,7 @@
           build-essential \
           xorg-dev \
           fonts-hack \
-          libacl1-dev apt show \
+          libacl1-dev \
           libmagickwand-dev \
           libgccjit-12-dev \
           libgtk2.0-dev \
