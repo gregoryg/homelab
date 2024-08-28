@@ -27,7 +27,7 @@
     cat teslafi-*csv| grep -v 'data_id' >> bigmama.csv
 
     echo 'Whoa, big mama'
-    wc -l bigmama.csv 
+    wc -l bigmama.csv
   #+end_src
   #+begin_src bash :var datadir=data-path
     echo "Changing to ${datadir}"
@@ -587,4 +587,12 @@
      HAVING miles > 60
      ORDER BY date_recorded);
    #+end_src
-
+** Battery degradation - 100% range over all time
+   #+begin_src sql
+     select max(battery_range), max(battery_level) AS battery_level, max(`Date`), chargeNumber, count(chargeNumber)
+     from teslafi
+     where chargeNumber <> 0
+     group by chargeNumber
+     having battery_level = 100
+     order by chargeNumber DESC;
+   #+end_src
