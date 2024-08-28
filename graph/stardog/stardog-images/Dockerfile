@@ -42,8 +42,8 @@ RUN useradd -m -u 1000 -g 1000 -G sudo stardog
 # RUN mkdir -p /var/opt/drivers/
 # RUN chown root:stardog /var/opt/drivers
 # RUN cp -v /usr/share/java/mysql-connector-java.jar /usr/share/java/postgresql-jdbc.jar /var/opt/drivers/
-COPY /SparkJDBC42.jar /usr/share/java/
-COPY /sqlite-jdbc-3.36.0.3.jar /usr/share/java/
+# COPY /SparkJDBC42.jar /usr/share/java/
+# COPY /sqlite-jdbc-3.36.0.3.jar /usr/share/java/
 
 ENV STARDOG_EXT=/usr/share/java/
 ENV PATH=/usr/local/stardog/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
