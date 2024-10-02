@@ -13,6 +13,6 @@ curl -s  https://api.openai.com/v1/chat/completions \
      -H "Content-Type: application/json" \
      -d '{
            "model": "gpt-4o",
-           "messages": [{"role": "system", "content": "explain this phrase, give examples of its use if appropriate, historical context if appropriate.  Reply only in the language of the phrase."},
+           "messages": [{"role": "system", "content": "Give a definition of the word or phrase.\nWhen the word or phrase is unusual or has multiple uses, or is something used in colloquial speech,give examples with very very terse explanations.\n\nReply only in the language of the word or phrase."},
                         {"role": "user", "content": '"${json_phrase}"'}],
-           "temperature": 0.7}'|jq -r '.choices[0].message.content' | tee ${scriptdir}/latest-explain-reply.txt
+           "temperature": 0.7}'|jq -r '.choices[0].message.content'  | tee ${scriptdir}/latest-fancy-define.txt
