@@ -14,10 +14,10 @@ audiopath=$(
            --write-description \
            --write-info-json \
            --restrict-filenames \
-           --trim-filenames 80 \
+           --trim-filenames 180 \
            --print after_move:filepath \
            "${vid}" \
-           -o ~/YouTube/'%(channel)s'/'%(channel)s'/'%(title)s.%(ext)s'
+           -o ~/YouTube/'%(channel)s'/'%(title)s'/'%(title)s.%(ext)s'
          )
 audiodir=$(dirname "${audiopath}")
 echo "Audio extraction of ${vid} at ${audiopath}"
@@ -58,3 +58,23 @@ ${WHISPER_CMD}
 if [ -n "${SSH_HOST}" ] ; then
     scp "${SSH_USER}@${SSH_HOST}":"${audiodir}/"'*.txt' $(dirname ${audiopath})
 fi
+
+
+
+# yt-dlp \
+#     -f 'bestaudio' \
+#     --write-thumbnail \
+#     --convert-thumbnails png \
+#     --check-formats \
+#     --no-mtime \
+#     --write-description \
+#     --write-info-json \
+#     --restrict-filenames \
+#     --extract-audio \
+#     --audio-format mp3 \
+#     'https://www.youtube.com/watch?v=eoFlbna9-cY' \
+#     -o '%(title)s/%(title)s.%(ext)s'  \
+#     --print after_move:filepath \
+#     --split-chapters \
+#     --write-info-json \
+#     -o "chapter:%(title)s/[%(section_number)02d] - %(section_title)s.%(ext)s"
