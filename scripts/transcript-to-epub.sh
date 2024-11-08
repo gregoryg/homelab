@@ -36,20 +36,3 @@ pandoc -f org -t epub \
        > $(echo "$(basename ${transcript_file})" | sed 's,\.org$,.epub,' ) "${transcript_file}"
 echo "wrote epub!"
 exit 0
-
-
-# newid=$(calibredb add \
-#                   --authors "$(jq -r '.channel' short_meta.json)" \
-#                   --cover /tmp/cropped-cover-3-4.png \
-#                   --languages $(jq -r '.language' short_meta.json) \
-#                   --series YouTube \
-#                   --title "$(jq -r '.title' short_meta.json)" \
-#                   --tags "$(jq -r '.tags' short_meta.json)" \
-#                   /tmp/mytranscript.md \
-#                   | grep 'Added book ids:' | cut -d ':' -f2 | tr -d ' ')
-# echo "New book was added with id ${newid}"
-
-# calibredb set_metadata \
-#           --field comments:"$(cat *.description)" \
-#           --field tags:"$(jq -r '.tags' short_meta.json | jq @csv|sed 's,\\",,g' | tr -d '"')" \
-#           ${newid}
