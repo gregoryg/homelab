@@ -142,94 +142,10 @@
 ***** TODO Get certain vars/vals set for sane usage
       + path of downloaded "parent" =.mp3= audio file
         + this matches ='%(title)s/%(title)s.%(ext)s'= from =yt-dlp=
-**** Bash script
-     TODO: GET RID OF THIS SHELL SCRIPT - it is deprecated in favor of the python script
-    #+begin_src bash :results verbatim :tangle /tmp/yt-audio.sh
-      WHISPER_MODEL=large-v3
-      SSH_HOST=aziriphale # null for hosted on current machine
-      SSH_USER=${USER}
-      WHISPER_CMD=
-
-      function transcribe_audio_file() {
-          # Send audio to whisper to produce transcription
-          # $1 is audio file path - NOTE: path is shell-escaped already
-          xaudiopath=$1
-          xaudiodir=$(dirname ${xaudiopath})
-          echo "  Audio extraction of ${xaudiopath}"
-          echo "    command will be rsync -av ${xaudiopath} ${SSH_USER}@${SSH_HOST}:${xaudiopath}"
-          if [ -n "${SSH_HOST}" ]; then
-              # use rsync to create new directories on target system
-              rsync -av ${xaudiopath} ${SSH_USER}@${SSH_HOST}:/tmp/transcribedir/
-              WHISPER_CMD="ssh ${SSH_USER}@${SSH_HOST} "
-          fi
-          WHISPER_CMD="${WHISPER_CMD} /home/${SSH_USER}/.local/bin/whisper --task transcribe --model ${WHISPER_MODEL} --word_timestamps True --output_format all --output_dir /tmp/transcribedir /tmp/transcribedir/$(basename ${xaudiopath})"
-          echo "  ${WHISPER_CMD}"
-          ${WHISPER_CMD}
-          return
-      }
-
-      function format_transcript() {
-          # $1 is a plain text file
-          # $2 is optional section title
-          # this function writes a markdown file with sentence and paragraph formatting
-          # output of script must be captured in the lovely global var concept that bash provides us
-          FORMAT_CMD="~/.local/python-venvs/wtpsplit/bin/python ~/gort.py ${1}"
-          formatted_transcript=$(ssh ${SSH_USER}@${SSH_HOST} ${FORMAT_CMD})
-          return
-      }
-
-      videourl="$1"
-      echo "Executing yt-dlp"
-      audiopath=$(yt-dlp \
-                      -f 'bestaudio' \
-                      --write-thumbnail \
-                      --convert-thumbnails png \
-                      --embed-metadata \
-                      --check-formats \
-                      --no-mtime \
-                      --write-description \
-                      --write-info-json \
-                      --restrict-filenames \
-                      --extract-audio \
-                      --audio-format mp3 \
-                      "${videourl}" \
-                      --paths home:/tmp/ \
-                      -o '%(title)s/%(title)s.%(ext)s'  \
-                      --split-chapters \
-                      --write-info-json \
-                      --print after_move:filepath \
-                      -o "chapter:%(title)s/[%(section_number)02d]-%(section_title)s.%(ext)s")
-
-      safepath=$(printf '%q' "${audiopath}")
-      infofile=$(ls $(dirname ${audiopath})/*.info.json|head -1)
-      numchapters=$(jq -r '.chapters | length' ${infofile})
-      if [[ ${numchapters} == 0  ]] ; then
-          echo "there ain't no chapters in this one"
-          echo "TODO: transcribe unchaptered video file ${audiopath}"
-          transcribe_audio_file "${safepath}"
-      else
-          indexmax=$((${numchapters} - 1))
-          echo "there are ${numchapters} chapters in this video"
-          for indexnum in $(seq 0 ${indexmax}); do
-              chapnum=$((${indexnum} + 1))
-              chaptitle=$(jq -r ".chapters[${indexnum}] | .title" ${infofile})
-              chapfile=$(ls $(dirname ${safepath})/\[$(printf '%02d' ${chapnum})\]*mp3|head -1)
-              # chapfile=$(printf '%q' "${chapfile}")
-              echo "Chapter ${chapnum}: ${chaptitle} - file ${chapfile}"
-              echo "Transcribing... ${chapfile}"
-              transcribe_audio_file ${chapfile}
-              format_transcript /tmp/transcribedir/$(basename ${chapfile} | sed 's,mp3$,txt,')
-              echo "## ${chaptitle}" >> /tmp/gort.md
-              cat "${formatted_transcript}" >> /tmp/gort.md
-          done
-      fi
-    #+end_src
 **** Python code
-     This came almost entirely from a gpt-4o session asking to transform all functionality from the bash script into python
+     This started from a gpt-4o session asking to transform all functionality from the bash script into python
      + TODO: trim trailing whitespace from formatted transcript
-     +
-     #+begin_src python :tangle scripts/yt-audio.py
-       #!/usr/bin/env python3
+     #+begin_src python :tangle scripts/yt-audio.py :shebang #!/usr/bin/env python3
        import os
        import subprocess
        import json
@@ -323,6 +239,88 @@
      #+end_src
 ***** Sample use for chaptered video
 
+**** Bash script
+     This shell script is  deprecated in favor of the python script
+    #+begin_src bash :results verbatim :tangle no
+      WHISPER_MODEL=large-v3
+      SSH_HOST=aziriphale # null for hosted on current machine
+      SSH_USER=${USER}
+      WHISPER_CMD=
+
+      function transcribe_audio_file() {
+          # Send audio to whisper to produce transcription
+          # $1 is audio file path - NOTE: path is shell-escaped already
+          xaudiopath=$1
+          xaudiodir=$(dirname ${xaudiopath})
+          echo "  Audio extraction of ${xaudiopath}"
+          echo "    command will be rsync -av ${xaudiopath} ${SSH_USER}@${SSH_HOST}:${xaudiopath}"
+          if [ -n "${SSH_HOST}" ]; then
+              # use rsync to create new directories on target system
+              rsync -av ${xaudiopath} ${SSH_USER}@${SSH_HOST}:/tmp/transcribedir/
+              WHISPER_CMD="ssh ${SSH_USER}@${SSH_HOST} "
+          fi
+          WHISPER_CMD="${WHISPER_CMD} /home/${SSH_USER}/.local/bin/whisper --task transcribe --model ${WHISPER_MODEL} --word_timestamps True --output_format all --output_dir /tmp/transcribedir /tmp/transcribedir/$(basename ${xaudiopath})"
+          echo "  ${WHISPER_CMD}"
+          ${WHISPER_CMD}
+          return
+      }
+
+      function format_transcript() {
+          # $1 is a plain text file
+          # $2 is optional section title
+          # this function writes a markdown file with sentence and paragraph formatting
+          # output of script must be captured in the lovely global var concept that bash provides us
+          FORMAT_CMD="~/.local/python-venvs/wtpsplit/bin/python ~/gort.py ${1}"
+          formatted_transcript=$(ssh ${SSH_USER}@${SSH_HOST} ${FORMAT_CMD})
+          return
+      }
+
+      videourl="$1"
+      echo "Executing yt-dlp"
+      audiopath=$(yt-dlp \
+                      -f 'bestaudio' \
+                      --write-thumbnail \
+                      --convert-thumbnails png \
+                      --embed-metadata \
+                      --check-formats \
+                      --no-mtime \
+                      --write-description \
+                      --write-info-json \
+                      --restrict-filenames \
+                      --extract-audio \
+                      --audio-format mp3 \
+                      "${videourl}" \
+                      --paths home:/tmp/ \
+                      -o '%(title)s/%(title)s.%(ext)s'  \
+                      --split-chapters \
+                      --write-info-json \
+                      --print after_move:filepath \
+                      -o "chapter:%(title)s/[%(section_number)02d]-%(section_title)s.%(ext)s")
+
+      safepath=$(printf '%q' "${audiopath}")
+      infofile=$(ls $(dirname ${audiopath})/*.info.json|head -1)
+      numchapters=$(jq -r '.chapters | length' ${infofile})
+      if [[ ${numchapters} == 0  ]] ; then
+          echo "there ain't no chapters in this one"
+          echo "TODO: transcribe unchaptered video file ${audiopath}"
+          transcribe_audio_file "${safepath}"
+      else
+          indexmax=$((${numchapters} - 1))
+          echo "there are ${numchapters} chapters in this video"
+          for indexnum in $(seq 0 ${indexmax}); do
+              chapnum=$((${indexnum} + 1))
+              chaptitle=$(jq -r ".chapters[${indexnum}] | .title" ${infofile})
+              chapfile=$(ls $(dirname ${safepath})/\[$(printf '%02d' ${chapnum})\]*mp3|head -1)
+              # chapfile=$(printf '%q' "${chapfile}")
+              echo "Chapter ${chapnum}: ${chaptitle} - file ${chapfile}"
+              echo "Transcribing... ${chapfile}"
+              transcribe_audio_file ${chapfile}
+              format_transcript /tmp/transcribedir/$(basename ${chapfile} | sed 's,mp3$,txt,')
+              echo "## ${chaptitle}" >> /tmp/gort.md
+              cat "${formatted_transcript}" >> /tmp/gort.md
+          done
+      fi
+    #+end_src
 **** un-chaptered video
      #+begin_src bash :results verbatim
        /tmp/yt-audio.sh 'https://www.youtube.com/watch?v=eoFlbna9-cY'
