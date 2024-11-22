@@ -222,48 +222,55 @@
 
            num_chapters = len(video_info.get('chapters', []))
            video_title = video_info.get('title', 'Video')  # Use 'Video' as a fallback
-           markdown_path = os.path.join(os.path.dirname(audio_path), os.path.basename(audio_path).removesuffix('.mp3') + '.org')
+           finaldoc_path = os.path.join(os.path.dirname(audio_path), os.path.basename(audio_path).removesuffix('.mp3') + '.org')
 
            if num_chapters == 0:
                print("No chapters found in the video")
                transcribe_audio_file(audio_path, ssh_host, ssh_user, whisper_model)
                transcript_path = os.path.join('/tmp/transcribedir', os.path.splitext(os.path.basename(audio_path))[0] + '.txt')
                formatted_transcript = format_transcript(transcript_path, ssh_host, ssh_user)
-               with open(markdown_path, 'w') as f:
+               with open(finaldoc_path, 'w') as f:
                    f.write(f"#+title: {video_title}\n\n")
                    # f.write(f"* {video_title}\n")
                    f.write(formatted_transcript)
            else:
                print(f"Found {num_chapters} chapters in the video")
-               with open(markdown_path, 'w') as f:
+               with open(finaldoc_path, 'w') as f:
                    f.write(f"#+title: {video_title}\n\n")
                    # f.write(f"* {video_title}\n")
                for index, chapter in enumerate(video_info['chapters'], start=1):
                    chap_title = chapter['title']
-                   print("Debug: markdown path is " + markdown_path)
+                   print("Debug: Formatted final doc path is " + finaldoc_path)
                    chap_file = next(f for f in os.listdir(os.path.dirname(audio_path)) if f.startswith(f"[{index:02d}]") and f.endswith('.mp3'))
                    print(f"Chapter {index}: {chap_title} - file {chap_file}")
                    transcribe_audio_file(os.path.join(os.path.dirname(audio_path), chap_file), ssh_host, ssh_user, whisper_model)
                    transcript_path = os.path.join('/tmp/transcribedir', os.path.splitext(chap_file)[0] + '.txt')
                    formatted_transcript = format_transcript(transcript_path, ssh_host, ssh_user)
-                   with open(markdown_path, 'a') as f:
+                   with open(finaldoc_path, 'a') as f:
                        f.write(f"\n* {chap_title}\n")
                        f.write(formatted_transcript)
 
        # TODO: validate args: non-empty URL, valid model names, accessible SSH host
+       # TODO: check for local whisper - warn user if not present, suggest --ssh_{host,user}
+       # Load configuration from config.ini
+
        if __name__ == '__main__':
-           parser = argparse.ArgumentParser(description='Transcribe YouTube videos using Whisper AI')
+           configp = ConfigParser()
+           configp.read(os.path.expanduser('~/.config/ytaudio/config.ini'))
+
+           parser = argparse.ArgumentParser(description='Transcribe YouTube videos using Whisper AI', epilog='Add optional config file at ~/.config/ytaudio/config.ini')
            parser.add_argument('video_url', help='URL of the YouTube video to transcribe')
-           parser.add_argument('--model', default='large-v3', help='Whisper AI model to use for transcription')
-           parser.add_argument('--ssh-host', help='SSH host to run the transcription on')
+           parser.add_argument('--model', default=configp.get('ytaudio', 'model'), help='Whisper AI model to use for transcription')
+           parser.add_argument('--ssh-host', default=configp.get('ytaudio', 'ssh_host'), help='SSH host to run the transcription on')
            parser.add_argument('--ssh-user', default=os.environ['USER'], help='SSH username')
            args = parser.parse_args()
-           # hard-coded section
-           ssh_host = 'aziriphale'
-           ssh_user = 'gregj'
+
            main(args.video_url, args.model, args.ssh_host, args.ssh_user)
      #+end_src
-***** Sample use for chaptered video
+
+#+RESULTS:
+
+***** Tests for chaptered video
 
 **** Bash script
      This shell script is  deprecated in favor of the python script
