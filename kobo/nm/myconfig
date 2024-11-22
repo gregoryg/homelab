@@ -308,9 +308,10 @@ menu_item :selection_search :Search DuckDuckGo :nickel_browser :modal:https://du
 # menu_item :selection_search :Search esTranslate :nickel_browser :modal:https://translate.google.com/?sl=es&tl=en&op=translate&text={1|S|%}
 # menu_item :selection_search :Search deTranslate :nickel_browser :modal:https://translate.google.com/?sl=de&tl=en&op=translate&text={1|S|%}
 # menu_item :selection_search :Search EsPaNiShTranslate :cmd_output :5000:/usr/bin/curl -s 'https://translate.google.com/?sl=es&tl=en&op=translate&text={1|S|%}' | jq -r '.[0][0][0]'
-menu_item :selection :Google Translate :cmd_output :5000:/usr/bin/curl -s 'http://translate.google.com/translate_a/single?client=gtx&ie=UTF-8&oe=UTF-8&hl=auto&sl=auto&tl=en&dt=bd&dt=ex&dt=ld&dt=md&dt=qc&dt=rw&dt=rm&dt=ss&dt=t&dt=at&pc=1&otf=1&srcrom=1&ssel=0&tsel=0&q={1|S|%}' | jq -r '.[0][0][0]' | fold -s -w 55
-menu_item :selection :GPT Translate :cmd_output :5000:/mnt/onboard/.adds/gregoryg/bin/translate-gpt.sh '{1|S|%}' | fold -s -w 55
-menu_item :selection :GPT Explain :cmd_output :5000:/mnt/onboard/.adds/gregoryg/bin/explain-gpt.sh '{1|S|%}' | fold -s -w 55
+menu_item :selection :Google Translate :cmd_output :9999:/usr/bin/curl -s 'http://translate.google.com/translate_a/single?client=gtx&ie=UTF-8&oe=UTF-8&hl=auto&sl=auto&tl=en&dt=bd&dt=ex&dt=ld&dt=md&dt=qc&dt=rw&dt=rm&dt=ss&dt=t&dt=at&pc=1&otf=1&srcrom=1&ssel=0&tsel=0&q={1|S|%}' | jq -r '.[0][0][0]' | fold -s -w 55
+menu_item :selection :GPT Translate :cmd_output :9999:/mnt/onboard/.adds/gregoryg/bin/translate-gpt.sh '{1|S|%}' | fold -s -w 55
+menu_item :selection :GPT Explain :cmd_output :9999:/mnt/onboard/.adds/gregoryg/bin/explain-gpt.sh '{1|S|%}' | fold -s -w 55
+menu_item :selection :GPT Fancy Define :cmd_output :9999:/mnt/onboard/.adds/gregoryg/bin/fancy-define.sh '{1|S|%}' | fold -s -w 55
 
 menu_item :reader :Battery   :cmd_output :50 :/mnt/onboard/.adds/gregoryg/bin/battery-status.sh
 menu_item :reader :Dark Mode :nickel_setting :toggle :dark_mode
