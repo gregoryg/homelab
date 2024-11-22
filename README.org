@@ -171,15 +171,24 @@
 
        def transcribe_audio_file(audio_path, ssh_host, ssh_user, whisper_model):
            print(f"Transcribing {audio_path}")
+           # make the "skeleton" of the whisper command to do the transcription
+           transcribe_command = f"/home/{ssh_user}/.local/bin/whisper --task transcribe --model {whisper_model} --word_timestamps True --output_format all --output_dir /tmp/transcribedir"
            if ssh_host:
                command = f"rsync -av {audio_path} {ssh_user}@{ssh_host}:/tmp/transcribedir/"
+               print(f"running rsync command: {command}")
                run_command(command)
-               command = f"ssh {ssh_user}@{ssh_host} /home/{ssh_user}/.local/bin/whisper --task transcribe --model {whisper_model} --word_timestamps True --output_format all --output_dir /tmp/transcribedir /tmp/transcribedir/{os.path.basename(audio_path)}"
+               transcribe_command = f"ssh {ssh_user}@{ssh_host} " + transcribe_command + f" /tmp/transcribedir/{os.path.basename(audio_path)}"
+               print(f"DEBUG: whisper command is '{transcribe_command}'")
+               output, error = run_command(transcribe_command)
+               print(output)
+               print(error)
+               # command = f"ssh {ssh_user}@{ssh_host} /home/{ssh_user}/.local/bin/whisper --task transcribe --model {whisper_model} --word_timestamps True --output_format all --output_dir /tmp/transcribedir /tmp/transcribedir/{os.path.basename(audio_path)}"
            else:
-               command = f"/home/{ssh_user}/.local/bin/whisper --task transcribe --model {whisper_model} --word_timestamps True --output_format all --output_dir /tmp/transcribedir {audio_path}"
-           output, error = run_command(command)
-           print(output)
-           print(error)
+               transcribe_command = transcribe_command + f" {audio_path}"
+               print(f"DEBUG: whisper command is '{transcribe_command}'")
+               output, error = run_command(transcribe_command)
+               print(output)
+               print(error)
 
        def format_transcript(transcript_path, ssh_host, ssh_user):
            command = f"ssh {ssh_user}@{ssh_host} ~/.local/python-venvs/wtpsplit/bin/python ~/gort.py {transcript_path}"
