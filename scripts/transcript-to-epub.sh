@@ -27,6 +27,7 @@ date: $(jq -r '.upload_date' "${json_file}")
 lang: $(jq -r '.language' "${json_file}")
 belongs-to-collection: YouTube
 " > metadata.yaml
+# description: $(jq -r '.description' "${json_file}")
 
 
 pandoc -f org -t epub \
