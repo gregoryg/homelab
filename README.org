@@ -196,7 +196,22 @@
            return clean_whitespace(output)
 
        def main(video_url, whisper_model, ssh_host, ssh_user):
-           command = f"""yt-dlp -f 'bestaudio' --write-thumbnail --convert-thumbnails png --embed-metadata --check-formats --no-mtime --write-description --write-info-json --restrict-filenames --extract-audio --audio-format mp3 '{video_url}' --paths home:~/YouTube/ -o '%(channel)s/%(title)s/%(title)s.%(ext)s' --print after_move:filepath --split-chapters -o 'chapter:%(channel)s/%(title)s/[%(section_number)02d]-%(section_title)s.%(ext)s'"""
+           command = f"""
+           yt-dlp -f 'bestaudio' \
+           --write-thumbnail \
+           --convert-thumbnails png \
+           --embed-metadata \
+           --check-formats \
+           --no-mtime \
+           --write-description \
+           --write-info-json \
+           --restrict-filenames \
+           --extract-audio --audio-format mp3 '{video_url}' \
+           --paths home:~/YouTube/  \
+           -o '%(channel)s/%(title)s/%(title)s.%(ext)s' \
+           --print after_move:filepath \
+           --split-chapters \
+           -o 'chapter:%(channel)s/%(title)s/[%(section_number)02d]-%(section_title)s.%(ext)s'"""
            output, error = run_command(command)
            audio_path = output.strip()
            print(f"Audio path: {audio_path}")
