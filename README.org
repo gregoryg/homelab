@@ -144,8 +144,9 @@
         + this matches ='%(title)s/%(title)s.%(ext)s'= from =yt-dlp=
 **** Python code
      This started from a gpt-4o session asking to transform all functionality from the bash script into python
-     + TODO: trim trailing whitespace from formatted transcript
-     #+begin_src python :tangle scripts/yt-audio.py :shebang #!/usr/bin/env python3
+     + [ ] TODO: trim trailing whitespace from formatted transcript
+     + [ ] TODO: trim spaces before joining sentences (eliminate double-space between words in a sentence)
+     #+begin_src python :tangle scripts/yt-audio.py :shebang #!/home/gregj/.local/python-venvs/ytaudio/bin/python3
        import os
        import subprocess
        import json
