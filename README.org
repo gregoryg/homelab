@@ -353,13 +353,15 @@
       fi
     #+end_src
 **** un-chaptered video
+     + Screen Junkies - Honest Trailers Alien Romulus
      #+begin_src bash :results verbatim
-       /tmp/yt-audio.sh 'https://www.youtube.com/watch?v=eoFlbna9-cY'
+       yt-audio.py 'https://www.youtube.com/watch?v=eoFlbna9-cY'
 #+end_src
 
 **** chaptered video
+     + Inteligencia Artificial - 🚨 NOTICIAS IA 🚨: ADOBE lo peta en audiovisual 🤯💥
      #+begin_src bash :results verbatim
-     /tmp/yt-audio.sh 'https://www.youtube.com/watch?v=nbSRBs0EMlE'
+     yt-audio.py 'https://www.youtube.com/watch?v=nbSRBs0EMlE'
 #+end_src
 
 
