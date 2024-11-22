@@ -268,8 +268,6 @@
            main(args.video_url, args.model, args.ssh_host, args.ssh_user)
      #+end_src
 
-#+RESULTS:
-
 ***** Tests for chaptered video
 
 **** Bash script
