@@ -48,7 +48,7 @@ def transcribe_audio_file(audio_path, ssh_host, ssh_user, whisper_model):
         print(error)
 
 def format_transcript(transcript_path, ssh_host, ssh_user):
-    command = f"ssh {ssh_user}@{ssh_host} ~/.local/python-venvs/wtpsplit/bin/python ~/gort.py {transcript_path}"
+    command = f"ssh {ssh_user}@{ssh_host} ~/.local/python-venvs/wtpsplit/bin/python ~/format_paragraphs.py {transcript_path}"
     output, error = run_command(command)
     return clean_whitespace(output)
 
