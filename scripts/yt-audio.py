@@ -10,6 +10,8 @@ import json
 import argparse
 from configparser import ConfigParser
 
+DEBUG = 0
+
 # TODO: add exception handling and logging overall (replace print with logging)
 # TODO: check for non-zero exit status for all SSH and RSYNC
 # TODO: check for non-zero exit status for shell command
@@ -32,17 +34,17 @@ def transcribe_audio_file(audio_path, ssh_host, ssh_user, whisper_model):
     transcribe_command = f"/home/{ssh_user}/.local/bin/whisper --task transcribe --model {whisper_model} --word_timestamps True --output_format all --output_dir /tmp/transcribedir"
     if ssh_host:
         command = f"rsync -av {audio_path} {ssh_user}@{ssh_host}:/tmp/transcribedir/"
-        print(f"running rsync command: {command}")
+        if DEBUG: print(f"running rsync command: {command}")
         run_command(command)
         transcribe_command = f"ssh {ssh_user}@{ssh_host} " + transcribe_command + f" /tmp/transcribedir/{os.path.basename(audio_path)}"
-        print(f"DEBUG: whisper command is '{transcribe_command}'")
+        if DEBUG: print(f"DEBUG: whisper command is '{transcribe_command}'")
         output, error = run_command(transcribe_command)
         print(output)
         print(error)
         # command = f"ssh {ssh_user}@{ssh_host} /home/{ssh_user}/.local/bin/whisper --task transcribe --model {whisper_model} --word_timestamps True --output_format all --output_dir /tmp/transcribedir /tmp/transcribedir/{os.path.basename(audio_path)}"
     else:
         transcribe_command = transcribe_command + f" {audio_path}"
-        print(f"DEBUG: whisper command is '{transcribe_command}'")
+        if DEBUG: print(f"DEBUG: whisper command is '{transcribe_command}'")
         output, error = run_command(transcribe_command)
         print(output)
         print(error)
@@ -69,6 +71,7 @@ def main(video_url, whisper_model, ssh_host, ssh_user):
     --print after_move:filepath \
     --split-chapters \
     -o 'chapter:%(channel)s/%(title)s/[%(section_number)02d]-%(section_title)s.%(ext)s'"""
+    if DEBUG: print(f"yt-dlp command: {command}")
     output, error = run_command(command)
     audio_path = output.strip()
     print(f"Audio path: {audio_path}")
@@ -97,7 +100,7 @@ def main(video_url, whisper_model, ssh_host, ssh_user):
             # f.write(f"* {video_title}\n")
         for index, chapter in enumerate(video_info['chapters'], start=1):
             chap_title = chapter['title']
-            print("Debug: Formatted final doc path is " + finaldoc_path)
+            if DEBUG: print("Debug: Formatted final doc path is " + finaldoc_path)
             chap_file = next(f for f in os.listdir(os.path.dirname(audio_path)) if f.startswith(f"[{index:02d}]") and f.endswith('.mp3'))
             print(f"Chapter {index}: {chap_title} - file {chap_file}")
             transcribe_audio_file(os.path.join(os.path.dirname(audio_path), chap_file), ssh_host, ssh_user, whisper_model)
@@ -120,7 +123,10 @@ if __name__ == '__main__':
     parser.add_argument('--model', default=configp.get('ytaudio', 'model'), help='Whisper AI model to use for transcription')
     parser.add_argument('--ssh-host', default=configp.get('ytaudio', 'ssh_host'), help='SSH host to run the transcription on')
     parser.add_argument('--ssh-user', default=os.environ['USER'], help='SSH username')
+    parser.add_argument('--debug', default=0, help='debug 0 or 1')
     args = parser.parse_args()
-
+    if args.debug != 0: args.debug = 1
+    print(args)
+    DEBUG = args.debug
     main(args.video_url, args.model, args.ssh_host, args.ssh_user)
 # Python code:1 ends here
