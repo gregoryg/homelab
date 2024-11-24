@@ -18,7 +18,7 @@ def main(input_file_path: str):
         # sentences are lists within paragraphs, peppered with spurious newlines
         paragraphed_sentences: typing.List[typing.List[str]] = sat.split(mytext, do_paragraph_segmentation=True)
         paragraphs = ["".join(sentences) for sentences in paragraphed_sentences]
-        paragraphs = [paragraph.replace("\n", "  ") for paragraph in paragraphs]
+        paragraphs = [paragraph.replace("\n", " ") for paragraph in paragraphs]
         paragraphed_text = "\n\n".join(paragraphs)
 
         print(paragraphed_text)
