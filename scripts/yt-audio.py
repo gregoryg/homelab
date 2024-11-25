@@ -265,7 +265,7 @@ def parse_args(config: ConfigParser):
                         help='SSH host to run the transcription on')
     parser.add_argument('--ssh-user', default=os.getenv('USER'),
                         help='SSH username')
-    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode for increased logging')
 
     args = parser.parse_args()
 
