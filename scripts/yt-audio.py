@@ -82,7 +82,7 @@ def download_audio(video_url: str) -> Path:
         "--write-description "
         "--write-info-json "
         "--restrict-filenames "
-        "--extract-audio --audio-format mp3 "
+        "--extract-audio --audio-format opus "
         f"'{video_url}' "
         "--paths home:~/YouTube/ "
         "-o '%(channel)s/%(title)s/%(title)s.%(ext)s' "
@@ -231,7 +231,7 @@ def process_transcription(audio_path: Path, video_info: dict, whisper_model: str
         logger.info(f"Found {num_chapters} chapters in the video.")
         for index, chapter in enumerate(video_info['chapters'], start=1):
             chap_title = chapter['title']
-            chap_file = next((f for f in audio_path.parent.glob(f"[[]{index:02d}]*.mp3")), None)
+            chap_file = next((f for f in audio_path.parent.glob(f"[[]{index:02d}]*.opus")), None)
             if not chap_file:
                 logger.warning(f"No audio file found for chapter {index}: {chap_title}")
                 continue
