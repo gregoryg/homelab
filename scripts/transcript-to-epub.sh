@@ -33,7 +33,7 @@ belongs-to-collection: YouTube
 pandoc -f org -t epub \
        --split-level=1 \
        --epub-cover-image=/tmp/cropped-cover-3-4.png \
-       --epub-metadata=metadata.yaml \
+       --metadata-file=metadata.yaml \
        > $(echo "$(basename ${transcript_file})" | sed 's,\.org$,.epub,' ) "${transcript_file}"
 echo "wrote epub!"
 exit 0
