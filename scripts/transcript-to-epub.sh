@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Org Mode to EPUB using pandoc
-# Org Mode file should have a #+title tag, though it's not required
+# Org Mode file should have a #+title tag, though it's not required by pandoc
 set -euo pipefail
 
 json_file=$(ls *.info.json|head -1)
