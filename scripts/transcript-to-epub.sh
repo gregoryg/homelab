@@ -18,7 +18,7 @@ convert $(ls *png|head -1) -gravity center -extent 3:4 /tmp/cropped-cover-3-4.pn
 echo "---
 title:
   - type: main
-    text: $(jq -r '.title' "${json_file}")
+    text: "'"'$(jq -r '.title' "${json_file}")'"' "
 creator:
   - role: author
     text: $(jq -r '.channel' "${json_file}")
