@@ -246,11 +246,19 @@ def process_transcription(audio_path: Path, video_info: dict, whisper_model: str
 
     return transcripts
 
-def write_final_document(finaldoc_path: Path, video_title: str, transcripts: List[Tuple[str, str]]):
+def write_final_document(finaldoc_path: Path, video_title: str, video_url: str, transcripts: List[Tuple[str, str]]):
+    # see if we can grab the downloaded thumbnail
+    thumbnail_dir = finaldoc_path.parent
+    thumbnail_file = next((f for f in thumbnail_dir.glob('*.png')), None)
+
     with finaldoc_path.open('w') as f:
-        f.write(f"# +title: {video_title}\n\n")
+        f.write(f"# +title: {video_title}\n")
+        f.write(f"# +source: {video_url}\n\n")
         for title, transcript in transcripts:
             f.write(f"* {title}\n")
+            if thumbnail_file:
+                f.write(f"\n[[file:{thumbnail_file}]]\n\n")
+                thumbnail_file = None
             f.write(transcript + "\n")
     logger.info(f"Final document written to {finaldoc_path}")
     print(f"Formatted Org Mode transcript written to {finaldoc_path}")
@@ -310,7 +318,7 @@ def main():
             audio_path, video_info, args.model, args.ssh_host, args.ssh_user
         )
         finaldoc_path = audio_path.with_suffix('.org')
-        write_final_document(finaldoc_path, video_info.get('title', 'Video'), transcripts)
+        write_final_document(finaldoc_path, video_info.get('title', 'Video'), video_info.get('webpage_url', 'Unknown'), transcripts)
     except Exception as e:
         logger.exception("An error occurred during processing.")
         sys.exit(1)
