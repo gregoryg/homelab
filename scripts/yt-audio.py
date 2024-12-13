@@ -270,7 +270,7 @@ def parse_args(config: ConfigParser):
     )
     parser.add_argument('video_url', help='URL of the YouTube video to transcribe')
     parser.add_argument('--model', default=config.get('ytaudio', 'model', fallback='base'),
-                        choices=['turbo', 'medium.en', 'large-v3'],
+                        choices=['turbo', 'base.en', 'medium.en', 'large-v3'],
                         help='Whisper AI model to use for transcription')
     parser.add_argument('--ssh-host', default=config.get('ytaudio', 'ssh_host', fallback=None),
                         help='SSH host to run the transcription on')
