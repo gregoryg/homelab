@@ -56,6 +56,7 @@ def run_command(command: str) -> Tuple[str, str]:
             logger.warning(f"Command stderr: {result.stderr}")
         return result.stdout, result.stderr
     except subprocess.CalledProcessError as e:
+        print(f"Command failed with exit code {e.returncode}\n Error: {e.stderr}")
         logger.error(f"Command '{command}' failed with exit code {e.returncode}. Error: {e.stderr}")
         raise
 
@@ -220,6 +221,7 @@ def process_transcription(audio_path: Path, video_info: dict, whisper_model: str
     num_chapters = len(video_info.get('chapters', []))
     video_title = video_info.get('title', 'Video')
 
+    print(f"Beginning to transcribe video {video_title}")
     if num_chapters == 0:
         logger.info("No chapters found in the video.")
         logger.info(f"Transcribing {audio_path.name}")
@@ -229,6 +231,7 @@ def process_transcription(audio_path: Path, video_info: dict, whisper_model: str
         transcripts.append((video_title, formatted_transcript))
     else:
         logger.info(f"Found {num_chapters} chapters in the video.")
+        print(f"Found {num_chapters} chapters in the video.")
         for index, chapter in enumerate(video_info['chapters'], start=1):
             chap_title = chapter['title']
             chap_file = next((f for f in audio_path.parent.glob(f"[[]{index:02d}]*.opus")), None)
