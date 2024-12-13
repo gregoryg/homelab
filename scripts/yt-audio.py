@@ -146,6 +146,10 @@ def transcribe_audio_file(audio_path: Path, ssh_host: str, ssh_user: str, whispe
     if ssh_host:
         rsync_command = f"rsync -av {audio_path} {ssh_user}@{ssh_host}:/tmp/transcribedir/"
         run_command(rsync_command)
+        # Special instruction to unload Ollama model from GPU if running
+        remote_command = f"""ssh {ssh_user}@{ssh_host} "ollama ps | tail -1 | head -1 | cut -d' ' -f1 |sed s,NAME,,|xargs -r ollama stop" """
+        output, error = run_command(remote_command)
+
         remote_command = f"ssh {ssh_user}@{ssh_host} '{transcribe_command} /tmp/transcribedir/{audio_path.name}'"
         output, error = run_command(remote_command)
     else:
