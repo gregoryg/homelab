@@ -1350,7 +1350,7 @@
   Oh it can be quite the trick finding a working URL
 
   #+begin_src bash
-    sudo apt -y install cups cups-bsd cups-filters
+    sudo apt -y install cups cups-bsd cups-filters system-config-printer
     sudo lpinfo -v -l
     system-config-printer
   #+end_src
