@@ -12,6 +12,7 @@
      # Essential packages for compiling Emacs and many other source packages
      sudo apt install -y  autoconf \
           automake \
+          cmake \
           curl \
           wget \
           libtool \

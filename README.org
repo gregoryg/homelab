@@ -1460,7 +1460,7 @@
 
      Now apt will accept that key's signature for all packages in that repo and only that
      repo.
-** Keep Ibus off my damn systems
+** Keep Ibus out of my damn way
    :PROPERTIES:
    :ID:       a6737084-b8d4-4050-86bc-10a394cfb81d
    :END:
