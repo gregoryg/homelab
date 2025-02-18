@@ -13,7 +13,7 @@ fi
 
 pandoc -f org -t gfm ${transcript_file} > /tmp/mytranscript.md
 # TODO: handle lack of thumbnail image
-convert $(ls *png|head -1) -gravity center -extent 3:4 /tmp/cropped-cover-3-4.png
+convert $(ls *png|head -1) -gravity center -extent 1274x1680 /tmp/cropped-cover-3-4.png
 # generate YAML file with epub-relevant info for pandoc
 echo "---
 title:
