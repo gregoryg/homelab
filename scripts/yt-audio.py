@@ -256,8 +256,8 @@ def write_final_document(finaldoc_path: Path, video_title: str, video_url: str, 
     thumbnail_file = next((f for f in thumbnail_dir.glob('*.png')), None)
 
     with finaldoc_path.open('w') as f:
-        f.write(f"# +title: {video_title}\n")
-        f.write(f"# +source: {video_url}\n\n")
+        f.write(f"#+title: {video_title}\n")
+        f.write(f"#+source: {video_url}\n\n")
         for title, transcript in transcripts:
             f.write(f"* {title}\n")
             if thumbnail_file:
