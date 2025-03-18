@@ -76,6 +76,7 @@ def download_audio(video_url: str) -> Path:
     command = (
         f"yt-dlp -f 'bestaudio' "
         "--write-thumbnail "
+        "--cookies-from-browser edge "
         "--convert-thumbnails png "
         "--embed-metadata "
         "--check-formats "
