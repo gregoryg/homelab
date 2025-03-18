@@ -140,9 +140,10 @@ def transcribe_audio_file(audio_path: Path, ssh_host: str, ssh_user: str, whispe
         The function prints the output and error messages from these command executions.
     """
     logger.info(f"Transcribing {audio_path}")
+    # Adding initial_prompt helps cue whisper to include sentences and punctuation!
     transcribe_command = (
         f"/home/{ssh_user}/.local/bin/whisper --task transcribe --model {whisper_model} "
-        "--word_timestamps True --output_format all --output_dir /tmp/transcribedir"
+        "--word_timestamps True --initial_prompt \"Hello, we are introducing our well-formatted transcript.\"  --output_format all --output_dir /tmp/transcribedir"
     )
     if ssh_host:
         rsync_command = f"rsync -av {audio_path} {ssh_user}@{ssh_host}:/tmp/transcribedir/"
