@@ -1359,7 +1359,7 @@
     # Find the correct printer name
     sudo cat /etc/cups/printers.conf
     # Set pages on printer to print in reverse order
-    sudo lpadmin -p HP-Officejet-Pro-8030 -o outputorder-default=reverse
+    sudo lpadmin -p HP-HP-OfficeJet-Pro-8030-series -o outputorder-default=reverse
   #+end_src
 ** If driver can't be found or can't set printer as default
    #+begin_src bash
