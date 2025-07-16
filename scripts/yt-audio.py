@@ -74,9 +74,9 @@ def download_audio(video_url: str) -> Path:
     Returns: Path object: The path to the audio file for the whole video
     """
     command = (
-        f"yt-dlp -f 'bestaudio' "
+        f"/usr/local/bin/yt-dlp -f 'bestaudio' "
         "--write-thumbnail "
-        "--cookies-from-browser edge "
+        "--cookies-from-browser chrome "
         "--convert-thumbnails png "
         "--embed-metadata "
         "--check-formats "
