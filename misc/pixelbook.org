@@ -52,7 +52,7 @@
    + Memory management is not great - on the one hand, Chrome seems more efficient in
      memory use on Chrome OS compared to other platforms.  On the other hand, when memory
      does get overtaxed, Chrome OS simply reboots, with no warning whatsoever.  Chrome
-     tabs will likely recover, but Linux applications may lose data in this scenario. 
+     tabs will likely recover, but Linux applications may lose data in this scenario.
    + If you are deeply invested in the Apple ecosystem, stick with the Mac!  I don't use
      iTunes, Garage Band, etc etc so don't miss those at all!
    + If you take advantage of Linux, you have to be relatively knowledgable to do things
@@ -93,7 +93,7 @@
    + Adjust per app, for now
    + Google working on a HiDPI fix
    + You may have a right-click option on the Linux application icon to 'Use low density'
-     
+
 ** SSH Agent
    Best way is to set up a user service in =systemd=
 
@@ -113,8 +113,8 @@
      """ > ~/.config/systemd/user/ssh-agent.service
      echo """
      export SSH_AUTH_SOCK=/run/user/1000/ssh-agent.socket
-     systemctl --user start ssh-agent.service 
-     """ >> .bashrc 
+     systemctl --user start ssh-agent.service
+     """ >> .bashrc
    #+end_src
 
 ** SSH Tunneling for Chrome OS
@@ -142,7 +142,7 @@
     #+BEGIN_SRC sh
       sudo apt install cups cups-bsd system-config-printer hplip
       # set default printer
-      lpoptions -d my_printer  
+      lpoptions -d my_printer
     #+END_SRC
    You can use Cloud print as well: [[https://www.niftiestsoftware.com/cups-cloud-print/comment-page-5/][CUPS Cloud Print]]
    #+begin_src sh
@@ -150,6 +150,25 @@
      sudo apt install ./cupscloudprint_20160502-1_all.deb
      sudo /usr/share/cloudprint-cups/setupcloudprint.py
    #+end_src
+
+#+RESULTS:
+| Reading        | package         | lists...       |           |          |             |             |     |             |         |          |      |
+| Building       | dependency      | tree...        |           |          |             |             |     |             |         |          |      |
+| Reading        | state           | information... |           |          |             |             |     |             |         |          |      |
+| Solving        | dependencies... |                |           |          |             |             |     |             |         |          |      |
+| Some           | packages        | could          | not       | be       | installed.  | This        | may | mean        | that    | you      | have |
+| requested      | an              | impossible     | situation | or       | if          | you         | are | using       | the     | unstable |      |
+| distribution   | that            | some           | required  | packages | have        | not         | yet | been        | created |          |      |
+| or             | been            | moved          | out       | of       | Incoming.   |             |     |             |         |          |      |
+| The            | following       | information    | may       | help     | to          | resolve     | the | situation:  |         |          |      |
+|                |                 |                |           |          |             |             |     |             |         |          |      |
+| Unsatisfied    | dependencies:   |                |           |          |             |             |     |             |         |          |      |
+| cupscloudprint | :               | Depends:       | python2.7 | but      | it          | is          | not | installable | or      |          |      |
+| python2.6      | but             | it             | is        | not      | installable |             |     |             |         |          |      |
+| Depends:       | python-cups     | but            | it        | is       | not         | installable |     |             |         |          |      |
+| Depends:       | python-httplib2 | but            | it        | is       | not         | installable |     |             |         |          |      |
+| Depends:       | python-six      | but            | it        | is       | not         | installable |     |             |         |          |      |
+
 ** Building / compiling
 
    #+BEGIN_SRC sh
@@ -172,13 +191,13 @@
 
    + And for Emacs 27 (as of 09-2019), this is the =master= branch of the repo, so should
      be done as so:
-	 #+begin_src sh 
+	 #+begin_src sh
 cd ~/projects
 git clone git://git.savannah.gnu.org/emacs.git &&
-	cd emacs && 
-	./autogen.sh && 
-	./configure && 
-	make && 
+	cd emacs &&
+	./autogen.sh &&
+	./configure &&
+	make &&
 	sudo make install
 	 #+end_src
 
@@ -198,7 +217,7 @@ hto     Works with no additional modification
 **** Org-mode, themes, packages
      All of it works seamlessly
 **** Open HTML in Chrome
-     This does not work at first. 
+     This does not work at first.
 
      To fix, set =browse-url-browser-function= to ='browse-url-generic=, then set
      =browse-url-generic-program= to ="sensible-browser"=
@@ -211,7 +230,7 @@ hto     Works with no additional modification
        file:///media/fuse/crostini_d00fa2e2d9984f71d0fa0ea743f880b213c6ca8d_termina_penguin/mydocument.html
      #+end_src
 
-     You can use that path in the Chrome OS browser. 
+     You can use that path in the Chrome OS browser.
 
 
 **** Tetris
@@ -227,7 +246,7 @@ hto     Works with no additional modification
      often-used functions that I map to function keys.  It's possible to use the top row
      of keys as function keys, but in that case you need the =launcher= key (CAPS LOCKS on
      most keyboards) to access the intended actions for those keys.  Unfortunately, I map
-     the launcher to Control, which means I have no launcher key to use.  
+     the launcher to Control, which means I have no launcher key to use.
 
      So ... for now I have remapped the actual control keys to =launcher=.  Now my only
      usable control key is the launcher-in-place-of-caps-lock.  I use left-control in
@@ -241,7 +260,7 @@ hto     Works with no additional modification
 ** screencasting
 ** Cloud connections
 ** Tie-in with (Pixel) phone
-   
+
 http://google.com
 * Set up Linux (Beta) for the first time
 ** Settings -> Linux (Beta)
@@ -271,7 +290,7 @@ http://google.com
 ** Install emacs 26.1
    + Compile and install
      #+begin_src sh
-       tar zxf emacs-26.1.tar.gz 
+       tar zxf emacs-26.1.tar.gz
        cd emacs-26.1
        ./configure
        make
@@ -283,7 +302,7 @@ http://google.com
        sudo cp -iv /usr/local/share/icons/hicolor/48x48/apps/emacs.png /usr/share/pixmaps/
        sudo cp -iv /usr/local/share/icons/hicolor/scalable/apps/emacs.svg /usr/share/pixmaps/
      #+end_src
-     
+
      Save to =/usr/share/applications/emacs.desktop=
      #+begin_src shell-script
        [Desktop Entry]
@@ -390,7 +409,7 @@ http://google.com
 
    Back in the Debian shell, you should now see the following:
    #+begin_src sh
-     gregorygrubbs@penguin:~$ ls -l /dev/net/tun 
+     gregorygrubbs@penguin:~$ ls -l /dev/net/tun
      crw-rw---- 1 root root 10, 200 Jan  1 10:21 /dev/net/tun
    #+end_src
 
@@ -402,7 +421,7 @@ http://google.com
 
    Once a successful connection has established, you may see some warning messages about
    iptables or missing =/proc/= paths.  Test that it is running despite the warnings
-   #+begin_src 
+   #+begin_src
    ps -ef | grep openconnect
    ping <some.vpn-protected.address.whatever.com>
    #+end_src
@@ -410,7 +429,7 @@ http://google.com
    + To find the odd =fuse= file path that Chrome OS uses, place a =.html= file in your
      home directory on Linux.  Go to the Files app, browse to the Linux files, right click
      on the HTML file, choose "Open with ... View".  Chrome will open with a file URL that
-     looks something like 
+     looks something like
      file:///media/fuse/crostini_8a90641edungodlylonghex_termina_penguin/my.html
 
    + You can open file URLs by using that long prefix and invoking
@@ -568,4 +587,3 @@ Explanation: Error occurs when the steam-runtime directory doesn't exist in the 
 Steam for Windows Errors:
 
 ???
-
