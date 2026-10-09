@@ -1,4 +1,4 @@
-#!/home/gregj/.local/python-venvs/ytaudio/bin/python3
+#!/home/gregj/.local/python-venvs/boodle/bin/python3
 import os
 import subprocess
 import json
@@ -74,9 +74,9 @@ def download_audio(video_url: str) -> Path:
     Returns: Path object: The path to the audio file for the whole video
     """
     command = (
-        f"/usr/local/bin/yt-dlp -f 'bestaudio' "
+        f"yt-dlp -f 'bestaudio' "
         "--write-thumbnail "
-        "--cookies-from-browser chrome "
+        "--cookies-from-browser firefox "
         "--convert-thumbnails png "
         "--embed-metadata "
         "--check-formats "
@@ -143,13 +143,17 @@ def transcribe_audio_file(audio_path: Path, ssh_host: str, ssh_user: str, whispe
     # Adding initial_prompt helps cue whisper to include sentences and punctuation!
     transcribe_command = (
         f"/home/{ssh_user}/.local/python-venvs/whisper/bin/whisper --task transcribe --model {whisper_model} "
-        "--word_timestamps False --initial_prompt \"Hello, we are introducing our well-formatted transcript.\"  --output_format all --output_dir /tmp/transcribedir"
+        "--word_timestamps False --initial_prompt \"Hello, we are introducing our well-formatted transcript. Output must be properly capitalized and punctuated.  Prefer sentences of reasonable length.\"  --output_format all --output_dir /tmp/transcribedir"
     )
     if ssh_host:
         rsync_command = f"rsync -av {audio_path} {ssh_user}@{ssh_host}:/tmp/transcribedir/"
         run_command(rsync_command)
         # Special instruction to unload Ollama model from GPU if running
         remote_command = f"""ssh {ssh_user}@{ssh_host} "ollama ps | tail -1 | head -1 | cut -d' ' -f1 |sed s,NAME,,|xargs -r ollama stop" """
+        output, error = run_command(remote_command)
+
+        # Special instruction to stop ChatterboxTTS Service to make room in GPU VRAM
+        remote_command = f"""ssh {ssh_user}@{ssh_host} "systemctl --user stop chatterbox-tts.service" """
         output, error = run_command(remote_command)
 
         remote_command = f"ssh {ssh_user}@{ssh_host} '{transcribe_command} /tmp/transcribedir/{audio_path.name}'"
