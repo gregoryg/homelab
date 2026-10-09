@@ -7,6 +7,7 @@ import sys
 from configparser import ConfigParser
 from pathlib import Path
 import logging
+import shlex
 from typing import Tuple, List
 
 # Initialize constants
@@ -15,10 +16,10 @@ LOG_DIR = Path.home() / '.config' / 'ytaudio' / 'logs'
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOG_FILE = LOG_DIR / 'ytaudio.log'
 
-# Setup logging
+# Setup logging; --debug (or debug = 1 in the config file) raises verbosity
 logging.basicConfig(
     filename=LOG_FILE,
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -60,19 +61,25 @@ def run_command(command: str) -> Tuple[str, str]:
         logger.error(f"Command '{command}' failed with exit code {e.returncode}. Error: {e.stderr}")
         raise
 
-def download_audio(video_url: str) -> Path:
+def download_audio(video_url: str, split_chapters: bool = True) -> Path:
     """
     Use the yt-dlp command to download audio from a video URL
 
-    If the video has sections or chapters, segment the audio files by chapter
+    If the video has sections or chapters and `split_chapters` is true, also
+    segment the audio into one file per chapter.
 
     Download thumbnail image and metadata in JSON format.
 
     Args:
         video_url (str): The URL to the video (usually YouTube)
+        split_chapters (bool): Whether to write per-chapter audio files
 
     Returns: Path object: The path to the audio file for the whole video
     """
+    chapter_options = (
+        "--split-chapters "
+        "-o 'chapter:%(channel)s/%(title)s/[%(section_number)02d]-%(section_title)s.%(ext)s' "
+    ) if split_chapters else ""
     command = (
         f"yt-dlp -f 'bestaudio' "
         "--write-thumbnail "
@@ -89,8 +96,7 @@ def download_audio(video_url: str) -> Path:
         "--paths home:~/YouTube/ "
         "-o '%(channel)s/%(title)s/%(title)s.%(ext)s' "
         "--print after_move:filepath "
-        "--split-chapters "
-        "-o 'chapter:%(channel)s/%(title)s/[%(section_number)02d]-%(section_title)s.%(ext)s' "
+        f"{chapter_options}"
     )
     output, error = run_command(command)
     audio_path = Path(output.strip())
@@ -114,39 +120,55 @@ def load_video_info(audio_path: Path) -> dict:
         raise FileNotFoundError("Info JSON file not found.")
     with info_file.open('r') as f:
         video_info = json.load(f)
-    logger.debug(f"Loaded video info: {video_info}")
+    # Log a bounded summary; the raw info JSON runs to hundreds of kilobytes
+    chapters = video_info.get('chapters') or []
+    logger.info(
+        f"Loaded video info from {info_file.name}: id={video_info.get('id')} "
+        f"duration={video_info.get('duration')} language={video_info.get('language')} "
+        f"chapters={len(chapters)}"
+    )
+    for chapter in chapters:
+        logger.debug(
+            f"Chapter {chapter.get('start_time')}-{chapter.get('end_time')}: {chapter.get('title')}"
+        )
     return video_info
 
-def transcribe_audio_file(audio_path: Path, ssh_host: str, ssh_user: str, whisper_model: str) -> Path:
+def transcribe_audio_files(audio_paths: List[Path], ssh_host: str, ssh_user: str, whisper_model: str) -> List[Path]:
     """
-    Transcribe an audio file using Whisper AI, either locally or on a remote host.
+    Transcribe audio files using Whisper AI, either locally or on a remote host.
 
     Depending on whether an `ssh_host` is provided, the transcription can be carried out locally or
     via passwordless SSH on a remote server (for example with the use of `ssh-agent`).
 
+    All files go to a single Whisper invocation so the model loads only once,
+    which matters for videos split into many chapters.
+
     Args:
-        audio_path (str): The file path to the audio file to be transcribed.
+        audio_paths (List[Path]): The audio files to be transcribed.
         ssh_host (str): The SSH host where the transcription should be executed.
                         If None, transcription is performed locally.
         ssh_user (str): The username to be used for SSH access to the remote host.
         whisper_model (str): The model name for Whisper AI to use for audio transcription.
 
     Returns:
-        None
+        List[Path]: The transcript text file for each audio file, in the same order.
+                    Remote transcripts are paths on the remote host.
 
     Side Effects:
         Executes commands to either synchronize files to a remote host and execute the
         Whisper AI transcription there, or directly runs the transcription locally.
         The function prints the output and error messages from these command executions.
     """
-    logger.info(f"Transcribing {audio_path}")
+    for audio_path in audio_paths:
+        logger.info(f"Transcribing {audio_path}")
     # Adding initial_prompt helps cue whisper to include sentences and punctuation!
     transcribe_command = (
         f"/home/{ssh_user}/.local/python-venvs/whisper/bin/whisper --task transcribe --model {whisper_model} "
         "--word_timestamps False --initial_prompt \"Hello, we are introducing our well-formatted transcript. Output must be properly capitalized and punctuated.  Prefer sentences of reasonable length.\"  --output_format all --output_dir /tmp/transcribedir"
     )
     if ssh_host:
-        rsync_command = f"rsync -av {audio_path} {ssh_user}@{ssh_host}:/tmp/transcribedir/"
+        local_files = ' '.join(shlex.quote(str(p)) for p in audio_paths)
+        rsync_command = f"rsync -av {local_files} {ssh_user}@{ssh_host}:/tmp/transcribedir/"
         run_command(rsync_command)
         # Special instruction to unload Ollama model from GPU if running
         remote_command = f"""ssh {ssh_user}@{ssh_host} "ollama ps | tail -1 | head -1 | cut -d' ' -f1 |sed s,NAME,,|xargs -r ollama stop" """
@@ -156,14 +178,17 @@ def transcribe_audio_file(audio_path: Path, ssh_host: str, ssh_user: str, whispe
         remote_command = f"""ssh {ssh_user}@{ssh_host} "systemctl --user stop chatterbox-tts.service" """
         output, error = run_command(remote_command)
 
-        remote_command = f"ssh {ssh_user}@{ssh_host} '{transcribe_command} /tmp/transcribedir/{audio_path.name}'"
+        remote_files = ' '.join(shlex.quote(f"/tmp/transcribedir/{p.name}") for p in audio_paths)
+        remote_command = f"ssh {ssh_user}@{ssh_host} {shlex.quote(f'{transcribe_command} {remote_files}')}"
         output, error = run_command(remote_command)
     else:
-        full_command = f"{transcribe_command} {audio_path}"
+        local_files = ' '.join(shlex.quote(str(p)) for p in audio_paths)
+        full_command = f"{transcribe_command} {local_files}"
         output, error = run_command(full_command)
-    transcript_path = Path('/tmp/transcribedir') / f"{audio_path.stem}.txt"
-    logger.info(f"Transcript saved to {transcript_path}")
-    return transcript_path
+    transcript_paths = [Path('/tmp/transcribedir') / f"{p.stem}.txt" for p in audio_paths]
+    for transcript_path in transcript_paths:
+        logger.info(f"Transcript saved to {transcript_path}")
+    return transcript_paths
 
 def format_transcript(transcript_path: Path, ssh_host: str, ssh_user: str) -> str:
     """
@@ -189,16 +214,19 @@ def format_transcript(transcript_path: Path, ssh_host: str, ssh_user: str) -> st
     External Dependencies:
         wtpsplit: Library used for text segmentation and formatting.
     """
+    quoted_path = shlex.quote(str(transcript_path))
     if ssh_host:
-        command = f"ssh {ssh_user}@{ssh_host} ~/.local/python-venvs/wtpsplit/bin/python ~/format_paragraphs.py {transcript_path}"
+        remote_command = f"~/.local/python-venvs/wtpsplit/bin/python ~/format_paragraphs.py {quoted_path}"
+        command = f"ssh {ssh_user}@{ssh_host} {shlex.quote(remote_command)}"
     else:
-        command = f"python ~/format_paragraphs.py {transcript_path}"
+        command = f"python ~/format_paragraphs.py {quoted_path}"
     output, error = run_command(command)
     formatted = clean_whitespace(output)
     logger.debug(f"Formatted transcript: {formatted}")
     return formatted
 
-def process_transcription(audio_path: Path, video_info: dict, whisper_model: str, ssh_host: str, ssh_user: str) -> List[Tuple[str, str]]:
+def process_transcription(audio_path: Path, video_info: dict, whisper_model: str, ssh_host: str, ssh_user: str,
+                          use_chapters: bool = True) -> List[Tuple[str, str]]:
     """
     Manage the transcription process for an audio file, optionally segmented by chapters.
 
@@ -214,6 +242,8 @@ def process_transcription(audio_path: Path, video_info: dict, whisper_model: str
         whisper_model (str): The Whisper AI model for audio transcription.
         ssh_host (str): SSH host for running transcription, if applicable.
         ssh_user (str): Username for SSH access.
+        use_chapters (bool): When false, ignore chapters and transcribe the whole
+                             audio file under a single heading.
 
     Returns:
         List[Tuple[str, str]]: A list of tuples each containing the title and
@@ -222,27 +252,21 @@ def process_transcription(audio_path: Path, video_info: dict, whisper_model: str
     Side Effects:
         Executes transcription and formatting commands, possibly remotely,
         handling output and error messages during execution.
-
-    Raises:
-        FileNotFoundError: If no audio file is found for a chapter.
     """
 
     transcripts = []
-    num_chapters = len(video_info.get('chapters', []))
+    chapters = video_info.get('chapters') or []
     video_title = video_info.get('title', 'Video')
 
     print(f"Beginning to transcribe video {video_title}")
-    if num_chapters == 0:
-        logger.info("No chapters found in the video.")
-        logger.info(f"Transcribing {audio_path.name}")
-        print(f"Transcribing {audio_path.name}")
-        transcript_path = transcribe_audio_file(audio_path, ssh_host, ssh_user, whisper_model)
-        formatted_transcript = format_transcript(transcript_path, ssh_host, ssh_user)
-        transcripts.append((video_title, formatted_transcript))
-    else:
-        logger.info(f"Found {num_chapters} chapters in the video.")
-        print(f"Found {num_chapters} chapters in the video.")
-        for index, chapter in enumerate(video_info['chapters'], start=1):
+    segments = []
+    if chapters and not use_chapters:
+        logger.info(f"Ignoring {len(chapters)} chapters as requested; transcribing the whole video.")
+        print(f"Ignoring {len(chapters)} chapters; transcribing the whole video.")
+    elif chapters:
+        logger.info(f"Found {len(chapters)} chapters in the video.")
+        print(f"Found {len(chapters)} chapters in the video.")
+        for index, chapter in enumerate(chapters, start=1):
             chap_title = chapter['title']
             chap_file = next((f for f in audio_path.parent.glob(f"[[]{index:02d}]*.opus")), None)
             if not chap_file:
@@ -250,9 +274,23 @@ def process_transcription(audio_path: Path, video_info: dict, whisper_model: str
                 continue
             print(f"Transcribing chapter {index}: {chap_title} - file {chap_file.name}")
             logger.info(f"Transcribing chapter {index}: {chap_title} - file {chap_file.name}")
-            transcript_path = transcribe_audio_file(chap_file, ssh_host, ssh_user, whisper_model)
-            formatted_transcript = format_transcript(transcript_path, ssh_host, ssh_user)
-            transcripts.append((chap_title, formatted_transcript))
+            segments.append((chap_title, chap_file))
+        if not segments:
+            logger.warning("No chapter audio files found; transcribing the whole video.")
+    else:
+        logger.info("No chapters found in the video.")
+
+    if not segments:
+        logger.info(f"Transcribing {audio_path.name}")
+        print(f"Transcribing {audio_path.name}")
+        segments = [(video_title, audio_path)]
+
+    transcript_paths = transcribe_audio_files(
+        [chap_file for _, chap_file in segments], ssh_host, ssh_user, whisper_model
+    )
+    for (title, _), transcript_path in zip(segments, transcript_paths):
+        formatted_transcript = format_transcript(transcript_path, ssh_host, ssh_user)
+        transcripts.append((title, formatted_transcript))
 
     return transcripts
 
@@ -286,7 +324,12 @@ def parse_args(config: ConfigParser):
                         help='SSH host to run the transcription on')
     parser.add_argument('--ssh-user', default=os.getenv('USER'),
                         help='SSH username')
-    parser.add_argument('--debug', action='store_true', help='Enable debug mode for increased logging')
+    parser.add_argument('--no-chapters', dest='use_chapters', action='store_false',
+                        help='Ignore video chapters: do not split the audio, and transcribe the '
+                             'whole video under a single heading')
+    parser.add_argument('--debug', action='store_true',
+                        default=config.getboolean('ytaudio', 'debug', fallback=False),
+                        help=f'Enable debug logging to {LOG_FILE}')
 
     args = parser.parse_args()
 
@@ -315,17 +358,18 @@ def load_config() -> ConfigParser:
 def main():
     config = load_config()
     args = parse_args(config)
-    print(args)
     # Update logging level based on debug flag
     if args.debug:
         logger.setLevel(logging.DEBUG)
         logger.debug("Debug mode enabled.")
+    logger.debug(f"Arguments: {args}")
 
     try:
-        audio_path = download_audio(args.video_url)
+        audio_path = download_audio(args.video_url, split_chapters=args.use_chapters)
         video_info = load_video_info(audio_path)
         transcripts = process_transcription(
-            audio_path, video_info, args.model, args.ssh_host, args.ssh_user
+            audio_path, video_info, args.model, args.ssh_host, args.ssh_user,
+            use_chapters=args.use_chapters
         )
         finaldoc_path = audio_path.with_suffix('.org')
         write_final_document(finaldoc_path, video_info.get('title', 'Video'), video_info.get('webpage_url', 'Unknown'), transcripts)
