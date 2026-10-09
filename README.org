@@ -1327,10 +1327,11 @@
    The key is to set an option in the =snd-hda-intel= module.  =power_save=0= means never
    go into power saving mode
    + On Ubuntu 20.4
-     in =/etc/modprobe.d/alsa-base.conf=
+     in= /etc/modprobe.d/audio_disable_powersave.conf=
      #+begin_src conf
        # GJG stop the buzzing from headphone jack
-       options snd-hda-intel power_save=0 power_save_controller=N
+       options snd-hda-intel power_save=0
+       options snd-hda-intel power_save_controller=N
      #+end_src
    + On openSUSE Tumbleweed
      in =/etc/modprobe.d/42-power-audio.conf=
